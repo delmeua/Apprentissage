@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌈 Mon Réviseur d'Anglais</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+  .animate-fall { animation: fall linear forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+  .card-3d { perspective: 1000px; }
+  .card-inner { transform-style: preserve-3d; transition: transform 0.5s; }
+  .card-face { backface-visibility: hidden; }
+  .card-back { transform: rotateY(180deg); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ============================================================
+// 🔊 Synthèse vocale — prononciation UK (3 interprètes en cascade)
+//    1) Puter.js  → voix cloud AWS Polly « Amy » (en-GB, neural) — seulement si l'app est servie en http(s)
+//                   (Puter.js refuse le protocole file:// : on ne charge même pas le script en local)
+//    2) Google Translate TTS → voix cloud Google (en-GB) — fonctionne aussi ouvert en file://
+//    3) speechSynthesis → voix du navigateur (dernier recours, marche hors-ligne)
+// ============================================================
+const TTS_CACHE = new Map();   // audios déjà générés (évite de les régénérer)
+let currentAudio = null;       // audio en cours de lecture
+let puterPromise = null;       // chargement du script Puter.js
+let puterBroken = false;       // si le cloud échoue, on ne réessaie plus
+
+function stopSpeaking() {
+  try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+  if (currentAudio) { try { currentAudio.pause(); } catch (e) {} currentAudio = null; }
+}
+
+function loadPuter() {
+  if (!puterPromise) {
+    puterPromise = new Promise((resolve) => {
+      // Puter.js exige une origin http(s) : depuis un fichier local (file://), il affiche
+      // une erreur et ne fonctionne pas → on ne charge même pas le script dans ce cas.
+      if (location.protocol === 'file:') return resolve(false);
+      if (window.puter && window.puter.ai && window.puter.ai.txt2speech) return resolve(true);
+      const s = document.createElement('script');
+      s.src = 'https://js.puter.com/v2/';
+      s.onload = () => resolve(!!(window.puter && window.puter.ai && window.puter.ai.txt2speech));
+      s.onerror = () => resolve(false);
+      document.head.appendChild(s);
+    });
+  }
+  return puterPromise;
+}
+
+function playAudio(audio, onend) {
+  stopSpeaking();
+  currentAudio = audio;
+  audio.onended = () => { if (currentAudio === audio) currentAudio = null; if (onend) onend(); };
+  try { audio.currentTime = 0; } catch (e) {}
+  const p = audio.play();
+  if (p && p.catch) p.catch(() => {});
+}
+
+function cacheAudio(key, audio) {
+  if (!audio) return;
+  if (TTS_CACHE.size > 200) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
+  TTS_CACHE.set(key, audio);
+}
+
+// 1) Voix cloud (Puter.js → AWS Polly neural, voix UK « Amy »)
+async function speakCloud(text, lang, onend) {
+  if (puterBroken) return false;
+  try {
+    const ok = await loadPuter();
+    if (!ok) { puterBroken = true; return false; }
+    const key = (lang || 'en-GB') + '::' + text;
+    let audio = TTS_CACHE.get(key);
+    if (!audio) {
+      audio = await window.puter.ai.txt2speech(text, { voice: 'Amy', engine: 'neural', language: lang || 'en-GB' });
+      cacheAudio(key, audio);
+    }
+    if (!audio) { puterBroken = true; return false; }
+    playAudio(audio, onend);
+    return true;
+  } catch (e) { puterBroken = true; return false; }
+}
+
+// 2) Google Translate TTS (secours cloud)
+function speakGoogleTTS(text, lang, onend) {
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + encodeURIComponent(lang || 'en-GB') + '&q=' + encodeURIComponent(text);
+  let audio = TTS_CACHE.get('g::' + url);
+  if (!audio) { audio = new Audio(url); cacheAudio('g::' + url, audio); }
+  audio.onerror = () => { if (currentAudio === audio) currentAudio = null; speakNative(text, lang, onend); };
+  playAudio(audio, onend);
+}
+
+// 3) Voix du navigateur (dernier recours, hors-ligne)
+function speakNative(text, lang, onend) {
+  if (!('speechSynthesis' in window)) { if (onend) onend(); return; }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang || 'en-GB';
+  utterance.rate = 0.85;
+  utterance.pitch = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const ukVoice = voices.find(v => v.lang === 'en-GB' && v.name.includes('Google')) || voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.indexOf('en-GB') === 0);
+  if (ukVoice) utterance.voice = ukVoice;
+  if (onend) { utterance.onend = onend; utterance.onerror = onend; }
+  window.speechSynthesis.speak(utterance);
+}
+
+async function speak(text, lang, onend) {
+  const word = String(text || '').trim();
+  if (!word) return;
+  if (await speakCloud(word, lang, onend)) return;
+  speakGoogleTTS(word, lang, onend);
+}
+
+function SpeakerButton({ text, lang, size }) {
+  const [speaking, setSpeaking] = useState(false);
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setSpeaking(true);
+    speak(text, lang || 'en-GB', () => setSpeaking(false));
+    setTimeout(() => setSpeaking(false), 6000); // sécurité si la fin n'est pas détectée
+  };
+  const sizeClasses = { sm: 'w-8 h-8 text-lg', md: 'w-12 h-12 text-2xl', lg: 'w-16 h-16 text-3xl' };
+  const sz = size || 'md';
+  return React.createElement('button', {
+    onClick: handleClick,
+    className: sizeClasses[sz] + ' rounded-full bg-white/80 hover:bg-white shadow-md flex items-center justify-center transition-all hover:scale-110' + (speaking ? ' animate-pulse ring-4 ring-indigo-300' : ''),
+    title: 'Écouter la prononciation'
+  }, speaking ? '🔊' : '🔉');
+}
+
+// ============================================================
+// CSV Parsing
+// ============================================================
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const words = [];
+  const firstLine = (lines[0] || '').toLowerCase();
+  const startIdx = (firstLine.includes('anglais') || firstLine.includes('english') || firstLine.includes('mot')) ? 1 : 0;
+  for (let i = startIdx; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const sep = line.includes(';') ? ';' : line.includes('\t') ? '\t' : ',';
+    const parts = line.split(sep).map(p => p.trim().replace(/^["']|["']$/g, ''));
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      words.push({ id: words.length, english: parts[0], french: parts[1] });
+    }
+  }
+  return words;
+}
+
+// ============================================================
+// 📊 Récapitulatif des mots travaillés (fichier CSV cumulatif)
+// ============================================================
+const RECAP_KEY = 'revision-anglais-recap';
+const TEACHER_KEY = 'revision-anglais-teacher';
+const STUDENT_KEY = 'revision-anglais-student';
+let recapFileHandle = null;   // fichier choisi pour l'ajout automatique (File System Access API)
+
+function loadRecap() {
+  try { return JSON.parse(localStorage.getItem(RECAP_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveRecap(list) {
+  try { localStorage.setItem(RECAP_KEY, JSON.stringify(list)); } catch (e) {}
+}
+function csvEscape(s) { return '"' + String(s).replace(/"/g, '""') + '"'; }
+function recapToCSV(list) {
+  return 'anglais,français\n' + list.map(w => csvEscape(w.english) + ',' + csvEscape(w.french)).join('\n') + '\n';
+}
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+// Ajoute les nouveaux mots au récapitulatif (sans doublons) → retourne les mots ajoutés
+function addWordsToRecap(newWords) {
+  const recap = loadRecap();
+  const seen = new Set(recap.map(w => (w.english + '|' + w.french).toLowerCase()));
+  const added = [];
+  newWords.forEach(w => {
+    const key = (w.english + '|' + w.french).toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      recap.push({ english: w.english, french: w.french });
+      added.push({ english: w.english, french: w.french });
+    }
+  });
+  saveRecap(recap);
+  return added;
+}
+// Ajoute les mots à la fin du fichier récap choisi (ajout automatique)
+async function appendToRecapFile(addedWords) {
+  if (!recapFileHandle || !addedWords || addedWords.length === 0) return;
+  try {
+    const file = await recapFileHandle.getFile();
+    const writable = await recapFileHandle.createWritable({ keepExistingData: true });
+    await writable.seek(file.size);
+    await writable.write(addedWords.map(w => csvEscape(w.english) + ',' + csvEscape(w.french)).join('\n') + '\n');
+    await writable.close();
+  } catch (e) { recapFileHandle = null; }
+}
+// L'utilisateur choisit (ou crée) le fichier récapitulatif : les nouveaux mots y seront ajoutés automatiquement
+async function pickRecapFile() {
+  if (!window.showSaveFilePicker) return false;
+  try {
+    recapFileHandle = await window.showSaveFilePicker({
+      suggestedName: 'recapitulatif.csv',
+      types: [{ description: 'Fichier CSV', accept: { 'text/csv': ['.csv'] } }],
+    });
+    // Si le fichier existe déjà, on récupère son contenu pour ne rien perdre
+    try {
+      const file = await recapFileHandle.getFile();
+      if (file.size > 0) {
+        const existing = parseCSV(await file.text());
+        if (existing.length > 0) addWordsToRecap(existing);
+      }
+    } catch (e) {}
+    // On réécrit le fichier avec le récapitulatif complet
+    const writable = await recapFileHandle.createWritable();
+    await writable.write(recapToCSV(loadRecap()));
+    await writable.close();
+    return true;
+  } catch (e) { recapFileHandle = null; return false; }
+}
+
+// ============================================================
+// 📧 Envoi des résultats par email au professeur
+//    1) Envoi direct par internet (relais gratuit FormSubmit — aucune messagerie requise) :
+//       essai 1 = AJAX JSON (réponse lisible), essai 2 = POST formulaire dans un iframe caché
+//       (aucune restriction CORS ; le champ _url fait accepter l'envoi depuis un fichier local)
+//    2) Secours : lien mailto: (ouvre le logiciel de messagerie de l'ordinateur)
+function buildResultsEmail(resultData) {
+  const pct = Math.round((resultData.correct / resultData.total) * 100);
+  const student = (resultData.student || '').trim().slice(0, 60);
+  const subject = 'Résultats révision anglais' + (student ? ' — ' + student : '') + ' — ' + resultData.mode + ' — ' + resultData.correct + '/' + resultData.total + ' (' + pct + '%)';
+  const lines = [];
+  lines.push('Bonjour,');
+  lines.push('');
+  lines.push("Voici les résultats de la dernière session de révision d'anglais :");
+  lines.push('');
+  if (student) lines.push('Élève : ' + student);
+  lines.push('Date : ' + (resultData.date || new Date().toLocaleString('fr-FR')));
+  lines.push('Mode : ' + resultData.mode);
+  lines.push('Score : ' + resultData.correct + '/' + resultData.total + ' (' + pct + '%)');
+  if (resultData.details && resultData.details.length > 0) {
+    lines.push('');
+    lines.push('Détail par mot :');
+    resultData.details.forEach(d => {
+      lines.push((d.ok ? '✅' : '❌') + ' ' + d.english + ' — ' + d.french);
+    });
+  }
+  lines.push('');
+  lines.push('Bonne journée !');
+  lines.push('');
+  lines.push("(Envoyé depuis l'application « Mon Réviseur d'Anglais »)");
+  return { subject: subject, body: lines.join('\n') };
+}
+
+// Le champ _url est indispensable quand la page est ouverte comme fichier local (file://) :
+// sans lui, FormSubmit refuse l'envoi ("FormSubmit will not work in pages browsed as HTML files").
+function formUrlField() {
+  return location.protocol === 'file:' ? 'https://mon-reviseur-anglais.example/revision.html' : location.href;
+}
+
+// POST "formulaire classique" dans un iframe caché : c'est une navigation, donc aucune
+// restriction CORS — et avec le champ _url, FormSubmit accepte l'envoi depuis un fichier local.
+// Résout true si le serveur a répondu (page atteinte), false si erreur réseau ou délai dépassé.
+function postViaHiddenForm(actionUrl, fields) {
+  return new Promise((resolve) => {
+    let iframe = null, form = null, timer = null, done = false;
+    const finish = (ok) => {
+      if (done) return; done = true;
+      if (timer) clearTimeout(timer);
+      try { if (form) form.remove(); } catch (e) {}
+      try { if (iframe) iframe.remove(); } catch (e) {}
+      resolve(ok);
+    };
+    try {
+      iframe = document.createElement('iframe');
+      iframe.name = 'fsend-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+      iframe.setAttribute('aria-hidden', 'true');
+      iframe.style.cssText = 'position:absolute;left:-9999px;top:0;width:1px;height:1px;border:0;';
+      iframe.addEventListener('load', () => {
+        let href = '';
+        try { href = String(iframe.contentWindow.location.href); } catch (e) { finish(true); return; } // page cross-origin atteinte → le serveur a répondu
+        if (!href || href === 'about:blank') return; // chargement initial de l'iframe
+        if (/neterror|chrome-error|blocked|certerror/i.test(href)) { finish(false); return; } // page d'erreur réseau du navigateur
+        finish(true); // page FormSubmit atteinte (contenu non lisible : iframe cross-origin)
+      });
+      document.body.appendChild(iframe);
+      form = document.createElement('form');
+      form.method = 'POST';
+      form.action = actionUrl;
+      form.target = iframe.name;
+      form.acceptCharset = 'UTF-8';
+      form.style.display = 'none';
+      Object.keys(fields).forEach((k) => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden'; inp.name = k; inp.value = String(fields[k]);
+        form.appendChild(inp);
+      });
+      document.body.appendChild(form);
+      timer = setTimeout(() => finish(false), 15000); // hors ligne ou aucune réponse
+      form.submit();
+    } catch (e) { finish(false); }
+  });
+}
+
+// 1) Envoi direct par internet (relais gratuit FormSubmit)
+//    → { ok: true/false, detail: string } — detail = courte trace technique (diagnostic)
+async function sendResultsEmail(teacherEmail, resultData) {
+  const email = buildResultsEmail(resultData);
+  const to = String(teacherEmail || '').trim();
+  const fields = { _subject: email.subject, _url: formUrlField(), _captcha: 'false', message: email.body };
+  let firstDetail = '';
+
+  // Essai 1 : AJAX JSON → réponse lisible, confirmation fiable
+  let timer = null;
+  try {
+    const ctrl = new AbortController();
+    timer = setTimeout(() => ctrl.abort(), 12000); // abandon après 12 s
+    const res = await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(to), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(fields),
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer); timer = null;
+    const data = await res.json().catch(() => null);
+    const blob = JSON.stringify(data || {});
+    const msg = data && data.message ? String(data.message) : '';
+    // 1ère utilisation : FormSubmit envoie un email d'activation au professeur et conserve
+    // la soumission (elle lui sera délivrée après validation) → c'est un succès.
+    if (/activat|confirm/i.test(blob)) return { ok: true, detail: 'Envoi direct confirmé — 1ère fois : le professeur reçoit un email de confirmation à valider une seule fois.' };
+    if (data && (data.success === true || data.success === 'true')) return { ok: true, detail: 'Envoi direct confirmé par le serveur.' };
+    if (res.ok && !msg) return { ok: true, detail: 'Envoi direct confirmé par le serveur.' }; // ex. page de remerciement
+    firstDetail = 'HTTP ' + res.status + (msg ? ' — ' + msg.slice(0, 110) : (blob ? ' — ' + blob.slice(0, 110) : ''));
+  } catch (e) {
+    if (timer) { clearTimeout(timer); timer = null; }
+    firstDetail = 'Serveur injoignable (' + String(e && e.message ? e.message : e).slice(0, 70) + ')';
+  }
+
+  // Essai 2 : POST formulaire dans un iframe caché → aucune restriction CORS, envoi accepté
+  //           depuis un fichier local grâce au champ _url (solution officielle FormSubmit)
+  const viaForm = await postViaHiddenForm('https://formsubmit.co/' + encodeURIComponent(to), fields);
+  if (viaForm) return { ok: true, detail: 'Email transmis à formsubmit.co (formulaire).' + (firstDetail ? ' Essai direct : ' + firstDetail : '') };
+  return { ok: false, detail: (firstDetail ? firstDetail + ' ; ' : '') + 'formulaire non transmis (pas de connexion internet ?)' };
+}
+
+// 2) Secours : ouvre le logiciel de messagerie par défaut de l'ordinateur (lien mailto:)
+function buildResultsMailto(teacherEmail, resultData) {
+  const email = buildResultsEmail(resultData);
+  return 'mailto:' + encodeURIComponent(teacherEmail) + '?subject=' + encodeURIComponent(email.subject) + '&body=' + encodeURIComponent(email.body.replace(/\n/g, '\r\n'));
+}
+
+// ============================================================
+// Confetti
+// ============================================================
+function Confetti({ active }) {
+  if (!active) return null;
+  const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3', '#F38181', '#AA96DA', '#FCBAD3', '#A8E6CF'];
+  const pieces = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    delay: Math.random() * 0.5,
+    duration: 1 + Math.random() * 1.5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    size: 6 + Math.random() * 8,
+    rotation: Math.random() * 360,
+  }));
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+      {pieces.map(p => (
+        <div key={p.id} className="absolute animate-fall"
+          style={{ left: p.left + '%', top: '-20px', width: p.size + 'px', height: p.size + 'px',
+            backgroundColor: p.color, borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+            animationDelay: p.delay + 's', animationDuration: p.duration + 's', transform: 'rotate(' + p.rotation + 'deg)' }} />
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// Header
+// ============================================================
+function Header({ wordCount, onHome }) {
+  return (
+    <header className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white px-4 py-3 shadow-lg">
+      <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <button onClick={onHome} className="flex items-center gap-2 text-xl font-bold hover:opacity-80 transition-opacity">
+          <span className="text-2xl">🌈</span>
+          <span>Mon Réviseur d'Anglais</span>
+        </button>
+        {wordCount > 0 && (
+          <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+            📚 {wordCount} mot{wordCount > 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    </header>
+  );
+}
+
+// ============================================================
+// Home Page
+// ============================================================
+function HomePage({ onLoadWords, recapCount, recapFileChosen, canPickFile, onPickRecapFile, onDownloadRecap, teacherEmail, onTeacherEmailChange }) {
+  const fileRef = useRef(null);
+  const [error, setError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleFile = useCallback((file) => {
+    setError('');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const words = parseCSV(e.target.result);
+      if (words.length === 0) {
+        setError('Aucun mot trouvé. Vérifie que ton fichier a 2 colonnes : anglais et français.');
+        return;
+      }
+      onLoadWords(words);
+    };
+    reader.readAsText(file);
+  }, [onLoadWords]);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  }, [handleFile]);
+
+  const loadSample = () => {
+    onLoadWords([
+      { id: 0, english: 'cat', french: 'chat' },
+      { id: 1, english: 'dog', french: 'chien' },
+      { id: 2, english: 'house', french: 'maison' },
+      { id: 3, english: 'tree', french: 'arbre' },
+      { id: 4, english: 'sun', french: 'soleil' },
+      { id: 5, english: 'water', french: 'eau' },
+      { id: 6, english: 'book', french: 'livre' },
+      { id: 7, english: 'apple', french: 'pomme' },
+      { id: 8, english: 'school', french: 'école' },
+      { id: 9, english: 'friend', french: 'ami' },
+      { id: 10, english: 'happy', french: 'heureux' },
+      { id: 11, english: 'big', french: 'grand' },
+    ]);
+  };
+
+  return (
+    <div className="min-h-full bg-gradient-to-b from-indigo-100 to-purple-100 flex flex-col items-center justify-center py-3 px-4">
+      <div className="text-center mb-4">
+        <div className="text-5xl mb-2">🇬🇧✨</div>
+        <h1 className="text-3xl font-bold text-indigo-700 mb-1">Mon Réviseur d'Anglais</h1>
+        <p className="text-base text-gray-600">Apprends tes mots anglais en t'amusant ! 🎉</p>
+      </div>
+      <div className="bg-white rounded-3xl shadow-xl p-5 max-w-lg w-full">
+        <h2 className="text-lg font-semibold text-gray-700 mb-3 text-center">📁 Importer ma liste de mots</h2>
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+          onClick={() => fileRef.current && fileRef.current.click()}
+          className={'border-3 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all ' + (dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/50')}
+        >
+          <div className="text-4xl mb-2">📄</div>
+          <p className="text-gray-600 font-medium">Glisse ton fichier ici<br /><span className="text-sm text-gray-400">ou clique pour choisir</span></p>
+          <p className="text-xs text-gray-400 mt-2">Fichier CSV : 1ère colonne = anglais, 2ème colonne = français</p>
+          <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden"
+            onChange={(e) => { const f = e.target.files && e.target.files[0]; if (f) handleFile(f); }} />
+        </div>
+        {error && <div className="mt-3 bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-xl text-sm">⚠️ {error}</div>}
+        <div className="mt-4 bg-gray-50 rounded-xl p-3">
+          <p className="text-sm font-medium text-gray-500 mb-1">📋 Format du fichier :</p>
+          <pre className="text-sm text-gray-700 bg-white rounded-lg p-2 overflow-x-auto font-mono">{"anglais,français\ncat,chat\ndog,chien\nhouse,maison"}</pre>
+        </div>
+        <div className="flex items-center gap-4 my-4">
+          <div className="flex-1 h-px bg-gray-200"></div><span className="text-gray-400 text-sm">ou</span><div className="flex-1 h-px bg-gray-200"></div>
+        </div>
+        <button onClick={loadSample}
+          className="w-full py-3 px-6 bg-gradient-to-r from-amber-400 to-orange-400 text-white font-bold rounded-xl text-lg hover:from-amber-500 hover:to-orange-500 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+          🎮 Essayer avec des mots d'exemple
+        </button>
+      </div>
+      <div className="bg-white rounded-3xl shadow-xl p-5 max-w-lg w-full mt-4">
+        <h2 className="text-lg font-semibold text-gray-700 mb-3 text-center">📊 Récapitulatif & professeur</h2>
+        <p className="text-sm text-gray-600 text-center mb-3">📚 {recapCount} mot{recapCount > 1 ? 's' : ''} déjà travaillé{recapCount > 1 ? 's' : ''} au total</p>
+        <div className="flex flex-col gap-2">
+          {canPickFile && (
+            <button onClick={onPickRecapFile}
+              className={'w-full py-2 px-4 font-semibold rounded-xl text-sm transition-colors ' + (recapFileChosen ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200')}>
+              {recapFileChosen ? '✅ Fichier récap choisi — les nouveaux mots y sont ajoutés automatiquement' : '💾 Choisir le fichier récapitulatif (ajout automatique)'}
+            </button>
+          )}
+          <button onClick={onDownloadRecap} disabled={recapCount === 0}
+            className="w-full py-2 px-4 bg-purple-100 text-purple-700 font-semibold rounded-xl text-sm hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            📥 Télécharger le récapitulatif (CSV, {recapCount} mot{recapCount > 1 ? 's' : ''})
+          </button>
+          <input type="email" value={teacherEmail} onChange={onTeacherEmailChange} placeholder="📧 Email du professeur (pour envoyer les résultats)"
+            className="w-full p-2 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:outline-none text-sm text-center" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Mode Selection
+// ============================================================
+function ModeSelection({ words, scores, onNavigate, wordCount, setWordCount }) {
+  const maxWords = words.length;
+  const minWords = Math.min(10, maxWords);
+  const effectiveCount = Math.min(wordCount, maxWords);
+  const modes = [
+    { id: 'flashcards', icon: '🃏', title: 'Flashcards', desc: 'Retourne la carte pour voir la traduction', color: 'from-blue-400 to-cyan-400', path: 'flashcards' },
+    { id: 'quiz', icon: '❓', title: 'Quiz', desc: 'Choisis la bonne traduction parmi 4 choix', color: 'from-green-400 to-emerald-400', path: 'quiz' },
+    { id: 'list', icon: '📖', title: 'Ma Liste', desc: 'Voir tous les mots à apprendre', color: 'from-purple-400 to-pink-400', path: 'list' },
+    { id: 'typing-en', icon: '🇬🇧', title: 'Écrire en anglais', desc: 'Lis le mot en français, écris-le en anglais', color: 'from-orange-400 to-red-400', path: 'typing-en' },
+  ];
+  const bestScore = scores.length > 0 ? Math.max.apply(null, scores.map(s => Math.round((s.correct / s.total) * 100))) : 0;
+
+  return (
+    <div className="h-full bg-gradient-to-b from-indigo-100 to-purple-100 py-3 px-4 overflow-y-auto">
+      <div className="max-w-2xl mx-auto">
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-white rounded-2xl p-3 text-center shadow-md">
+            <div className="text-2xl mb-1">📚</div>
+            <div className="text-xl font-bold text-indigo-600">{words.length}</div>
+            <div className="text-sm text-gray-500">mots à apprendre</div>
+          </div>
+          <div className="bg-white rounded-2xl p-3 text-center shadow-md">
+            <div className="text-2xl mb-1">⭐</div>
+            <div className="text-xl font-bold text-amber-500">{bestScore}%</div>
+            <div className="text-sm text-gray-500">meilleur score</div>
+          </div>
+        </div>
+        {/* Sélecteur du nombre de mots */}
+        <div className="bg-white rounded-2xl p-4 shadow-md mb-4">
+          <h3 className="font-semibold text-gray-600 text-center mb-3">🎲 Combien de mots veux-tu réviser ?</h3>
+          <div className="flex items-center justify-center gap-4">
+            <button onClick={() => setWordCount(Math.max(minWords, effectiveCount - 5))} disabled={effectiveCount <= minWords}
+              className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 text-2xl font-bold hover:bg-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center">−</button>
+            <div className="text-center min-w-[80px]">
+              <div className="text-3xl font-bold text-indigo-600">{effectiveCount}</div>
+              <div className="text-xs text-gray-400">mots</div>
+            </div>
+            <button onClick={() => setWordCount(Math.min(maxWords, effectiveCount + 5))} disabled={effectiveCount >= maxWords}
+              className="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 text-2xl font-bold hover:bg-indigo-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center">+</button>
+          </div>
+          <div className="flex justify-center gap-2 mt-3 flex-wrap">
+            {[10, 15, 20, 30].filter(n => n <= maxWords).map(n => (
+              <button key={n} onClick={() => setWordCount(n)}
+                className={'px-4 py-2 rounded-full text-sm font-medium transition-colors ' + (effectiveCount === n ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-indigo-50')}>{n}</button>
+            ))}
+            {maxWords > 30 && (
+              <button onClick={() => setWordCount(maxWords)}
+                className={'px-4 py-2 rounded-full text-sm font-medium transition-colors ' + (effectiveCount === maxWords ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-indigo-50')}>Tous ({maxWords})</button>
+            )}
+          </div>
+          {maxWords < 10 && <p className="text-center text-amber-500 text-sm mt-3">⚠️ Il faut au moins 10 mots. Ajoute des mots dans ton fichier CSV.</p>}
+        </div>
+        <h2 className="text-2xl font-bold text-indigo-700 text-center mb-4">🎯 Choisis ton mode de jeu</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {modes.map(mode => {
+            const canPlay = mode.id === 'list' || maxWords >= 10;
+            return (
+            <button key={mode.id} onClick={() => canPlay && onNavigate(mode.path)} disabled={!canPlay}
+              className={'bg-gradient-to-br ' + mode.color + ' text-white rounded-2xl p-4 text-left shadow-lg transition-all ' + (canPlay ? 'hover:shadow-xl transform hover:-translate-y-1' : 'opacity-50 cursor-not-allowed')}>
+              <div className="text-3xl mb-2">{mode.icon}</div>
+              <div className="text-xl font-bold mb-1">{mode.title}</div>
+              <div className="text-sm opacity-90">{mode.desc}</div>
+              {mode.id !== 'list' && maxWords >= 10 && <div className="text-xs opacity-75 mt-2">📝 {effectiveCount} mots</div>}
+              {mode.id !== 'list' && maxWords < 10 && <div className="text-xs opacity-75 mt-2">⚠️ 10 mots min.</div>}
+            </button>
+            );
+          })}
+        </div>
+        {scores.length > 0 && (
+          <div className="mt-4 bg-white rounded-2xl p-4 shadow-md">
+            <h3 className="font-semibold text-gray-600 mb-2">📊 Mes derniers résultats</h3>
+            <div className="space-y-2">
+              {scores.slice(-5).reverse().map((s, i) => {
+                const pct = Math.round((s.correct / s.total) * 100);
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-sm text-gray-400 w-20">{s.date}</span>
+                    <span className="text-sm text-gray-500 flex-1">{s.mode}</span>
+                    <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={'h-full rounded-full ' + (pct >= 80 ? 'bg-green-400' : pct >= 50 ? 'bg-amber-400' : 'bg-red-400')} style={{ width: pct + '%' }} />
+                    </div>
+                    <span className="text-sm font-bold w-12 text-right">{s.correct}/{s.total}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Flashcards Mode
+// ============================================================
+function FlashcardsMode({ words, wordCount, onFinish }) {
+  const sessionWords = [...words].sort(() => Math.random() - 0.5).slice(0, wordCount);
+  const [queue, setQueue] = useState(() => [...sessionWords]);
+  const [current, setCurrent] = useState(null);
+  const [flipped, setFlipped] = useState(false);
+  const [direction, setDirection] = useState('en-fr');
+  const [correct, setCorrect] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const resultsRef = useRef([]);
+
+  useEffect(() => {
+    if (queue.length > 0 && !current) {
+      const newDir = Math.random() > 0.5 ? 'en-fr' : 'fr-en';
+      setCurrent(queue[0]);
+      setFlipped(false);
+      setDirection(newDir);
+      if (newDir === 'en-fr') setTimeout(() => speak(queue[0].english, 'en-GB'), 300);
+    }
+  }, [queue, current]);
+
+  // Quand on retourne la carte et que la réponse en anglais apparaît → on la prononce
+  useEffect(() => {
+    if (flipped && direction === 'fr-en' && current) setTimeout(() => speak(current.english, 'en-GB'), 250);
+  }, [flipped]);
+
+  const handleNext = (wasCorrect) => {
+    resultsRef.current.push({ english: current.english, french: current.french, ok: !!wasCorrect });
+    if (wasCorrect) {
+      setCorrect(c => c + 1);
+      if ((correct + 1) % 5 === 0) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); }
+    }
+    const newQueue = queue.slice(1);
+    setQueue(newQueue);
+    if (newQueue.length === 0) {
+      onFinish(wasCorrect ? correct + 1 : correct, sessionWords.length, resultsRef.current);
+    } else {
+      const newDir = Math.random() > 0.5 ? 'en-fr' : 'fr-en';
+      setCurrent(newQueue[0]);
+      setFlipped(false);
+      setDirection(newDir);
+      if (newDir === 'en-fr') setTimeout(() => speak(newQueue[0].english, 'en-GB'), 300);
+    }
+  };
+
+  if (!current) return <div className="h-full flex items-center justify-center"><p className="text-xl text-gray-500">Chargement...</p></div>;
+
+  const progress = ((sessionWords.length - queue.length) / sessionWords.length) * 100;
+  const frontText = direction === 'en-fr' ? current.english : current.french;
+  const backText = direction === 'en-fr' ? current.french : current.english;
+  const frontLabel = direction === 'en-fr' ? '🇬🇧 Anglais' : '🇫🇷 Français';
+  const backLabel = direction === 'en-fr' ? '🇫🇷 Français' : '🇬🇧 Anglais';
+
+  return (
+    <div className="h-full bg-gradient-to-b from-blue-50 to-cyan-50 py-3 px-4 overflow-y-auto">
+      <Confetti active={showConfetti} />
+      <div className="max-w-lg mx-auto">
+        <div className="mb-4">
+          <div className="flex justify-between text-sm text-gray-500 mb-1">
+            <span>🃏 Flashcards</span><span>{sessionWords.length - queue.length + 1} / {sessionWords.length}</span>
+          </div>
+          <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
+            <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full transition-all duration-500" style={{ width: progress + '%' }} />
+          </div>
+        </div>
+        <div className="card-3d cursor-pointer select-none mb-4" onClick={() => setFlipped(f => !f)}>
+          <div className="card-inner relative w-full" style={{ transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)', minHeight: '240px' }}>
+            <div className="card-face absolute inset-0 bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-6">
+              <span className="text-sm font-medium text-blue-400 mb-4 bg-blue-50 px-4 py-1 rounded-full">{frontLabel}</span>
+              <span className="text-4xl font-bold text-gray-800 text-center">{frontText}</span>
+              {direction === 'en-fr' && (
+                <div className="mt-4" onClick={(e) => e.stopPropagation()}>
+                  <SpeakerButton text={current.english} lang="en-GB" size="md" />
+                </div>
+              )}
+              <span className="text-gray-400 mt-4 text-sm">👆 Clique pour retourner</span>
+            </div>
+            <div className="card-face card-back absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-3xl shadow-xl flex flex-col items-center justify-center p-6">
+              <span className="text-sm font-medium text-white/80 mb-4 bg-white/20 px-4 py-1 rounded-full">{backLabel}</span>
+              <span className="text-4xl font-bold text-white text-center">{backText}</span>
+              {direction === 'fr-en' && (
+                <div className="mt-4" onClick={(e) => e.stopPropagation()}>
+                  <SpeakerButton text={current.english} lang="en-GB" size="md" />
+                </div>
+              )}
+              <span className="text-white/70 mt-6 text-sm">👆 Clique pour retourner</span>
+            </div>
+          </div>
+        </div>
+        {flipped ? (
+          <div className="flex gap-4 justify-center animate-fadeIn">
+            <button onClick={() => handleNext(false)} className="flex-1 max-w-[160px] py-3 bg-red-100 text-red-600 font-bold rounded-2xl text-lg hover:bg-red-200 transition-colors shadow-md">😅 Je ne savais pas</button>
+            <button onClick={() => handleNext(true)} className="flex-1 max-w-[160px] py-3 bg-green-100 text-green-600 font-bold rounded-2xl text-lg hover:bg-green-200 transition-colors shadow-md">😊 Je savais !</button>
+          </div>
+        ) : (
+          <p className="text-center text-gray-400 text-sm">Retourne la carte, puis dis-moi si tu connaissais la réponse</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Quiz Mode
+// ============================================================
+function QuizMode({ words, wordCount, onFinish }) {
+  const sessionWords = [...words].sort(() => Math.random() - 0.5).slice(0, wordCount);
+  const [queue] = useState(() => [...sessionWords]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [direction, setDirection] = useState('en-fr');
+  const [options, setOptions] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [correct, setCorrect] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const resultsRef = useRef([]);
+  const current = queue[currentIdx];
+
+  useEffect(() => {
+    if (current) {
+      const dir = Math.random() > 0.5 ? 'en-fr' : 'fr-en';
+      setDirection(dir);
+      const correctAnswer = dir === 'en-fr' ? current.french : current.english;
+      const wrongPool = words.filter(w => w.id !== current.id).map(w => dir === 'en-fr' ? w.french : w.english).filter((v, i, arr) => arr.indexOf(v) === i);
+      const shuffled = wrongPool.sort(() => Math.random() - 0.5).slice(0, 3);
+      setOptions([...shuffled, correctAnswer].sort(() => Math.random() - 0.5));
+      setSelected(null);
+      if (dir === 'en-fr') setTimeout(() => speak(current.english, 'en-GB'), 300);
+    }
+  }, [currentIdx, current, words]);
+
+  // Quand la réponse est révélée et qu'elle est en anglais → on la prononce
+  useEffect(() => {
+    if (selected !== null && direction === 'fr-en' && current) setTimeout(() => speak(current.english, 'en-GB'), 400);
+  }, [selected]);
+
+  const handleSelect = (option) => {
+    if (selected !== null) return;
+    setSelected(option);
+    const correctAnswer = direction === 'en-fr' ? current.french : current.english;
+    resultsRef.current.push({ english: current.english, french: current.french, ok: option === correctAnswer });
+    if (option === correctAnswer) {
+      setCorrect(c => c + 1);
+      if ((correct + 1) % 5 === 0) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); }
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIdx + 1 >= queue.length) onFinish(correct, queue.length, resultsRef.current);
+    else setCurrentIdx(i => i + 1);
+  };
+
+  if (!current) return null;
+  const question = direction === 'en-fr' ? current.english : current.french;
+  const correctAnswer = direction === 'en-fr' ? current.french : current.english;
+  const progress = (currentIdx / queue.length) * 100;
+
+  return (
+    <div className="h-full bg-gradient-to-b from-green-50 to-emerald-50 py-3 px-4 overflow-y-auto">
+      <Confetti active={showConfetti} />
+      <div className="max-w-lg mx-auto">
+        <div className="mb-4">
+          <div className="flex justify-between text-sm text-gray-500 mb-1"><span>❓ Quiz</span><span>{currentIdx + 1} / {queue.length}</span></div>
+          <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
+            <div className="h-full bg-gradient-to-r from-green-400 to-emerald-400 rounded-full transition-all duration-500" style={{ width: progress + '%' }} />
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl shadow-xl p-5 mb-4 text-center">
+          <span className="text-sm font-medium text-green-500 bg-green-50 px-4 py-1 rounded-full mb-4 inline-block">{direction === 'en-fr' ? '🇬🇧' : '🇫🇷'} Traduis ce mot</span>
+          <div className="text-4xl font-bold text-gray-800 mt-2">{question}</div>
+          {direction === 'en-fr' && (
+            <div className="mt-4 flex justify-center">
+              <SpeakerButton text={current.english} lang="en-GB" size="md" />
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          {options.map((option, i) => {
+            let bgClass = 'bg-white hover:bg-gray-50 border-2 border-gray-200';
+            if (selected !== null) {
+              if (option === correctAnswer) bgClass = 'bg-green-100 border-2 border-green-400';
+              else if (option === selected) bgClass = 'bg-red-100 border-2 border-red-400';
+              else bgClass = 'bg-gray-50 border-2 border-gray-100 opacity-50';
+            }
+            return (
+              <button key={i} onClick={() => handleSelect(option)}
+                className={bgClass + ' rounded-2xl p-3 text-lg font-semibold text-gray-700 transition-all shadow-sm hover:shadow-md text-left flex items-center gap-3'}>
+                <span className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-400 shrink-0">{String.fromCharCode(65 + i)}</span>
+                <span className="flex-1">{option}</span>
+                {direction === 'fr-en' && <SpeakerButton text={option} lang="en-GB" size="sm" />}
+                {selected !== null && option === correctAnswer && <span className="text-green-500 text-xl">✓</span>}
+                {selected !== null && option === selected && option !== correctAnswer && <span className="text-red-500 text-xl">✗</span>}
+              </button>
+            );
+          })}
+        </div>
+        {selected !== null && (
+          <div className="mt-4 text-center animate-fadeIn">
+            {selected === correctAnswer ? (
+              <div className="mb-4"><div className="text-5xl mb-2">🎉</div><p className="text-xl font-bold text-green-600">Bravo ! C'est exact !</p></div>
+            ) : (
+              <div className="mb-4"><div className="text-5xl mb-2">💪</div><p className="text-lg text-gray-600">La bonne réponse était : <span className="font-bold text-green-600">{correctAnswer}</span>{direction === 'fr-en' && <span className="inline-flex align-middle ml-2"><SpeakerButton text={correctAnswer} lang="en-GB" size="sm" /></span>}</p></div>
+            )}
+            <button onClick={handleNext} className="py-3 px-8 bg-gradient-to-r from-green-400 to-emerald-400 text-white font-bold rounded-2xl text-lg hover:from-green-500 hover:to-emerald-500 transition-all shadow-md">
+              {currentIdx + 1 >= queue.length ? '🏁 Voir mon score' : '➡️ Mot suivant'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Typing Mode
+// ============================================================
+function TypingMode({ words, wordCount, onFinish, fixedDirection, label }) {
+  const sessionWords = [...words].sort(() => Math.random() - 0.5).slice(0, wordCount);
+  const [queue] = useState(() => [...sessionWords]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [direction, setDirection] = useState('en-fr');
+  const [input, setInput] = useState('');
+  const [showResult, setShowResult] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [correct, setCorrect] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const inputRef = useRef(null);
+  const resultsRef = useRef([]);
+  const current = queue[currentIdx];
+
+  useEffect(() => {
+    if (current) {
+      const newDir = fixedDirection || (Math.random() > 0.5 ? 'en-fr' : 'fr-en');
+      setDirection(newDir);
+      setInput('');
+      setShowResult(false);
+      if (newDir === 'en-fr') setTimeout(() => speak(current.english, 'en-GB'), 300);
+      setTimeout(() => inputRef.current && inputRef.current.focus(), 100);
+    }
+  }, [currentIdx, current]);
+
+  const normalize = (s) =>
+    s.toLowerCase().trim()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove accents
+      .replace(/[àáâãäå]/g, 'a').replace(/[èéêë]/g, 'e')
+      .replace(/[ìíîï]/g, 'i').replace(/[òóôõö]/g, 'o')
+      .replace(/[ùúûü]/g, 'u').replace(/[ç]/g, 'c');
+
+  const handleSubmit = () => {
+    if (showResult || !input.trim()) return;
+    const correctAnswer = direction === 'en-fr' ? current.french : current.english;
+    const userAnswer = normalize(input);
+    const expected = normalize(correctAnswer);
+    // Strict check: exact match, or one of the comma/slash-separated alternatives
+    const alternatives = expected.split(/[,;/]/).map(s => s.trim()).filter(Boolean);
+    const match = alternatives.includes(userAnswer);
+    resultsRef.current.push({ english: current.english, french: current.french, ok: match });
+    setIsCorrect(match);
+    setShowResult(true);
+    // 🔊 Feedback audio : prononcer le mot en anglais (la traduction)
+    setTimeout(() => speak(current.english, 'en-GB'), 300);
+    if (match) {
+      setCorrect(c => c + 1);
+      if ((correct + 1) % 5 === 0) { setShowConfetti(true); setTimeout(() => setShowConfetti(false), 2500); }
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIdx + 1 >= queue.length) onFinish(correct, queue.length, resultsRef.current);
+    else setCurrentIdx(i => i + 1);
+  };
+
+  if (!current) return null;
+  const question = direction === 'en-fr' ? current.english : current.french;
+  const correctAnswer = direction === 'en-fr' ? current.french : current.english;
+  const progress = (currentIdx / queue.length) * 100;
+
+  return (
+    <div className="h-full bg-gradient-to-b from-orange-50 to-amber-50 py-3 px-4 overflow-y-auto">
+      <Confetti active={showConfetti} />
+      <div className="max-w-lg mx-auto">
+        <div className="mb-4">
+          <div className="flex justify-between text-sm text-gray-500 mb-1"><span>{label || '✏️ Mode Écriture'}</span><span>{currentIdx + 1} / {queue.length}</span></div>
+          <div className="h-3 bg-white rounded-full overflow-hidden shadow-inner">
+            <div className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-500" style={{ width: progress + '%' }} />
+          </div>
+        </div>
+        <div className="bg-white rounded-3xl shadow-xl p-5 mb-4 text-center">
+          <span className="text-sm font-medium text-orange-500 bg-orange-50 px-4 py-1 rounded-full mb-4 inline-block">{direction === 'en-fr' ? '🇬🇧 Anglais' : '🇫🇷 Français'}</span>
+          <div className="text-4xl font-bold text-gray-800 mt-2">{question}</div>
+          {direction === 'en-fr' && <div className="mt-4 flex justify-center"><SpeakerButton text={current.english} lang="en-GB" size="md" /></div>}
+        </div>
+        {!showResult ? (
+          <div className="space-y-4">
+            <p className="text-center text-gray-500">{direction === 'en-fr' ? '🇫🇷 Écris en français' : '🇬🇧 Écris en anglais'}</p>
+            <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); handleSubmit(); } }}
+              placeholder="Tape ta réponse ici..."
+              className="w-full text-xl p-3 rounded-2xl border-2 border-orange-200 focus:border-orange-400 focus:outline-none text-center font-medium shadow-sm"
+              autoComplete="off" autoCapitalize="off" />
+            <button onClick={handleSubmit} disabled={!input.trim()}
+              className="w-full py-3 bg-gradient-to-r from-orange-400 to-amber-400 text-white font-bold rounded-2xl text-lg hover:from-orange-500 hover:to-amber-500 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+              ✅ Vérifier
+            </button>
+          </div>
+        ) : (
+          <div className="text-center animate-fadeIn space-y-4">
+            {isCorrect ? (
+              <>
+                <div className="text-6xl">🎉</div>
+                <p className="text-2xl font-bold text-green-600">Bravo, c'est juste !</p>
+                <p className="text-lg text-gray-700 flex items-center justify-center gap-2">
+                  <SpeakerButton text={current.english} lang="en-GB" size="sm" />
+                  <span className="font-bold text-green-600">{correctAnswer}</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-6xl">❌</div>
+                <p className="text-lg text-gray-600">Ta réponse : <span className="font-bold text-red-600">{input}</span></p>
+                <p className="text-lg text-gray-700 flex items-center justify-center gap-2">
+                  <SpeakerButton text={current.english} lang="en-GB" size="sm" />
+                  <span>✅ La bonne réponse : <span className="font-bold text-green-600">{correctAnswer}</span></span>
+                </p>
+              </>
+            )}
+            <button
+              onClick={handleNext}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); handleNext(); } }}
+              autoFocus
+              className="py-3 px-8 bg-gradient-to-r from-orange-400 to-amber-400 text-white font-bold rounded-2xl text-lg hover:from-orange-500 hover:to-amber-500 transition-all shadow-md"
+            >
+              {currentIdx + 1 >= queue.length ? '🏁 Voir mon score' : '➡️ Mot suivant'}
+            </button>
+            <p className="text-sm text-gray-400">ou appuie sur la touche Entrée ⏎</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Word List Mode
+// ============================================================
+function WordListMode({ words }) {
+  const [search, setSearch] = useState('');
+  const filtered = words.filter(w => w.english.toLowerCase().includes(search.toLowerCase()) || w.french.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div className="h-full bg-gradient-to-b from-purple-50 to-pink-50 py-3 px-4 overflow-y-auto">
+      <div className="max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold text-purple-700 text-center mb-3">📖 Ma Liste de Mots</h2>
+        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Rechercher un mot..."
+          className="w-full p-3 rounded-2xl border-2 border-purple-200 focus:border-purple-400 focus:outline-none mb-3 shadow-sm" />
+        <div className="bg-white rounded-2xl shadow-lg max-h-[50vh] overflow-y-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gradient-to-r from-purple-400 to-pink-400 text-white">
+                <th className="text-left px-6 py-4 font-semibold">🇬🇧 Anglais</th>
+                <th className="text-left px-6 py-4 font-semibold">🇫🇷 Français</th>
+                <th className="px-6 py-4 font-semibold w-16">🔊</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((word, i) => (
+                <tr key={word.id} className={'border-b border-gray-100 ' + (i % 2 === 0 ? 'bg-purple-50/30' : 'bg-white') + ' hover:bg-purple-50 transition-colors'}>
+                  <td className="px-6 py-3 font-medium text-gray-800"><span className="cursor-pointer hover:text-indigo-600 hover:underline active:scale-95 inline-block" title="🔊 Clique pour écouter" onClick={() => speak(word.english, 'en-GB')}>{word.english}</span></td>
+                  <td className="px-6 py-3 text-gray-600">{word.french}</td>
+                  <td className="px-6 py-3"><SpeakerButton text={word.english} lang="en-GB" size="sm" /></td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={3} className="px-6 py-8 text-center text-gray-400">Aucun mot trouvé</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-center text-gray-400 text-sm mt-4">{filtered.length} mot{filtered.length > 1 ? 's' : ''} affiché{filtered.length > 1 ? 's' : ''}</p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Result Page
+// ============================================================
+function ResultPage({ correct, total, modeName, details, teacherEmail, onTeacherEmailChange, studentName, onStudentNameChange, onRestart, onHome }) {
+  const pct = Math.round((correct / total) * 100);
+  const [showConfetti] = useState(pct >= 70);
+  const [mailState, setMailState] = useState('idle'); // idle | sending | sent | fallback
+  const [mailDetail, setMailDetail] = useState('');
+  const missed = (details || []).filter(d => !d.ok);
+  let emoji = '💪', message = "Continue à t'entraîner !", color = 'text-amber-500';
+  if (pct === 100) { emoji = '🏆'; message = 'Parfait ! Tu es un champion !'; color = 'text-green-500'; }
+  else if (pct >= 80) { emoji = '🌟'; message = 'Excellent travail !'; color = 'text-green-500'; }
+  else if (pct >= 60) { emoji = '👍'; message = 'Bien joué !'; color = 'text-blue-500'; }
+  else if (pct >= 40) { emoji = '💪'; message = "Pas mal ! Encore un peu d'effort !"; color = 'text-amber-500'; }
+
+  const emailTrimmed = (teacherEmail || '').trim();
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed);
+  const studentTrimmed = (studentName || '').trim();
+  const handleSendEmail = async () => {
+    if (!emailValid || mailState === 'sending') return;
+    setMailState('sending');
+    setMailDetail('');
+    // 1) Envoi direct par internet (aucune messagerie requise)
+    const result = await sendResultsEmail(emailTrimmed, { correct, total, mode: modeName, details, student: studentTrimmed });
+    setMailDetail(result.detail || '');
+    if (result.ok) {
+      setMailState('sent');
+      setTimeout(() => { setMailState('idle'); setMailDetail(''); }, 8000);
+      return;
+    }
+    // 2) Secours : ouvre le logiciel de messagerie de l'ordinateur (s'il est installé)
+    window.location.href = buildResultsMailto(emailTrimmed, { correct, total, mode: modeName, details, student: studentTrimmed });
+    setMailState('fallback');
+    setTimeout(() => { setMailState('idle'); setMailDetail(''); }, 10000);
+  };
+
+  return (
+    <div className="min-h-full bg-gradient-to-b from-indigo-100 to-purple-100 flex items-center justify-center p-4">
+      <Confetti active={showConfetti} />
+      <div className="bg-white rounded-3xl shadow-xl p-6 max-w-md w-full text-center">
+        <div className="text-6xl mb-3">{emoji}</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-1">Session terminée !</h2>
+        <p className={'text-base font-medium mb-4 ' + color}>{message}</p>
+        <div className="relative w-28 h-28 mx-auto mb-4">
+          <svg className="w-full h-full" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" strokeWidth="8" />
+            <circle cx="50" cy="50" r="45" fill="none"
+              stroke={pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444'}
+              strokeWidth="8" strokeDasharray={(pct * 2.827) + ' 282.7'} strokeLinecap="round"
+              transform="rotate(-90 50 50)" className="transition-all duration-1000" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-3xl font-bold text-gray-800">{pct}%</span>
+            <span className="text-xs text-gray-400">{correct}/{total}</span>
+          </div>
+        </div>
+        <p className="text-gray-400 text-sm mb-4">Mode : {modeName}</p>
+        {missed.length > 0 ? (
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-gray-600 mb-2">📝 Mots à revoir ({missed.length}) :</p>
+            <div className="flex flex-wrap gap-2 justify-center max-h-28 overflow-y-auto">
+              {missed.map((d, i) => (
+                <span key={i} className="inline-flex items-center gap-1 bg-red-50 text-red-600 px-3 py-1 rounded-full text-sm font-medium">
+                  <SpeakerButton text={d.english} lang="en-GB" size="sm" />
+                  {d.english} = {d.french}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (details && details.length > 0) ? (
+          <p className="text-green-600 font-medium text-sm mb-4">🎉 Aucun mot à revoir, bravo !</p>
+        ) : null}
+        <div className="bg-indigo-50 rounded-2xl p-3 mb-4">
+          <p className="text-sm font-semibold text-indigo-700 mb-2">📧 Envoyer les résultats au professeur</p>
+          <input type="text" value={studentName} onChange={onStudentNameChange} placeholder="👤 Ton prénom (pour le professeur)"
+            className="w-full p-2 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:outline-none text-sm text-center mb-2" />
+          <input type="email" value={teacherEmail} onChange={onTeacherEmailChange} placeholder="Email du professeur"
+            className="w-full p-2 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:outline-none text-sm text-center mb-2" />
+          <button onClick={handleSendEmail} disabled={!emailValid || mailState === 'sending'}
+            className="w-full py-2 bg-gradient-to-r from-indigo-400 to-purple-400 text-white font-bold rounded-xl text-sm hover:from-indigo-500 hover:to-purple-500 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+            {mailState === 'sending' ? '⏳ Envoi en cours…' : '📧 Envoyer les résultats par email'}
+          </button>
+          {mailState === 'sent' && <p className="text-green-600 text-sm font-medium mt-2 animate-fadeIn">✅ Email envoyé directement au professeur !</p>}
+          {mailState === 'fallback' && <p className="text-amber-600 text-sm font-medium mt-2 animate-fadeIn">⚠️ Envoi direct impossible. J'ouvre ta messagerie en secours — si rien ne s'ouvre, aucune messagerie n'est installée sur cet ordinateur.</p>}
+          {mailDetail ? <p className="text-xs text-gray-400 mt-1 animate-fadeIn">{mailDetail}</p> : null}
+          <p className="text-xs text-gray-400 mt-2">Envoi direct par internet (formsubmit.co, gratuit) — aucune messagerie requise. La 1ère fois, le professeur reçoit un email de confirmation à valider une seule fois.</p>
+        </div>
+        <div className="flex flex-col gap-3">
+          <button onClick={onRestart} className="w-full py-3 bg-gradient-to-r from-indigo-400 to-purple-400 text-white font-bold rounded-2xl text-lg hover:from-indigo-500 hover:to-purple-500 transition-all shadow-md">🔄 Rejouer</button>
+          <button onClick={onHome} className="w-full py-3 bg-gray-100 text-gray-600 font-bold rounded-2xl text-lg hover:bg-gray-200 transition-all">🏠 Menu principal</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Main App
+// ============================================================
+function App() {
+  const [words, setWords] = useState([]);
+  const [view, setView] = useState('home'); // home, modes, flashcards, quiz, list, typing-en, result
+  const [scores, setScores] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('vocab-scores') || '[]'); } catch(e) { return []; }
+  });
+  const [resultData, setResultData] = useState(null);
+  const [wordCount, setWordCount] = useState(10);
+  const [recapCount, setRecapCount] = useState(() => loadRecap().length);
+  const [recapFileChosen, setRecapFileChosen] = useState(false);
+  const [teacherEmail, setTeacherEmail] = useState(() => {
+    try { return localStorage.getItem(TEACHER_KEY) || ''; } catch(e) { return ''; }
+  });
+  const [studentName, setStudentName] = useState(() => {
+    try { return localStorage.getItem(STUDENT_KEY) || ''; } catch(e) { return ''; }
+  });
+
+  const handleLoadWords = (newWords) => {
+    setWords(newWords);
+    setWordCount(Math.max(10, Math.min(wordCount, newWords.length)));
+    setView('modes');
+    loadPuter();
+    // 📊 Chaque nouveau jeu de mots est ajouté au récapitulatif cumulatif
+    const added = addWordsToRecap(newWords);
+    setRecapCount(loadRecap().length);
+    if (added.length > 0) appendToRecapFile(added);
+  };
+
+  const handlePickRecapFile = async () => {
+    const ok = await pickRecapFile();
+    setRecapFileChosen(ok);
+    setRecapCount(loadRecap().length);
+  };
+
+  const handleTeacherEmailChange = (e) => {
+    setTeacherEmail(e.target.value);
+    try { localStorage.setItem(TEACHER_KEY, e.target.value); } catch(err) {}
+  };
+
+  const handleStudentNameChange = (e) => {
+    setStudentName(e.target.value);
+    try { localStorage.setItem(STUDENT_KEY, e.target.value); } catch(err) {}
+  };
+
+  const handleDownloadRecap = () => downloadTextFile('recapitulatif.csv', recapToCSV(loadRecap()));
+
+  const handleFinish = (correct, total, modeName, details) => {
+    const entry = { date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }), mode: modeName, correct, total };
+    const newScores = [...scores, entry];
+    setScores(newScores);
+    localStorage.setItem('vocab-scores', JSON.stringify(newScores));
+    setResultData({ correct, total, mode: modeName, details: details || [], date: new Date().toLocaleString('fr-FR') });
+    setView('result');
+  };
+
+  const navigate = (path) => setView(path);
+  const goHome = () => setView('modes');
+  const showHeader = view !== 'home' && view !== 'result' && words.length > 0;
+
+  const homeProps = {
+    onLoadWords: handleLoadWords,
+    recapCount,
+    recapFileChosen,
+    canPickFile: !!window.showSaveFilePicker,
+    onPickRecapFile: handlePickRecapFile,
+    onDownloadRecap: handleDownloadRecap,
+    teacherEmail,
+    onTeacherEmailChange: handleTeacherEmailChange,
+  };
+
+  const renderView = () => {
+    switch(view) {
+      case 'home': return <HomePage {...homeProps} />;
+      case 'modes': return <ModeSelection words={words} scores={scores} onNavigate={navigate} wordCount={wordCount} setWordCount={setWordCount} />;
+      case 'flashcards': return <FlashcardsMode words={words} wordCount={Math.min(wordCount, words.length)} onFinish={(c,t,d) => handleFinish(c,t,'Flashcards 🃏',d)} />;
+      case 'quiz': return <QuizMode words={words} wordCount={Math.min(wordCount, words.length)} onFinish={(c,t,d) => handleFinish(c,t,'Quiz ❓',d)} />;
+      case 'typing-en': return <TypingMode words={words} wordCount={Math.min(wordCount, words.length)} fixedDirection="fr-en" label="✏️ Écriture en anglais 🇬🇧" onFinish={(c,t,d) => handleFinish(c,t,'Écriture 🇬🇧',d)} />;
+      case 'list': return <WordListMode words={words} />;
+      case 'result': return resultData ? <ResultPage correct={resultData.correct} total={resultData.total} modeName={resultData.mode}
+        details={resultData.details} teacherEmail={teacherEmail} onTeacherEmailChange={handleTeacherEmailChange}
+        studentName={studentName} onStudentNameChange={handleStudentNameChange}
+        onRestart={() => { setResultData(null); navigate(resultData.mode.includes('Flashcards') ? 'flashcards' : resultData.mode.includes('Quiz') ? 'quiz' : 'typing-en'); }}
+        onHome={goHome} /> : null;
+      default: return <HomePage {...homeProps} />;
+    }
+  };
+
+  return (
+    <div className="h-[100dvh] flex flex-col overflow-hidden">
+      {showHeader && <Header wordCount={words.length} onHome={() => navigate('modes')} />}
+      <div className="flex-1 min-h-0 overflow-y-auto">{renderView()}</div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
