@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apprentissage</title>
+    <style>
+      :root { font-family: "Comic Sans MS", "Chalkboard SE", system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2.2rem;
+        padding: 2rem 1rem;
+        text-align: center;
+        color: #fff;
+        background: linear-gradient(135deg, #ff6b9d, #ffa62b, #ffd93d, #6bd67e, #4d96ff, #b36bff);
+        background-size: 400% 400%;
+        animation: fondAnime 14s ease infinite;
+        overflow-x: hidden;
+      }
+      @keyframes fondAnime {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 6vw, 3.6rem);
+        color: #fff;
+        text-shadow: 0 4px 0 rgba(0,0,0,.2), 0 0 24px rgba(255,255,255,.6);
+        letter-spacing: .06em;
+        animation: rebond 1.6s ease-in-out infinite;
+      }
+      h1 .emoji { display: inline-block; animation: tourne 2.5s ease-in-out infinite; }
+      @keyframes rebond {
+        0%, 100% { transform: translateY(0) rotate(-1deg); }
+        50% { transform: translateY(-8px) rotate(1deg); }
+      }
+      @keyframes tourne {
+        0%, 100% { transform: rotate(-12deg) scale(1); }
+        50% { transform: rotate(12deg) scale(1.2); }
+      }
+
+      #prenom { display: none; margin: 0; }
+
+      #boitePrenom {
+        background: rgba(255,255,255,.95);
+        border-radius: 999px;
+        padding: .6rem 1.4rem;
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        box-shadow: 0 8px 0 rgba(0,0,0,.15), 0 14px 28px rgba(0,0,0,.2);
+      }
+      #boitePrenom.hidden { display: none; }
+
+      #champPrenom {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #4d96ff;
+        width: 220px;
+        text-align: center;
+      }
+      #champPrenom::placeholder { color: #b9c6d8; font-weight: normal; }
+
+      #btnOk {
+        border: none;
+        cursor: pointer;
+        background: linear-gradient(#6bd67e, #3cb371);
+        color: #fff;
+        font-family: inherit;
+        font-size: 1.2rem;
+        font-weight: bold;
+        padding: .45rem 1.1rem;
+        border-radius: 999px;
+        box-shadow: 0 4px 0 #2e8b57;
+        transition: transform .1s;
+      }
+      #btnOk:active { transform: translateY(3px); box-shadow: 0 1px 0 #2e8b57; }
+
+      #errMessage {
+        min-height: 1.4rem;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 0 2px 0 rgba(0,0,0,.2);
+        display: none;
+      }
+
+      .boutons {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .grosBouton {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .6rem;
+        width: 260px;
+        padding: 1.6rem 1rem;
+        border-radius: 32px;
+        border: 6px solid #fff;
+        font-family: inherit;
+        font-size: 1.6rem;
+        font-weight: bold;
+        color: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform .15s;
+        animation: pop .8s ease-in-out infinite alternate;
+      }
+      .grosBouton:hover { transform: scale(1.07) rotate(-1deg); }
+      .grosBouton:active { transform: scale(.96); }
+      .grosBouton .icone { font-size: 3.4rem; }
+
+      .btnCalculs {
+        background: linear-gradient(#ff9a3d, #ff6b6b);
+        box-shadow: 0 10px 0 #d94f2b, 0 18px 30px rgba(0,0,0,.25);
+      }
+      .btnHistoires {
+        background: linear-gradient(#4d96ff, #7b5bff);
+        box-shadow: 0 10px 0 #3a5fd9, 0 18px 30px rgba(0,0,0,.25);
+        animation-delay: .4s;
+      }
+      @keyframes pop {
+        from { transform: translateY(0); }
+        to { transform: translateY(-10px); }
+      }
+
+      /* Confettis */
+      .confetti {
+        position: fixed;
+        top: -20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        z-index: 10;
+        animation: tombe linear forwards;
+      }
+      @keyframes tombe {
+        to { transform: translateY(110vh) rotate(720deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="titre"><span class="emoji">🎉</span> Apprentissage <span class="emoji">🎈</span></h1>
+
+    <div id="boitePrenom">
+      <span style="font-size:1.6rem">✏️</span>
+      <input id="champPrenom" type="text" maxlength="20" placeholder="Écris ton prénom ici !" autocomplete="off" />
+      <button id="btnOk">C'est parti !</button>
+    </div>
+
+    <p id="errMessage">Oups ! Écris d'abord ton prénom 😊</p>
+
+    <h1 id="prenom"></h1>
+
+    <div class="boutons">
+      <a class="grosBouton btnCalculs" href="#" onclick="alert('Bientôt prêt ! 🔢'); return false;">
+        <span class="icone">✖️</span> Mes tables de multiplication
+      </a>
+      <a class="grosBouton btnHistoires" href="#" onclick="alert('Bientôt prêt ! 🇬🇧'); return false;">
+        <span class="icone">🐝</span> Mon vocabulaire anglais
+      </a>
+    </div>
+
+    <script>
+      const champ = document.getElementById("champPrenom");
+      const boite = document.getElementById("boitePrenom");
+      const prenom = document.getElementById("prenom");
+      const err = document.getElementById("errMessage");
+      const btnOk = document.getElementById("btnOk");
+
+      function lancerConfettis() {
+        const couleurs = ["#ffd93d", "#ff6b9d", "#6bd67e", "#4d96ff", "#ffa62b", "#b36bff"];
+        for (let i = 0; i < 80; i++) {
+          const c = document.createElement("div");
+          c.className = "confetti";
+          c.style.left = Math.random() * 100 + "vw";
+          c.style.background = couleurs[Math.floor(Math.random() * couleurs.length)];
+          c.style.animationDuration = (2 + Math.random() * 2.5) + "s";
+          c.style.animationDelay = Math.random() * 0.8 + "s";
+          document.body.appendChild(c);
+          setTimeout(() => c.remove(), 6000);
+        }
+      }
+
+      function valider() {
+        const valeur = champ.value.trim();
+        if (!valeur) {
+          err.style.display = "block";
+          champ.focus();
+          return;
+        }
+        err.style.display = "none";
+        boite.classList.add("hidden");
+        prenom.textContent = "🤗 Salut " + valeur + " ! 🤗";
+        prenom.style.display = "block";
+        lancerConfettis();
+      }
+
+      btnOk.addEventListener("click", valider);
+      champ.addEventListener("keydown", (e) => { if (e.key === "Enter") valider(); });
+      champ.addEventListener("input", () => { err.style.display = "none"; });
+      window.addEventListener("load", () => champ.focus());
+    </script>
+  </body>
+</html>
