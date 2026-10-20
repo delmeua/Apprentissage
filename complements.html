@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Compléments à 10 et à 100 🚀</title>
+<style>
+  :root{
+    --bg1:#6a11cb; --bg2:#2575fc; --good:#22c55e; --bad:#ef4444;
+    font-family:"Comic Sans MS","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:linear-gradient(135deg,var(--bg1),var(--bg2));
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    min-height:100vh;overflow:hidden;
+  }
+  .stars{position:fixed;inset:0;pointer-events:none;font-size:22px;opacity:.35;
+    background-image:radial-gradient(#fff 1px,transparent 1px);
+    background-size:40px 40px;}
+  #app{width:min(560px,94vw);text-align:center;position:relative;z-index:2}
+  .card{
+    background:rgba(255,255,255,.14);backdrop-filter:blur(10px);
+    border:3px solid rgba(255,255,255,.35);border-radius:28px;
+    padding:28px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35);
+  }
+  h1{font-size:2.2rem;margin:.2em 0;filter:drop-shadow(2px 3px 0 rgba(0,0,0,.3))}
+  h2{font-size:1.4rem;margin:.4em 0}
+  .btn{
+    font-family:inherit;font-weight:bold;font-size:1.25rem;
+    padding:14px 26px;margin:10px;border-radius:999px;border:0;cursor:pointer;
+    color:#fff;background:linear-gradient(135deg,#ff6a88,#ff99ac);
+    box-shadow:0 6px 0 #c2185b, 0 10px 18px rgba(0,0,0,.3);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #c2185b}
+  .btn.green{background:linear-gradient(135deg,#56ab2f,#a8e063);box-shadow:0 6px 0 #2e7d32,0 10px 18px rgba(0,0,0,.3)}
+  .btn.green:active{box-shadow:0 2px 0 #2e7d32}
+  .btn.blue{background:linear-gradient(135deg,#2193b0,#6dd5ed);box-shadow:0 6px 0 #1565c0,0 10px 18px rgba(0,0,0,.3)}
+  .btn.blue:active{box-shadow:0 2px 0 #1565c0}
+  .btn.small{font-size:1rem;padding:10px 18px}
+  .quit{
+    margin-top:14px;background:linear-gradient(135deg,#f7971e,#ffd200);
+    color:#5d4037;box-shadow:0 6px 0 #b45309,0 10px 18px rgba(0,0,0,.3);
+  }
+  .quit:active{box-shadow:0 2px 0 #b45309}
+  .lang-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+  .flag{font-size:2.6rem;display:block}
+  .question{
+    font-size:clamp(2rem,9vw,3.4rem);font-weight:bold;letter-spacing:2px;
+    background:rgba(255,255,255,.2);border-radius:20px;padding:18px 10px;margin:12px 0;
+  }
+  input#answer{
+    font-family:inherit;font-size:2rem;text-align:center;width:180px;
+    padding:10px;border-radius:16px;border:4px solid #fff;outline:none;color:#311b92;
+    background:#fff;
+  }
+  .feedback{min-height:70px;font-size:1.35rem;font-weight:bold;margin:8px 0;transition:.2s}
+  .good{color:#a5f3a0}.bad{color:#ffb3b3}
+  .score-pill{display:inline-block;background:rgba(0,0,0,.25);border-radius:999px;
+    padding:8px 18px;margin:4px;font-size:1.1rem}
+  .wobble{animation:wob .45s}
+  @keyframes wob{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+  .pop{animation:pop .35s}
+  @keyframes pop{50%{transform:scale(1.25)}}
+  .shake{animation:shk .4s}
+  @keyframes shk{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  .speaker{cursor:pointer;font-size:1.6rem;vertical-align:middle;margin-left:8px}
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:9}
+  .hidden{display:none}
+  .progress{height:14px;background:rgba(0,0,0,.25);border-radius:99px;margin:10px 20px;overflow:hidden}
+  .progress>div{height:100%;width:0;background:linear-gradient(90deg,#a8e063,#ffd200);transition:width .3s}
+  footer{margin-top:12px;font-size:.85rem;opacity:.75}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<canvas id="confetti"></canvas>
+<div id="app"></div>
+
+<script>
+/* ============ DATA / i18n ============ */
+const T = {
+  fr:{
+    code:"fr-FR", flag:"🇫🇷", name:"Français",
+    title:"🚀 Compléments — Champion !",
+    subtitle:"Deviens un champion des compléments à 10 et à 100 !",
+    chooseLang:"Choisis ta langue ! ✨",
+    pickMode:"Choisis ton défi 💪",
+    mode10:"Compléments à 10", mode100:"Compléments à 100", modeMix:"Mélange fou 🎲",
+    qSpoken:(a,tg)=>`Combien faut-il ajouter à ${spokenNum(a)} pour arriver à ${spokenNum(tg)} ?`,
+    qWritten:(a,t)=>`${a} + ? = ${t}`,
+    good:["Bravo ! 🎉","Super ! 🌟","Génial ! 🏆","Fantastique ! 🤩","Ouiiii ! 🥳"],
+    goodSpoken:["Bravo !","Super !","Génial !","Fantastique !","Bravo, bravo !"],
+    bad:(v)=>`Oops ! 😅 La bonne réponse était ${v}. Tu vas y arriver !`,
+    spokenBad:(a,v,tg)=>[
+      `Presque ! La bonne réponse était ${spokenNum(v)}.`,
+      `${spokenNum(a)} plus ${spokenNum(v)}, ça fait ${spokenNum(tg)}.`
+    ],
+    retry:"Réessaie ! 💪", next:"Question suivante ⏩",
+    score:"⭐ Points", streak:"🔥 Série", done:"DÉFI RÉUSSI ! 🏆",
+    playAgain:"Rejouer 🔄",
+    byeTitle:"À bientôt, champion ! 👋",
+    byeMsg:"Merci d'avoir joué aux Compléments !",
+    back:"Revenir au jeu 🔙",
+    say:"🔊 Écouter",
+    results:(s,t)=>`Tu as gagné ${s} points sur ${t} !`,
+  },
+  en:{
+    code:"en-US", flag:"🇬🇧", name:"English",
+    title:"🚀 Number Bonds Champ!",
+    subtitle:"Master number bonds to 10 and 100!",
+    chooseLang:"Pick your language! ✨",
+    pickMode:"Choose your challenge 💪",
+    mode10:"Bonds to 10", mode100:"Bonds to 100", modeMix:"Crazy mix 🎲",
+    qSpoken:(a,t)=>`How much do you add to ${a} to reach ${t}?`,
+    qWritten:(a,t)=>`${a} + ? = ${t}`,
+    good:["Bravo! 🎉","Awesome! 🌟","Great job! 🏆","Fantastic! 🤩","Yesss! 🥳"],
+    goodSpoken:["Bravo!","Awesome!","Great job!","Fantastic!","Yes!"],
+    bad:(v)=>`Oops! 😅 The right answer was ${v}. You'll get it next time!`,
+    spokenBad:(a,v,tg)=>[
+      `Nearly! The correct answer was ${v}.`,
+      `${a} plus ${v} makes ${tg}.`
+    ],
+    retry:"Try again! 💪", next:"Next question ⏩",
+    score:"⭐ Points", streak:"🔥 Streak", done:"CHALLENGE COMPLETE! 🏆",
+    playAgain:"Play again 🔄",
+    byeTitle:"See you soon, champ! 👋",
+    byeMsg:"Thanks for playing Number Bonds!",
+    back:"Back to the game 🔙",
+    say:"🔊 Listen",
+    results:(s,t)=>`You scored ${s} out of ${t} points!`,
+  }
+};
+let lang = "fr";
+const t = () => T[lang];
+
+/* Nombres à l'oral en français de Belgique : septante, nonante */
+function spokenNum(n){
+  if(lang !== "fr") return String(n);
+  const units = ["zéro","un","deux","trois","quatre","cinq","six","sept","huit","neuf"];
+  const tens = {10:"dix",20:"vingt",30:"trente",40:"quarante",50:"cinquante",
+                60:"soixante",70:"septante",80:"quatre-vingts",90:"nonante",100:"cent"};
+  if(n <= 9) return units[n];
+  if(tens[n]) return tens[n];
+  if(n > 100) return String(n);
+  const t0 = Math.floor(n/10)*10, u = n%10;
+  if(t0 === 80) return u ? "quatre-vingt-" + units[u] : "quatre-vingts";
+  return tens[t0] + "-" + units[u];
+}
+
+/* ============ STATE ============ */
+let mode = 10, target = 10, a = 0, ans = 0;
+let score = 0, streak = 0, qIndex = 0;
+let TOTAL = 10;
+let used = new Set();   // exercices déjà posés (clé: "a->target")
+let currentKey = "";
+
+/* ============ VOICE ============ */
+/* Voix de qualité identique sur toutes les plateformes (même Chromium Linux
+   sans voix installée) via des serveurs TTS en ligne, lus par <audio>.
+   Chaîne de repli : StreamElements -> Google Traduction -> voix du navigateur. */
+let audioVoice = null;
+let providerIdx = 0; // index du fournisseur TTS retenu (testé au démarrage)
+function ttsProviders(text, code){
+  const b = code.split("-")[0];
+  // Voix naturelles StreamElements (AWS Polly) : Céline (fr), Joanna (en-US)
+  const voice = (b === "fr") ? "Celine" : "Joanna";
+  return [
+    `https://api.streamelements.com/kappa/v2/speech?voice=${voice}&text=${encodeURIComponent(text)}`,
+    `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${b}&q=${encodeURIComponent(text)}`
+  ];
+}
+/* Test au démarrage : retient le premier fournisseur qui répond (audio jouable) */
+function detectProvider(){
+  const test = ttsProviders("1", "fr-FR");
+  test.forEach((url, i) => {
+    if(providerIdx !== 0 || i !== 0) return; // déjà trouvé
+    const probe = new Audio();
+    probe.addEventListener("canplaythrough", () => { providerIdx = i; }, {once:true});
+    probe.preload = "auto"; probe.src = url;
+  });
+}
+/* Promise résolue quand la voix a fini de parler (vérification active) */
+function speechDone(maxMs){
+  return new Promise(res=>{
+    const start = Date.now();
+    const poll = setInterval(()=>{
+      const audioActive = audioVoice && !audioVoice.paused && !audioVoice.ended;
+      const synthActive = "speechSynthesis" in window && speechSynthesis.speaking;
+      const queueActive = speaking || speakQueue.length > 0;
+      if((!audioActive && !synthActive && !queueActive) || Date.now()-start > maxMs){
+        clearInterval(poll); res();
+      }
+    }, 150);
+  });
+}
+/* File d'attente vocale : les longues phrases sont découpées en segments
+   courts (les serveurs TTS tronquent les phrases longues), joués à la suite. */
+let speakQueue = [], speaking = false;
+function speak(text){
+  speakQueue.push(text);
+  if(!speaking) drainQueue();
+}
+function drainQueue(){
+  if(speakQueue.length === 0){ speaking = false; return; }
+  speaking = true;
+  const text = speakQueue.shift();
+  try{
+    if(audioVoice){ audioVoice.pause(); audioVoice = null; }
+    if("speechSynthesis" in window) speechSynthesis.cancel();
+    playProvider(text, t().code, providerIdx, drainQueue);
+  }catch(e){ fallbackSpeak(text, drainQueue); }
+}
+function playProvider(text, code, idx, onEnd){
+  const urls = ttsProviders(text, code);
+  if(idx >= urls.length){ fallbackSpeak(text, onEnd); return; }
+  let settled = false; // évite la double lecture (source de l'écho)
+  let endFired = false;
+  const finish = () => { if(!endFired){ endFired = true; if(onEnd) setTimeout(onEnd, 150); } };
+  const fail = () => {
+    if(settled) return;
+    settled = true;
+    try{ a.pause(); a.src=""; }catch(e){}
+    playProvider(text, code, idx+1, onEnd);
+  };
+  const a = new Audio(urls[idx]);
+  a.volume = 1;
+  a.addEventListener("error", fail);
+  a.addEventListener("ended", finish);
+  a.addEventListener("canplay", () => { /* flux prêt */ });
+  a.play()
+    .then(() => {
+      if(!settled && a.duration === 0 && a.networkState === a.NETWORK_NO_SOURCE) fail();
+      // garde-fou : si rien ne se joue après 5 s (et pas terminé), on considère l'échec
+      setTimeout(() => { if(!endFired && !a.ended && !settled && (a.paused || a.currentTime === 0)) fail(); }, 5000);
+    })
+    .catch(fail);
+  audioVoice = a;
+}
+
+/* Repli hors-ligne : synthèse vocale du navigateur (voix "Google" si dispo) */
+let voicesCache = [];
+function loadVoices(){ voicesCache = speechSynthesis.getVoices() || []; }
+if("speechSynthesis" in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
+function pickVoice(code){
+  if(!voicesCache.length) loadVoices();
+  const base = code.split("-")[0];
+  const matching = voicesCache.filter(v => v.lang && v.lang.toLowerCase().startsWith(base));
+  return matching.find(v => /google/i.test(v.name))
+      || matching.find(v => !v.localService)
+      || matching[0] || null;
+}
+function fallbackSpeak(text, onEnd){
+  try{
+    if(!("speechSynthesis" in window)){ if(onEnd) onEnd(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = t().code; u.rate = 1; u.pitch = 1;
+    const v = pickVoice(u.lang);
+    if(v){ u.voice = v; u.lang = v.lang; }
+    if(onEnd) u.addEventListener("end", () => setTimeout(onEnd, 150), {once:true});
+    speechSynthesis.speak(u);
+  }catch(e){ if(onEnd) onEnd(); }
+}
+let AC = null;
+function beep(freq, dur=0.15, type="sine", when=0, vol=0.2){
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, AC.currentTime + when);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + when + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(AC.currentTime + when); o.stop(AC.currentTime + when + dur);
+  }catch(e){}
+}
+const sfxWin  = () => [523,659,784,1047].forEach((f,i)=>beep(f,.18,"triangle",i*.09));
+const sfxLose = () => { beep(300,.2,"sawtooth"); beep(220,.3,"sawtooth",.15); };
+
+/* ============ CONFETTI ============ */
+const cv = document.getElementById("confetti"), ctx = cv.getContext("2d");
+let pieces = [];
+function resize(){cv.width=innerWidth;cv.height=innerHeight}
+addEventListener("resize",resize); resize();
+function burst(){
+  const colors=["#ffd200","#ff6a88","#6dd5ed","#a8e063","#c084fc","#fff"];
+  for(let i=0;i<120;i++) pieces.push({
+    x:innerWidth/2+(Math.random()-.5)*200, y:innerHeight/3,
+    vx:(Math.random()-.5)*10, vy:Math.random()*-9-3,
+    s:Math.random()*8+4, c:colors[i%colors.length],
+    r:Math.random()*6, vr:(Math.random()-.5)*.3, life:1
+  });
+}
+(function loop(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  pieces.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.r+=p.vr;p.life-=.008;
+    ctx.save();ctx.globalAlpha=Math.max(p.life,0);
+    ctx.translate(p.x,p.y);ctx.rotate(p.r);
+    ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);ctx.restore();
+  });
+  pieces = pieces.filter(p=>p.life>0 && p.y<innerHeight+40);
+  requestAnimationFrame(loop);
+})();
+
+/* ============ VIEWS ============ */
+const app = document.getElementById("app");
+
+function viewLanguage(){
+  document.documentElement.lang = lang;
+  app.innerHTML = `
+    <div class="card">
+      <h1>🧮 ✨</h1>
+      <h2>${T.fr.chooseLang}</h2>
+      <div class="lang-row">
+        <button class="btn blue lang-btn" data-l="fr"><span class="flag">🇫🇷</span>Français</button>
+        <button class="btn blue lang-btn" data-l="en"><span class="flag">🇬🇧</span>English</button>
+      </div>
+    </div>`;
+  app.querySelectorAll(".lang-btn").forEach(b=>b.onclick=()=>{
+    lang=b.dataset.l; beep(880,.12,"triangle");
+    // Le titre reste visuel uniquement — pas de lecture vocale
+    viewMode();
+  });
+}
+
+function viewMode(){
+  app.innerHTML = `
+    <div class="card">
+      <h1>${t().title}</h1>
+      <p>${t().subtitle}</p>
+      <div>
+        <button class="btn green" data-m="10">🎯 ${t().mode10}</button>
+        <button class="btn blue" data-m="100">💯 ${t().mode100}</button>
+        <button class="btn" data-m="mix">🎲 ${t().modeMix}</button>
+      </div>
+      <a href="index.html"><button class="btn quit">🚪 ${lang==="fr"?"Quitter le jeu 👋":"Quit game 👋"}</button></a>
+      <footer></footer>
+    </div>`;
+  app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
+    mode = b.dataset.m==="mix" ? (Math.random()<.5?10:100) : +b.dataset.m;
+    beep(660,.12,"triangle");
+    startGame();
+  });
+}
+
+function startGame(){
+  score=0;streak=0;qIndex=0;
+  used = new Set();
+  TOTAL = (mode==="mix") ? 10 : 9;  // 9 exercices uniques en mode pur, 10 en mixte
+  nextQuestion();
+}
+
+function nextQuestion(){
+  if(qIndex>=TOTAL) return endGame();
+  qIndex++;
+  // Tirage jusqu'à obtenir un exercice pas encore posé
+  let guard = 0;
+  do{
+    target = mode;
+    if(mode==="mix") target = Math.random()<.5 ? 10 : 100;
+    if(target===100){
+      const pool=[10,20,30,40,50,60,70,80,90];
+      a = pool[Math.floor(Math.random()*pool.length)];
+    } else {
+      a = 1+Math.floor(Math.random()*9);
+    }
+    currentKey = a+"->"+target;
+    guard++;
+  } while(used.has(currentKey) && guard<200);
+  used.add(currentKey);
+  ans = target - a;
+  renderQuestion();
+  beep(520,.08,"sine"); beep(660,.08,"sine",.09);
+  speak(t().qSpoken(a,target));
+}
+
+function renderQuestion(){
+  app.innerHTML = `
+    <div class="card" id="qcard">
+      <span class="score-pill">${t().score}: <b id="sc">${score}</b></span>
+      <span class="score-pill">${t().streak}: <b id="stk">${streak}</b></span>
+      <div class="progress"><div style="width:${(qIndex-1)/TOTAL*100}%"></div></div>
+      <h2>🎯 ${qIndex} / ${TOTAL}</h2>
+      <div class="question" id="qtext">
+        ${t().qWritten(a,target)}
+        <span class="speaker" id="spk" title="${t().say}">🔊</span>
+      </div>
+      <input id="answer" type="number" min="0" autocomplete="off" placeholder="?" />
+      <div><button class="btn green" id="ok">✔️ ${lang==="fr"?"Valider":"Check"}</button></div>
+      <div class="feedback" id="fb"></div>
+      <a href="index.html"><button class="btn small quit">🚪 ${lang==="fr"?"Quitter":"Quit"}</button></a>
+    </div>`;
+  const inp=document.getElementById("answer");
+  inp.focus();
+  document.getElementById("spk").onclick=()=>speak(t().qSpoken(a,target));
+  const check=checkAnswer;
+  document.getElementById("ok").onclick=check;
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+}
+
+function checkAnswer(){
+  const inp=document.getElementById("answer");
+  const fb=document.getElementById("fb");
+  const v=parseInt(inp.value,10);
+  if(isNaN(v)) { inp.classList.add("shake"); setTimeout(()=>inp.classList.remove("shake"),450); return; }
+  if(v===ans){
+    score++; streak++;
+    sfxWin(); burst();
+    const msg=t().good[Math.floor(Math.random()*t().good.length)];
+    fb.innerHTML=`<span class="good pop">${msg}</span>`;
+    inp.classList.add("wobble");
+    document.getElementById("sc").textContent=score;
+    document.getElementById("stk").textContent=streak;
+    const eq = lang==="fr" ? `${spokenNum(a)} plus ${spokenNum(ans)}, ça fait ${spokenNum(target)}!` : `${a} plus ${ans} makes ${target}!`;
+    speak(t().goodSpoken[Math.floor(Math.random()*t().goodSpoken.length)] + " " + eq);
+    disableInput();
+    speechDone(3000).then(()=>setTimeout(nextQuestion, 600));
+  } else {
+    streak=0; sfxLose();
+    document.getElementById("qcard").classList.add("shake");
+    setTimeout(()=>document.getElementById("qcard").classList.remove("shake"),450);
+    fb.innerHTML=`<span class="bad">❌ ${t().bad(ans)}</span>`;
+    (Array.isArray(t().spokenBad(a,ans,target)) ? t().spokenBad(a,ans,target) : [t().spokenBad(a,ans,target)]).forEach(speak);
+    disableInput();
+    speechDone(9000).then(()=>setTimeout(nextQuestion, 700));
+  }
+}
+function disableInput(){
+  const inp=document.getElementById("answer");
+  inp.disabled=true; document.getElementById("ok").disabled=true;
+}
+
+function endGame(){
+  const perfect = score===TOTAL;
+  app.innerHTML=`
+    <div class="card pop">
+      <h1>${t().done}</h1>
+      <div style="font-size:4rem">${perfect?"🏆🥇":"🎉"}</div>
+      <p class="question">${t().results(score,TOTAL)}</p>
+      <div>
+        <button class="btn green" id="again">🔄 ${t().playAgain}</button>
+        <button class="btn blue" id="menu">🏠 ${lang==="fr"?"Menu":"Menu"}</button>
+      </div>
+      <a href="index.html"><button class="btn quit">🚪 ${lang==="fr"?"Quitter le jeu 👋":"Quit game 👋"}</button></a>
+    </div>`;
+  sfxWin(); if(perfect){burst();setTimeout(burst,400);setTimeout(burst,800);}
+  speak(t().results(score,TOTAL));
+  document.getElementById("again").onclick=startGame;
+  document.getElementById("menu").onclick=viewMode;
+}
+
+detectProvider();
+viewLanguage();
+</script>
+</body>
+</html>

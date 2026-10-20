@@ -102,29 +102,34 @@
         gap: 2rem;
         flex-wrap: wrap;
         justify-content: center;
+        align-items: center;
       }
 
+      /* Taille stricte et identique pour les deux gros boutons */
       .grosBouton {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: .6rem;
-        width: 260px;
-        padding: 1.6rem 1rem;
+        justify-content: center;
+        gap: .4rem;
+        width: 290px;
+        height: 170px;
+        padding: 1rem;
         border-radius: 32px;
         border: 6px solid #fff;
         font-family: inherit;
-        font-size: 1.6rem;
+        font-size: 1.4rem;
         font-weight: bold;
         color: #fff;
         cursor: pointer;
         text-decoration: none;
         transition: transform .15s;
         animation: pop .8s ease-in-out infinite alternate;
+        text-align: center;
       }
       .grosBouton:hover { transform: scale(1.07) rotate(-1deg); }
       .grosBouton:active { transform: scale(.96); }
-      .grosBouton .icone { font-size: 3.4rem; }
+      .grosBouton .icone { font-size: 2.8rem; line-height: 1; }
 
       .btnCalculs {
         background: linear-gradient(#ff9a3d, #ff6b6b);
@@ -135,6 +140,52 @@
         box-shadow: 0 10px 0 #3a5fd9, 0 18px 30px rgba(0,0,0,.25);
         animation-delay: .4s;
       }
+
+      /* Conteneur en grille 2 colonnes pour les sous-boutons de calcul */
+      #sousMenuCalculs {
+        display: none;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.2rem;
+        width: 100%;
+        max-width: 640px;
+        margin-top: 1rem;
+        justify-items: center;
+      }
+      #sousMenuCalculs.visible {
+        display: grid;
+      }
+
+      .sousBouton {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .8rem;
+        width: 100%;
+        height: 80px;
+        padding: 1rem;
+        border-radius: 24px;
+        border: 4px solid #fff;
+        font-family: inherit;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #fff;
+        cursor: pointer;
+        text-decoration: none;
+        background: linear-gradient(#ffb347, #ffcc33);
+        box-shadow: 0 6px 0 #cc9900, 0 12px 20px rgba(0,0,0,.2);
+        transition: transform .15s;
+        text-align: center;
+      }
+      .sousBouton:hover { transform: scale(1.03); }
+      .sousBouton:active { transform: scale(.95); }
+
+      /* Pour que le dernier bouton (le 7e) s'étale sur les 2 colonnes si on veut le centrer */
+      .sousBouton:nth-child(7) {
+        grid-column: span 2;
+        max-width: 310px;
+        justify-self: center;
+      }
+
       @keyframes pop {
         from { transform: translateY(0); }
         to { transform: translateY(-10px); }
@@ -169,12 +220,23 @@
     <h1 id="prenom"></h1>
 
     <div class="boutons">
-      <a class="grosBouton btnCalculs" href="tablesQuiz.html">
-        <span class="icone">✖️</span> Mes tables de multiplication
-      </a>
-      <a class="grosBouton btnHistoires" href="anglais.html">
+      <div class="grosBouton btnCalculs" id="btnCalculs">
+        <span class="icone">🧮</span> Mes calculs
+      </div>
+      <a class="grosBouton btnHistoires" id="btnVocabulaire" href="anglais.html">
         <span class="icone">🐝</span> Mon vocabulaire anglais
       </a>
+    </div>
+
+    <!-- 7 sous-boutons de calcul disposés 2 par 2 -->
+    <div id="sousMenuCalculs">
+      <a class="sousBouton" href="tablesQuiz.html">✖️ Tables de multiplication</a>
+      <a class="sousBouton" href="horloge.html">⏰ L'horloge</a>
+      <a class="sousBouton" href="fractions.html">🍰 Fractions</a>
+      <a class="sousBouton" href="base_10.html">🔟 Base 10</a>
+      <a class="sousBouton" href="suites_logiques.html">🧩 Suites logiques</a>
+      <a class="sousBouton" href="retire9_19.html">➖ Retire 9 ou 19</a>
+      <a class="sousBouton" href="complements.html">➕ Compléments 10 et 100</a>
     </div>
 
     <script>
@@ -183,6 +245,20 @@
       const prenom = document.getElementById("prenom");
       const err = document.getElementById("errMessage");
       const btnOk = document.getElementById("btnOk");
+      
+      const btnCalculs = document.getElementById("btnCalculs");
+      const btnVocabulaire = document.getElementById("btnVocabulaire");
+      const sousMenuCalculs = document.getElementById("sousMenuCalculs");
+
+      // Gestion de l'affichage des sous-boutons de calcul
+      btnCalculs.addEventListener("click", () => {
+        sousMenuCalculs.classList.toggle("visible");
+      });
+
+      // Disparition des sous-boutons quand on clique sur vocabulaire
+      btnVocabulaire.addEventListener("click", () => {
+        sousMenuCalculs.classList.remove("visible");
+      });
 
       function lancerConfettis() {
         const couleurs = ["#ffd93d", "#ff6b9d", "#6bd67e", "#4d96ff", "#ffa62b", "#b36bff"];

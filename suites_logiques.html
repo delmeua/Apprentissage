@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Les chenilles et suites logiques - 2ème primaire</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka for child-friendly typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #fef08a 0%, #bae6fd 50%, #fbcfe8 100%);
+            background-attachment: fixed;
+        }
+        /* Custom animations for caterpillar / success */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-x-hidden text-slate-700">
+
+    <!-- Header -->
+    <header class="w-full bg-white/80 backdrop-blur-md shadow-sm py-4 px-6 flex flex-wrap justify-between items-center z-10">
+        <div class="flex items-center space-x-3">
+            <span class="text-3xl">🐛</span>
+            <h1 id="app-title" class="text-2xl font-bold text-amber-600">Les Chenilles Magiques</h1>
+        </div>
+        <div class="flex items-center space-x-4 mt-2 sm:mt-0">
+            <!-- Language Selector -->
+            <div class="flex bg-slate-100 p-1 rounded-full shadow-inner">
+                <button id="lang-fr" onclick="setLanguage('fr')" class="px-3 py-1 rounded-full text-sm font-semibold transition-all bg-white text-amber-600 shadow-sm">FR</button>
+                <button id="lang-en" onclick="setLanguage('en')" class="px-3 py-1 rounded-full text-sm font-semibold transition-all text-slate-500 hover:text-slate-800">EN</button>
+            </div>
+            <!-- Score & Streak -->
+            <div class="hidden sm:flex items-center space-x-2 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200 text-amber-800 text-sm font-semibold">
+                <span>⭐ <span id="score-display">0</span></span>
+                <span class="text-amber-300">|</span>
+                <span>🔥 <span id="streak-display">0</span></span>
+            </div>
+            <!-- Quit Button -->
+            <button onclick="quitApp()" id="btn-quit" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-full font-semibold shadow-md transition-all flex items-center space-x-1 text-sm">
+                <span>🚪</span>
+                <span data-i18n="quit">Quitter</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 max-w-5xl mx-auto w-full">
+
+        <!-- Welcome / Home Screen -->
+        <div id="home-screen" class="bg-white/90 backdrop-blur-md p-8 rounded-3xl shadow-xl max-w-lg w-full text-center space-y-6 border-4 border-amber-300 animate-bounce-slow">
+            <div class="text-6xl">🐛🧮✨</div>
+            <h2 id="home-title" class="text-3xl font-bold text-slate-800" data-i18n="home_title">Prêt pour l'aventure des chenilles ?</h2>
+            <p id="home-desc" class="text-slate-600 text-lg" data-i18n="home_desc">Complète les suites logiques et aide la chenille à grandir ! Choisis ta difficulté :</p>
+            
+            <!-- Difficulty Selection -->
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="selectDifficulty('easy')" id="diff-easy" class="p-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50 text-emerald-700 font-bold hover:bg-emerald-100 transition-all">
+                    <div class="text-2xl">🌱</div>
+                    <div data-i18n="easy">Facile</div>
+                </button>
+                <button onclick="selectDifficulty('medium')" id="diff-medium" class="p-3 rounded-2xl border-2 border-sky-400 bg-sky-50 text-sky-700 font-bold hover:bg-sky-100 transition-all ring-2 ring-sky-400">
+                    <div class="text-2xl">⭐</div>
+                    <div data-i18n="medium">Moyen</div>
+                </button>
+                <button onclick="selectDifficulty('hard')" id="diff-hard" class="p-3 rounded-2xl border-2 border-purple-400 bg-purple-50 text-purple-700 font-bold hover:bg-purple-100 transition-all">
+                    <div class="text-2xl">🔥</div>
+                    <div data-i18n="hard">Difficile</div>
+                </button>
+            </div>
+
+            <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-xl rounded-2xl shadow-lg transform hover:-translate-y-0.5 transition-all" data-i18n="start_btn">
+                Commencer l'exercice 🚀
+            </button>
+        </div>
+
+        <!-- Game Screen (Hidden by default) -->
+        <div id="game-screen" class="hidden flex-col items-center justify-center w-full max-w-4xl space-y-8">
+            
+            <!-- Instruction & Rule banner -->
+            <div class="bg-white/90 backdrop-blur-md px-6 py-4 rounded-2xl shadow-md border-2 border-amber-200 text-center w-full flex flex-wrap items-center justify-between gap-4">
+                <div class="text-left">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-500" data-i18n="rule_label">Règle de la chenille :</span>
+                    <h3 id="rule-text" class="text-xl font-bold text-slate-800">...</h3>
+                </div>
+                <div class="flex items-center space-x-2 sm:hidden bg-amber-50 px-3 py-1 rounded-full border border-amber-200 text-amber-800 text-sm font-semibold">
+                    <span>⭐ <span id="score-display-mobile">0</span></span>
+                    <span>🔥 <span id="streak-display-mobile">0</span></span>
+                </div>
+            </div>
+
+            <!-- Caterpillar Track Container -->
+            <div class="bg-white/95 backdrop-blur-md p-6 sm:p-10 rounded-3xl shadow-xl border-4 border-amber-300 w-full overflow-x-auto py-12 flex items-center justify-center min-h-[280px]">
+                <div id="caterpillar-container" class="flex items-center space-x-3 sm:space-x-4 min-w-max px-4">
+                    <!-- Dynamic caterpillar nodes inserted here -->
+                </div>
+            </div>
+
+            <!-- Action Buttons & Feedback -->
+            <div class="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 w-full">
+                <button onclick="checkAnswers()" id="check-btn" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-lg rounded-2xl shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center justify-center space-x-2">
+                    <span>✅</span>
+                    <span data-i18n="check_btn">Vérifier mes réponses</span>
+                </button>
+                <button onclick="getAiHint()" id="hint-btn" class="w-full sm:w-auto px-6 py-4 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-lg rounded-2xl shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center justify-center space-x-2">
+                    <span>🪄</span>
+                    <span data-i18n="hint_btn">Indice IA</span>
+                </button>
+                <button onclick="nextSequence()" id="next-btn" class="hidden w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-lg rounded-2xl shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center justify-center space-x-2">
+                    <span>➡️</span>
+                    <span data-i18n="next_btn">Chenille suivante</span>
+                </button>
+                <button onclick="resetGame()" class="w-full sm:w-auto px-6 py-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-lg rounded-2xl transition-all flex items-center justify-center space-x-2">
+                    <span>🔄</span>
+                    <span data-i18n="restart_btn">Changer de niveau</span>
+                </button>
+            </div>
+
+            <!-- AI Hint & Audio Box -->
+            <div id="ai-hint-box" class="hidden w-full p-5 rounded-2xl bg-indigo-50 border-2 border-indigo-200 text-indigo-900 shadow-md space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2 font-bold text-indigo-700">
+                        <span>🤖</span>
+                        <span data-i18n="ai_tutor_title">L'Aide de la Chenille :</span>
+                    </div>
+                    <button id="tts-btn" onclick="speakAiHint()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-semibold shadow-sm flex items-center space-x-1">
+                        <span>🔊</span>
+                        <span data-i18n="listen_btn">Écouter</span>
+                    </button>
+                </div>
+                <p id="ai-hint-text" class="text-sm sm:text-base leading-relaxed">...</p>
+            </div>
+
+            <!-- Feedback Message Box -->
+            <div id="feedback-box" class="hidden w-full p-4 rounded-2xl text-center font-bold text-lg shadow-md transition-all"></div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-4 text-xs text-slate-500 font-medium">
+        <span data-i18n="footer_text">Exercice interactif de mathématiques - 2ème primaire / CP & Maternelle</span>
+    </footer>
+
+    <!-- Custom Message Modal / Box (No alert()) -->
+    <div id="message-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full text-center space-y-4 shadow-2xl border-4 border-amber-300">
+            <div id="modal-icon" class="text-5xl">🎉</div>
+            <h3 id="modal-title" class="text-2xl font-bold text-slate-800">Bravo !</h3>
+            <p id="modal-text" class="text-slate-600">Tu as réussi tous les nombres de la chenille !</p>
+            <button onclick="closeModal()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-md transition-all" data-i18n="modal_ok">
+                Continuer
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Translations Dictionary
+        const translations = {
+            fr: {
+                app_title: "Les Chenilles Magiques",
+                quit: "Quitter",
+                home_title: "Prêt pour l'aventure des chenilles ?",
+                home_desc: "Complète les suites logiques et aide la chenille à grandir ! Choisis ta difficulté :",
+                easy: "Facile",
+                medium: "Moyen",
+                hard: "Difficile",
+                start_btn: "Commencer l'exercice 🚀",
+                rule_label: "Règle de la chenille :",
+                check_btn: "Vérifier mes réponses",
+                hint_btn: "Indice IA",
+                next_btn: "Chenille suivante",
+                restart_btn: "Changer de niveau",
+                footer_text: "Exercice interactif de mathématiques - 2ème primaire / CP & Maternelle",
+                modal_ok: "Continuer",
+                success_msg: "Fantastique ! Ta chenille est parfaite ! 🎉",
+                error_msg: "Oups ! Il y a quelques erreurs. Regarde bien les nombres et réessaie ! 💪",
+                rule_add: "Ajouter {step} à chaque fois (+{step})",
+                rule_sub: "Retirer {step} à chaque fois (-{step})",
+                head_label: "Tête",
+                ai_tutor_title: "L'Aide de la Chenille",
+                listen_btn: "Écouter",
+                ai_loading: "La chenille réfléchit à un super indice... 🧠",
+                ai_error: "Impossible d'obtenir l'indice pour le moment."
+            },
+            en: {
+                app_title: "Magic Caterpillars",
+                quit: "Quit",
+                home_title: "Ready for the caterpillar adventure?",
+                home_desc: "Complete the logical number sequences and help the caterpillar grow! Choose your difficulty:",
+                easy: "Easy",
+                medium: "Medium",
+                hard: "Hard",
+                start_btn: "Start Exercise 🚀",
+                rule_label: "Caterpillar Rule:",
+                check_btn: "Check Answers",
+                hint_btn: "AI Hint",
+                next_btn: "Next Caterpillar",
+                restart_btn: "Change Difficulty",
+                footer_text: "Interactive Math Exercise - Elementary / Primary School",
+                modal_ok: "Continue",
+                success_msg: "Fantastic! Your caterpillar is perfect! 🎉",
+                error_msg: "Oops! There are a few mistakes. Look closely at the numbers and try again! 💪",
+                rule_add: "Add {step} each time (+{step})",
+                rule_sub: "Subtract {step} each time (-{step})",
+                head_label: "Head",
+                ai_tutor_title: "Caterpillar Helper",
+                listen_btn: "Listen",
+                ai_loading: "The caterpillar is thinking of a great hint... 🧠",
+                ai_error: "Could not fetch a hint right now."
+            }
+        };
+
+        let currentLang = 'fr';
+        let currentDifficulty = 'medium'; // 'easy', 'medium', 'hard'
+        let score = 0;
+        let streak = 0;
+        let currentHintText = '';
+        
+        let currentSequenceData = {
+            start: 0,
+            step: 2,
+            isAddition: true,
+            length: 6,
+            sequence: [],
+            missingIndices: []
+        };
+
+        // Initialize App
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('lang-fr').className = lang === 'fr' 
+                ? 'px-3 py-1 rounded-full text-sm font-semibold transition-all bg-white text-amber-600 shadow-sm'
+                : 'px-3 py-1 rounded-full text-sm font-semibold transition-all text-slate-500 hover:text-slate-800';
+            document.getElementById('lang-en').className = lang === 'en' 
+                ? 'px-3 py-1 rounded-full text-sm font-semibold transition-all bg-white text-amber-600 shadow-sm'
+                : 'px-3 py-1 rounded-full text-sm font-semibold transition-all text-slate-500 hover:text-slate-800';
+            
+            // Update static texts
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+
+            if (currentSequenceData.sequence.length > 0) {
+                updateRuleText();
+            }
+        }
+
+        function selectDifficulty(diff) {
+            currentDifficulty = diff;
+            ['easy', 'medium', 'hard'].forEach(d => {
+                const btn = document.getElementById(`diff-${d}`);
+                if (d === diff) {
+                    btn.classList.add('ring-2', 'ring-sky-400', 'bg-sky-50');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-sky-400', 'bg-sky-50');
+                }
+            });
+        }
+
+        function quitApp() {
+            window.location.href = 'index.html';
+        }
+
+        function startGame() {
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            generateNewSequence();
+        }
+
+        function resetGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            document.getElementById('home-screen').classList.remove('hidden');
+            document.getElementById('feedback-box').classList.add('hidden');
+            document.getElementById('ai-hint-box').classList.add('hidden');
+        }
+
+        function generateNewSequence() {
+            document.getElementById('feedback-box').classList.add('hidden');
+            document.getElementById('ai-hint-box').classList.add('hidden');
+            document.getElementById('check-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+
+            let start, step, isAddition, length;
+            length = 6; // caterpillar segments
+
+            if (currentDifficulty === 'easy') {
+                isAddition = true;
+                step = [1, 2, 5, 10][Math.floor(Math.random() * 4)];
+                if (step === 10) start = Math.floor(Math.random() * 5) * 10;
+                else if (step === 5) start = Math.floor(Math.random() * 10) * 5;
+                else start = Math.floor(Math.random() * 20);
+            } else if (currentDifficulty === 'medium') {
+                isAddition = Math.random() > 0.2; // mostly addition
+                step = [2, 3, 4, 5, 10][Math.floor(Math.random() * 5)];
+                if (isAddition) {
+                    start = Math.floor(Math.random() * 40);
+                } else {
+                    start = 30 + Math.floor(Math.random() * 50);
+                }
+            } else { // hard
+                isAddition = Math.random() > 0.4;
+                step = [3, 4, 6, 7, 8, 9][Math.floor(Math.random() * 6)];
+                if (isAddition) {
+                    start = Math.floor(Math.random() * 60);
+                } else {
+                    start = 50 + Math.floor(Math.random() * 50);
+                }
+            }
+
+            // Build full sequence
+            let seq = [];
+            let curr = start;
+            for (let i = 0; i < length; i++) {
+                seq.push(curr);
+                curr = isAddition ? curr + step : curr - step;
+                if (curr < 0) {
+                    isAddition = true;
+                    curr = seq[i] + step;
+                }
+            }
+
+            let missingCount = currentDifficulty === 'easy' ? 2 : (currentDifficulty === 'medium' ? 3 : 4);
+            let missingIndices = [];
+            while (missingIndices.length < missingCount) {
+                let idx = Math.floor(Math.random() * length);
+                if (!missingIndices.includes(idx)) {
+                    missingIndices.push(idx);
+                }
+            }
+            missingIndices.sort((a,b) => a - b);
+
+            currentSequenceData = {
+                start, step, isAddition, length, sequence: seq, missingIndices
+            };
+
+            updateRuleText();
+            renderCaterpillar();
+        }
+
+        function updateRuleText() {
+            const ruleTpl = currentSequenceData.isAddition ? translations[currentLang].rule_add : translations[currentLang].rule_sub;
+            document.getElementById('rule-text').textContent = ruleTpl.replace(/{step}/g, currentSequenceData.step);
+        }
+
+        function renderCaterpillar() {
+            const container = document.getElementById('caterpillar-container');
+            container.innerHTML = '';
+
+            const colors = ['bg-amber-400', 'bg-emerald-400', 'bg-sky-400', 'bg-pink-400', 'bg-purple-400', 'bg-orange-400'];
+
+            currentSequenceData.sequence.forEach((val, idx) => {
+                const isMissing = currentSequenceData.missingIndices.includes(idx);
+                const colorClass = colors[idx % colors.length];
+
+                const nodeWrapper = document.createElement('div');
+                nodeWrapper.className = "flex items-center";
+
+                const circle = document.createElement('div');
+                circle.className = `w-16 h-16 sm:w-20 sm:h-20 rounded-full ${colorClass} shadow-md flex flex-col items-center justify-center border-4 border-white relative transition-transform transform hover:scale-105`;
+                
+                if (idx === 0) {
+                    const headBadge = document.createElement('span');
+                    headBadge.className = "absolute -top-3 bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase shadow-sm";
+                    headBadge.textContent = translations[currentLang].head_label;
+                    circle.appendChild(headBadge);
+                }
+
+                if (isMissing) {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'w-12 h-12 sm:w-14 sm:h-14 text-center text-xl font-bold rounded-xl border-2 border-slate-300 focus:border-amber-500 focus:outline-none bg-white/90 text-slate-800 shadow-inner';
+                    input.dataset.index = idx;
+                    input.setAttribute('aria-label', `Nombre manquant ${idx + 1}`);
+                    circle.appendChild(input);
+                } else {
+                    const numberSpan = document.createElement('span');
+                    numberSpan.className = 'text-2xl sm:text-3xl font-bold text-white drop-shadow';
+                    numberSpan.textContent = val;
+                    circle.appendChild(numberSpan);
+                }
+
+                nodeWrapper.appendChild(circle);
+
+                if (idx < currentSequenceData.sequence.length - 1) {
+                    const bridge = document.createElement('div');
+                    bridge.className = 'w-4 sm:w-6 h-3 bg-emerald-600 rounded-full -mx-1 z-0';
+                    nodeWrapper.appendChild(bridge);
+                }
+
+                container.appendChild(nodeWrapper);
+            });
+        }
+
+        // --- GEMINI API INTEGRATIONS ---
+
+        // Helper function for Base64 conversion
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Helper to turn PCM 16-bit to WAV Blob for audio playback
+        function pcmToWav(pcm16, sampleRate = 24000) {
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+
+            /* RIFF identifier */
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true); // PCM chunk size
+            view.setUint16(20, 1, true); // Audio format 1 = PCM
+            view.setUint16(22, 1, true); // Mono channel
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true); // Block align
+            view.setUint16(34, 16, true); // Bits per sample
+            writeString(36, 'data');
+            view.setUint32(40, pcm16.length * 2, true);
+
+            // Copy PCM samples
+            let offset = 44;
+            for (let i = 0; i < pcm16.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16[i], true);
+            }
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        // 1. Gemini Text API: Get pedagogical hint for kids
+        async function getAiHint() {
+            const hintBox = document.getElementById('ai-hint-box');
+            const hintText = document.getElementById('ai-hint-text');
+            
+            hintBox.classList.remove('hidden');
+            hintText.textContent = translations[currentLang].ai_loading;
+
+            const visibleSeq = currentSequenceData.sequence.map((val, idx) => 
+                currentSequenceData.missingIndices.includes(idx) ? '?' : val
+            ).join(', ');
+
+            const systemPrompt = currentLang === 'fr' 
+                ? "Tu es un tuteur virtuel bienveillant pour un enfant de 6-7 ans (CP / 2ème primaire). Donne un indice amusant et très simple (1 à 2 phrases max) pour l'aider à trouver les nombres manquants '?' sans donner directement la réponse finale. Sois encourageant avec des emojis."
+                : "You are a friendly virtual tutor for a 6-7 year old child. Provide a simple, fun hint (1-2 short sentences max) to help them find the missing numbers '?' without revealing the answer directly. Use warm emojis.";
+
+            const userPrompt = currentLang === 'fr'
+                ? `La suite de la chenille est : [${visibleSeq}]. La règle est : ${currentSequenceData.isAddition ? 'ajouter' : 'retirer'} ${currentSequenceData.step} à chaque étape. Donnes-moi un petit indice.`
+                : `The caterpillar sequence is: [${visibleSeq}]. The rule is: ${currentSequenceData.isAddition ? 'add' : 'subtract'} ${currentSequenceData.step} each step. Give me a small hint.`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    currentHintText = text;
+                    hintText.textContent = text;
+                } else {
+                    hintText.textContent = translations[currentLang].ai_error;
+                }
+            } catch (err) {
+                console.error("Gemini API Error:", err);
+                hintText.textContent = translations[currentLang].ai_error;
+            }
+        }
+
+        // 2. Gemini Speech/TTS API: Read hint out loud
+        async function speakAiHint() {
+            if (!currentHintText) return;
+
+            const ttsBtn = document.getElementById('tts-btn');
+            ttsBtn.disabled = true;
+            ttsBtn.classList.add('opacity-50');
+
+            const voiceName = currentLang === 'fr' ? 'Kore' : 'Puck';
+            const speakPrompt = currentLang === 'fr'
+                ? `Dis de manière très dynamique et joyeuse : ${currentHintText}`
+                : `Say cheerfully and warmly: ${currentHintText}`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: speakPrompt }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: voiceName }
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType || '';
+
+                if (audioData) {
+                    let sampleRate = 24000;
+                    const match = mimeType.match(/rate=(\d+)/);
+                    if (match) {
+                        sampleRate = parseInt(match[1], 10);
+                    }
+
+                    const pcmBuffer = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmBuffer);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                }
+            } catch (err) {
+                console.error("Gemini TTS Error:", err);
+            } finally {
+                ttsBtn.disabled = false;
+                ttsBtn.classList.remove('opacity-50');
+            }
+        }
+
+        function checkAnswers() {
+            const inputs = document.querySelectorAll('#caterpillar-container input');
+            let allCorrect = true;
+            let answeredAll = true;
+
+            inputs.forEach(input => {
+                const idx = parseInt(input.dataset.index);
+                const expected = currentSequenceData.sequence[idx];
+                const userVal = parseInt(input.value);
+
+                if (input.value.trim() === '') {
+                    answeredAll = false;
+                }
+
+                if (userVal === expected) {
+                    input.classList.remove('border-rose-500', 'bg-rose-50');
+                    input.classList.add('border-emerald-500', 'bg-emerald-50');
+                } else {
+                    input.classList.remove('border-emerald-500', 'bg-emerald-50');
+                    input.classList.add('border-rose-500', 'bg-rose-50');
+                    allCorrect = false;
+                }
+            });
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.classList.remove('hidden');
+
+            if (!answeredAll) {
+                feedbackBox.className = 'w-full p-4 rounded-2xl text-center font-bold text-lg shadow-md bg-amber-100 text-amber-800 border-2 border-amber-300';
+                feedbackBox.textContent = currentLang === 'fr' ? '⚠️ Remplis tous les cercles vides !' : '⚠️ Please fill in all empty circles!';
+                return;
+            }
+
+            if (allCorrect) {
+                feedbackBox.className = 'w-full p-4 rounded-2xl text-center font-bold text-lg shadow-md bg-emerald-100 text-emerald-800 border-2 border-emerald-300';
+                feedbackBox.textContent = translations[currentLang].success_msg;
+                
+                score += 10;
+                streak += 1;
+                updateScoreDisplays();
+
+                document.getElementById('check-btn').classList.add('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+
+                showModal('🎉', currentLang === 'fr' ? 'Super !' : 'Awesome!', translations[currentLang].success_msg);
+            } else {
+                feedbackBox.className = 'w-full p-4 rounded-2xl text-center font-bold text-lg shadow-md bg-rose-100 text-rose-800 border-2 border-rose-300';
+                feedbackBox.textContent = translations[currentLang].error_msg;
+                streak = 0;
+                updateScoreDisplays();
+            }
+        }
+
+        function nextSequence() {
+            generateNewSequence();
+        }
+
+        function updateScoreDisplays() {
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('streak-display').textContent = streak;
+            document.getElementById('score-display-mobile').textContent = score;
+            document.getElementById('streak-display-mobile').textContent = streak;
+        }
+
+        function showModal(icon, title, text) {
+            document.getElementById('modal-icon').textContent = icon;
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-text').textContent = text;
+            const modal = document.getElementById('message-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('message-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Les Blocs de Base 10</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dizaine: linear-gradient(180deg, #4cc9f0 0%, #4361ee 100%);
+            --unite: linear-gradient(180deg, #ffb703 0%, #fb8500 100%);
+            --correct: #2a9d8f;
+            --wrong: #e63946;
+            --bg-play: #f0f7ff;
+        }
+        * { box-sizing: border-box; font-family: 'Fredoka', sans-serif; margin: 0; padding: 0; user-select: none; }
+        
+        body { 
+            background: linear-gradient(135deg, #e0f2fe 0%, #e8f5e9 100%); 
+            color: #2b2d42; 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 20px 15px;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        body::before, body::after {
+            content: "🎈";
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.2;
+            animation: floatUpDown 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+        body::before { top: 10%; left: 5%; animation-delay: 0s; }
+        body::after { bottom: 15%; right: 5%; content: "☁️"; font-size: 60px; animation-delay: 3s; }
+
+        @keyframes floatUpDown {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        .game-wrapper { 
+            background: #ffffff; 
+            width: 100%; 
+            max-width: 950px; 
+            border-radius: 35px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08); 
+            padding: 30px; 
+            margin: auto;
+            display: flex; 
+            flex-direction: column; 
+            border: 6px solid #ffffff; 
+            position: relative;
+            z-index: 10;
+        }
+        
+        .app-screen { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; animation: fadeIn 0.4s ease-out; }
+        .app-screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .game-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 20px; border-bottom: 4px dashed #e2e8f0; padding-bottom: 15px; }
+        .hud-title { font-size: 28px; font-weight: 700; color: #4361ee; text-shadow: 1px 1px 0px #cbd5e1; }
+        .hud-stats { display: flex; gap: 12px; align-items: center; }
+        .hud-card { background: #f1f5f9; padding: 10px 20px; border-radius: 18px; font-weight: 700; font-size: 18px; border: 3px solid #cbd5e1; box-shadow: inset 0 -3px 0 #cbd5e1; }
+        
+        .btn-quit { background: var(--wrong); color: white; border: none; padding: 10px 22px; border-radius: 18px; cursor: pointer; font-weight: 700; font-size: 16px; box-shadow: 0 5px 0 #b91c1c; transition: all 0.1s; }
+        .btn-quit:active { transform: translateY(5px); box-shadow: none; }
+        
+        .instruction-banner { font-size: 24px; font-weight: 600; background: #f0fdf4; padding: 16px; border-radius: 20px; border: 3px dashed #65a30d; width: 100%; margin-bottom: 20px; box-shadow: 0 4px 0 #d9f99d; }
+        .number-alert { font-size: 38px; color: #4361ee; font-weight: 700; background: #dbeafe; padding: 2px 15px; border-radius: 12px; border: 2px solid #bfdbfe; display: inline-block; margin-left: 5px; }
+        
+        .feedback-banner { width: 100%; padding: 16px; border-radius: 20px; color: white; font-size: 24px; font-weight: 700; margin-bottom: 20px; text-align: center; display: none; box-shadow: 0 6px 0 rgba(0,0,0,0.15); }
+        
+        .workspace { display: flex; width: 100%; gap: 20px; margin-bottom: 20px; min-height: 340px; }
+        .palette { width: 190px; background: #f8fafc; border: 3px dashed #cbd5e1; border-radius: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 25px; padding: 20px; box-shadow: inset 0 4px 10px rgba(0,0,0,0.02); }
+        .palette-btn { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; background: white; padding: 12px; border-radius: 16px; border: 2px solid #e2e8f0; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.04); }
+        .palette-btn:hover { transform: scale(1.05) rotate(1deg); border-color: #4361ee; }
+        .palette-lbl { font-size: 15px; font-weight: 700; margin-top: 10px; color: #475569; }
+        
+        .block-d10 { 
+            width: 30px; 
+            height: 200px; 
+            background: var(--dizaine); 
+            border: 2px solid #1e3a8a; 
+            border-radius: 8px; 
+            display: grid; 
+            grid-template-rows: repeat(10, 1fr); 
+            box-shadow: 4px 4px 0px #1e3a8a, 6px 6px 10px rgba(0,0,0,0.15); 
+        }
+        .block-d10 div { border-bottom: 2px solid #1e3a8a; background: rgba(255,255,255,0.1); }
+        .block-d10 div:last-child { border-bottom: none; }
+        
+        .block-u1 { 
+            width: 26px; 
+            height: 26px; 
+            background: var(--unite); 
+            border: 2px solid #9a3412; 
+            border-radius: 6px; 
+            display: inline-block; 
+            box-shadow: 3px 3px 0px #9a3412, 4px 4px 6px rgba(0,0,0,0.15); 
+        }
+        
+        .board-zone { flex: 1; background: var(--bg-play); border: 4px solid #bfdbfe; border-radius: 25px; padding: 25px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 18px; overflow-y: auto; max-height: 350px; box-shadow: inset 0 4px 12px rgba(0,0,0,0.05); }
+        
+        .removable-wrap { position: relative; cursor: pointer; transition: transform 0.1s; }
+        .removable-wrap:hover { transform: scale(1.03); }
+        .removable-wrap:hover::after { content: "✕"; position: absolute; top: -12px; right: -12px; background: var(--wrong); color: white; font-size: 14px; font-weight: bold; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        .comparison-layout { display: none; width: 100%; gap: 20px; margin-bottom: 20px; }
+        .comp-column { flex: 1; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 160px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .comp-column.user-error { background: #fee2e2; border: 3px dashed var(--wrong); }
+        .comp-column.correct-model { background: #dcfce7; border: 3px dashed var(--correct); }
+        .comp-title { font-weight: 700; font-size: 18px; margin-bottom: 15px; color: #1e293b; }
+        .comp-blocks-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+        
+        .action-zone { display: flex; gap: 15px; align-items: center; justify-content: center; width: 100%; margin-top: 10px; }
+        .btn-action { background: var(--correct); color: white; font-size: 24px; font-weight: 700; border: none; padding: 14px 45px; border-radius: 20px; cursor: pointer; box-shadow: 0 6px 0 #14532d; transition: all 0.1s; }
+        .btn-action:active { transform: translateY(6px); box-shadow: none; }
+        
+        .input-number { width: 130px; font-size: 32px; font-weight: 700; padding: 10px; text-align: center; border: 4px solid #cbd5e1; border-radius: 18px; outline: none; box-shadow: inset 0 3px 6px rgba(0,0,0,0.05); color: #1e3a8a; }
+        .input-number:focus { border-color: #4361ee; background: #f8fafc; }
+        
+        .lang-button-group { display: flex; gap: 20px; margin-top: 25px; margin-bottom: 10px; }
+        .btn-lang { background: #ffffff; border: 4px solid #cbd5e1; padding: 16px 35px; border-radius: 22px; cursor: pointer; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 14px; transition: all 0.2s; box-shadow: 0 6px 0 #cbd5e1; }
+        .btn-lang:hover { transform: translateY(-3px); border-color: #4361ee; box-shadow: 0 9px 0 #cbd5e1; }
+        .btn-lang:active { transform: translateY(3px); box-shadow: 0 3px 0 #cbd5e1; }
+        
+        .trophy-badge { font-size: 80px; margin-bottom: 20px; animation: bounce 2s infinite; }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <!-- WELCOME SCREEN -->
+        <div id="scr-welcome" class="app-screen active">
+            <div class="trophy-badge">🧱🏫</div>
+            <h1 style="font-size: 42px; color: #4361ee; margin-bottom: 10px; text-shadow: 2px 2px 0px #dbeafe;">Les Blocs de Base 10</h1>
+            <p style="font-size: 20px; color: #64748b; font-weight: 600;">Choisissez votre langue / Choose your language</p>
+            <div class="lang-button-group">
+                <button class="btn-lang" onclick="triggerStartGame('fr')"><span>🇫🇷</span> Français</button>
+                <button class="btn-lang" onclick="triggerStartGame('en')"><span>🇬🇧</span> English</button>
+            </div>
+            <button class="btn-quit" style="margin-top: 30px; font-size: 18px; padding: 12px 30px;" onclick="triggerQuitFromWelcome()">Quitter / Quit</button>
+        </div>
+
+        <!-- PLAY SCREEN -->
+        <div id="scr-game" class="app-screen">
+            <div class="game-header">
+                <div class="hud-title" id="hud-exercise-label">Exercice 1 / 10</div>
+                <div class="hud-stats">
+                    <div class="hud-card">⏱️ <span id="hud-timer">00:00</span></div>
+                    <div class="hud-card">⭐ <span id="hud-score-label">Score : 0</span> pts</div>
+                    <button class="btn-quit" id="btn-quit-text" onclick="triggerQuit()">Quitter</button>
+                </div>
+            </div>
+            <div class="instruction-banner" id="hud-instruction">...</div>
+            <div class="feedback-banner" id="app-feedback-banner"></div>
+            
+            <div class="workspace">
+                <div class="palette" id="workspace-palette" style="display: none;">
+                    <div class="palette-btn" onclick="executeAddBlock('dizaine')">
+                        <div class="block-d10"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                        <span class="palette-lbl" id="lbl-add-dizaine">+1 Dizaine</span>
+                    </div>
+                    <div class="palette-btn" onclick="executeAddBlock('unite')">
+                        <div class="block-u1"></div>
+                        <span class="palette-lbl" id="lbl-add-unite">+1 Unité</span>
+                    </div>
+                </div>
+                <div class="board-zone" id="workspace-board"></div>
+            </div>
+
+            <!-- COMPARISON LAYOUT (FEEDBACK VISUEL) -->
+            <div class="comparison-layout" id="app-comparison-box">
+                <div class="comp-column user-error">
+                    <div class="comp-title" id="lbl-comp-user">Ce que tu as fait :</div>
+                    <div class="comp-blocks-row" id="comp-zone-user"></div>
+                </div>
+                <div class="comp-column correct-model">
+                    <div class="comp-title" id="lbl-comp-correct">La bonne réponse :</div>
+                    <div class="comp-blocks-row" id="comp-zone-correct"></div>
+                </div>
+            </div>
+
+            <div class="action-zone">
+                <input type="number" id="app-input-number" class="input-number" min="0" max="99" style="display: none;">
+                <button class="btn-action" id="btn-validate" onclick="executeValidation()">Valider</button>
+            </div>
+        </div>
+
+        <!-- END SCREEN -->
+        <div id="scr-end" class="app-screen">
+            <div class="trophy-badge">🏆✨</div>
+            <h2 style="font-size: 36px; color: var(--correct); margin-bottom: 15px;" id="lbl-end-congrats">Félicitations !</h2>
+            <p style="font-size: 24px; font-weight: 600; margin-bottom: 10px;" id="lbl-end-score">Score final : 0 / 200</p>
+            <p style="font-size: 20px; color: #64748b; margin-bottom: 35px;" id="lbl-end-time">Temps total : 00:00</p>
+            <button class="btn-action" onclick="resetApp()" id="lbl-btn-restart">Recommencer 🔄</button>
+        </div>
+
+        <!-- QUIT SCREEN -->
+        <div id="scr-quit" class="app-screen">
+            <div class="trophy-badge">👋✨</div>
+            <h2 style="font-size: 36px; color: var(--wrong); margin-bottom: 15px;" id="lbl-quit-title">Au revoir !</h2>
+            <p style="font-size: 22px; font-weight: 600; color: #475569; margin-bottom: 35px;" id="lbl-quit-text">La session d'exercice est fermée.</p>
+            <button class="btn-action" onclick="resetApp()" style="background: #4361ee; box-shadow: 0 6px 0 #1e3a8a;" id="lbl-quit-btn">Menu Principal</button>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            fr: {
+                exLabel: "Exercice", quit: "Quitter", score: "Score : ",
+                inst1_4: "Compte les blocs et écris le nombre :",
+                inst5_10: "Représente le nombre suivant à l'aide des blocs :",
+                addDizaine: "+1 Dizaine", addUnite: "+1 Unité",
+                compUser: "Oups ! Regarde bien ! 👇 Tu as fait :", compCorrect: "La bonne réponse attendue :",
+                good: "🎉 Bravo ! C'est super juste ! 🌟", wrong: "❌ Ce n'est pas tout à fait ça... Regarde l'aide ci-dessous !",
+                btnNext: "Suivant ➡️", btnValidate: "Valider 👍", congrats: "Félicitations ! 🏆",
+                finalScore: "Score final : ", totalTime: "Temps total : ", restart: "Recommencer 🔄",
+                quitTitle: "Au revoir !", quitText: "La session d'exercice est fermée.", quitBtn: "Menu Principal"
+            },
+            en: {
+                exLabel: "Exercise", quit: "Quit", score: "Score: ",
+                inst1_4: "Count the blocks and write the number:",
+                inst5_10: "Represent the following number using the blocks:",
+                addDizaine: "+1 Ten", addUnite: "+1 One",
+                compUser: "Oops! Take a look! 👇 What you did:", compCorrect: "The correct expected answer:",
+                good: "🎉 Brilliant! That's perfectly correct! 🌟", wrong: "❌ Not quite right... Check the help below!",
+                btnNext: "Next ➡️", btnValidate: "Validate 👍", congrats: "Congratulations! 🏆",
+                finalScore: "Final score: ", totalTime: "Total time: ", restart: "Restart 🔄",
+                quitTitle: "Goodbye!", quitText: "The practice session is closed.", quitBtn: "Main Menu"
+            }
+        };
+
+        let currentLang = 'fr';
+        let currentExercise = 1;
+        let totalExercises = 10;
+        let score = 0;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        
+        let targetNumber = 0;
+        let userDizaines = 0;
+        let userUnites = 0;
+        let isShowingFeedback = false;
+
+        const htmlBlocks = {
+            dizaine: '<div class="block-d10"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>',
+            unite: '<div class="block-u1"></div>'
+        };
+
+        // Écouteur global de la touche Entrée pour tout le jeu
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                // Vérifie si l'écran de jeu est actif
+                const gameScreen = document.getElementById('scr-game');
+                if (gameScreen.classList.contains('active')) {
+                    event.preventDefault();
+                    executeValidation();
+                }
+            }
+        });
+
+        function triggerStartGame(lang) {
+            currentLang = lang;
+            document.getElementById('scr-welcome').classList.remove('active');
+            document.getElementById('scr-game').classList.add('active');
+            
+            secondsElapsed = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                let mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+                let secs = String(secondsElapsed % 60).padStart(2, '0');
+                document.getElementById('hud-timer').innerText = `${mins}:${secs}`;
+            }, 1000);
+
+            currentExercise = 1;
+            score = 0;
+            initExercise();
+        }
+
+        function initExercise() {
+            isShowingFeedback = false;
+            document.getElementById('app-feedback-banner').style.display = 'none';
+            document.getElementById('app-comparison-box').style.display = 'none';
+            
+            const t = translations[currentLang];
+            document.getElementById('hud-exercise-label').innerText = `${t.exLabel} ${currentExercise} / ${totalExercises}`;
+            document.getElementById('hud-score-label').innerText = `${t.score}${score}`;
+            document.getElementById('lbl-add-dizaine').innerText = t.addDizaine;
+            document.getElementById('lbl-add-unite').innerText = t.addUnite;
+            document.getElementById('btn-validate').innerText = t.btnValidate;
+            document.getElementById('btn-quit-text').innerText = t.quit;
+
+            targetNumber = Math.floor(Math.random() * 89) + 11;
+            let targetDizaines = Math.floor(targetNumber / 10);
+            let targetUnites = targetNumber % 10;
+
+            const board = document.getElementById('workspace-board');
+            board.innerHTML = "";
+
+            if (currentExercise <= 4) {
+                document.getElementById('workspace-palette').style.display = 'none';
+                document.getElementById('app-input-number').style.display = 'inline-block';
+                document.getElementById('app-input-number').value = '';
+                document.getElementById('hud-instruction').innerText = t.inst1_4;
+
+                for(let i=0; i<targetDizaines; i++) board.innerHTML += htmlBlocks.dizaine;
+                for(let i=0; i<targetUnites; i++) board.innerHTML += htmlBlocks.unite;
+                
+                // Focus automatique sur le champ de saisie pour un confort maximal
+                setTimeout(() => {
+                    document.getElementById('app-input-number').focus();
+                }, 50);
+            } else {
+                document.getElementById('workspace-palette').style.display = 'flex';
+                document.getElementById('app-input-number').style.display = 'none';
+                document.getElementById('hud-instruction').innerHTML = `${t.inst5_10} <span class="number-alert">${targetNumber}</span>`;
+                
+                userDizaines = 0;
+                userUnites = 0;
+            }
+        }
+
+        function executeAddBlock(type) {
+            if (isShowingFeedback) return;
+            const board = document.getElementById('workspace-board');
+            
+            if (type === 'dizaine') {
+                userDizaines++;
+                let id = 'u-diz-' + Date.now() + Math.random();
+                board.innerHTML += `<div class="removable-wrap" id="${id}" onclick="executeRemoveBlock('${id}', 'dizaine')">${htmlBlocks.dizaine}</div>`;
+            } else {
+                userUnites++;
+                let id = 'u-uni-' + Date.now() + Math.random();
+                board.innerHTML += `<div class="removable-wrap" id="${id}" onclick="executeRemoveBlock('${id}', 'unite')">${htmlBlocks.unite}</div>`;
+            }
+        }
+
+        function executeRemoveBlock(elementId, type) {
+            if (isShowingFeedback) return;
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.remove();
+                if (type === 'dizaine') userDizaines--;
+                else userUnites--;
+            }
+        }
+
+        function executeValidation() {
+            const t = translations[currentLang];
+            const banner = document.getElementById('app-feedback-banner');
+            const compBox = document.getElementById('app-comparison-box');
+            const btnValidate = document.getElementById('btn-validate');
+
+            if (isShowingFeedback) {
+                currentExercise++;
+                if (currentExercise > totalExercises) {
+                    triggerEndGame();
+                } else {
+                    initExercise();
+                }
+                return;
+            }
+
+            let isCorrect = false;
+            let correctDizaines = Math.floor(targetNumber / 10);
+            let correctUnites = targetNumber % 10;
+
+            if (currentExercise <= 4) {
+                let inputVal = parseInt(document.getElementById('app-input-number').value);
+                if (isNaN(inputVal)) return; // Empêche la validation si le champ est vide
+                isCorrect = (inputVal === targetNumber);
+            } else {
+                let calculatedTotal = (userDizaines * 10) + userUnites;
+                isCorrect = (calculatedTotal === targetNumber);
+            }
+
+            if (isCorrect) {
+                score += 20;
+                banner.style.background = 'var(--correct)';
+                banner.innerText = t.good;
+                banner.style.display = 'block';
+            } else {
+                banner.style.background = 'var(--wrong)';
+                banner.innerText = t.wrong;
+                banner.style.display = 'block';
+
+                document.getElementById('lbl-comp-user').innerText = t.compUser;
+                document.getElementById('lbl-comp-correct').innerText = t.compCorrect;
+
+                const zoneUser = document.getElementById('comp-zone-user');
+                const zoneCorrect = document.getElementById('comp-zone-correct');
+                zoneUser.innerHTML = "";
+                zoneCorrect.innerHTML = "";
+
+                if (currentExercise <= 4) {
+                    let inputVal = parseInt(document.getElementById('app-input-number').value) || 0;
+                    zoneUser.innerHTML = `<span style="font-size:36px; font-weight:bold; color:var(--wrong)">${inputVal}</span>`;
+                    
+                    for(let i=0; i<correctDizaines; i++) zoneCorrect.innerHTML += htmlBlocks.dizaine;
+                    for(let i=0; i<correctUnites; i++) zoneCorrect.innerHTML += htmlBlocks.unite;
+                    zoneCorrect.innerHTML += ` <span style="font-size:26px; font-weight:bold; margin-left:12px; color:var(--correct)">(${targetNumber})</span>`;
+                } else {
+                    if(userDizaines === 0 && userUnites === 0) {
+                        zoneUser.innerHTML = "<i>(Vide / Empty)</i>";
+                    } else {
+                        for(let i=0; i<userDizaines; i++) zoneUser.innerHTML += htmlBlocks.dizaine;
+                        for(let i=0; i<userUnites; i++) zoneUser.innerHTML += htmlBlocks.unite;
+                    }
+
+                    for(let i=0; i<correctDizaines; i++) zoneCorrect.innerHTML += htmlBlocks.dizaine;
+                    for(let i=0; i<correctUnites; i++) zoneCorrect.innerHTML += htmlBlocks.unite;
+                }
+                
+                compBox.style.display = 'flex';
+            }
+
+            isShowingFeedback = true;
+            btnValidate.innerText = t.btnNext;
+            document.getElementById('hud-score-label').innerText = `${t.score}${score}`;
+        }
+
+        function triggerEndGame() {
+            clearInterval(timerInterval);
+            document.getElementById('scr-game').classList.remove('active');
+            document.getElementById('scr-end').classList.add('active');
+
+            const t = translations[currentLang];
+            document.getElementById('lbl-end-congrats').innerText = t.congrats;
+            document.getElementById('lbl-end-score').innerText = `${t.finalScore}${score} / 200`;
+            document.getElementById('lbl-end-time').innerText = `${t.totalTime}${document.getElementById('hud-timer').innerText}`;
+            document.getElementById('lbl-btn-restart').innerText = t.restart;
+        }
+
+        function triggerQuitFromWelcome() {
+            window.location.href = 'index.html';
+        }
+
+        function triggerQuit() {
+            clearInterval(timerInterval);
+            window.location.href = 'index.html';
+        }
+
+        function resetApp() {
+            clearInterval(timerInterval);
+            document.getElementById('scr-game').classList.remove('active');
+            document.getElementById('scr-end').classList.remove('active');
+            document.getElementById('scr-quit').classList.remove('active');
+            document.getElementById('scr-welcome').classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fr" data-lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'Heure Magique - Le Jeu des Horloges</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #feada6 100%);
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --primary: #ff6b6b;
+            --primary-hover: #ee5253;
+            --accent: #ffd166;
+            --success: #06d6a0;
+            --error: #ef476f;
+            --text: #2d3436;
+        }
+
+        /* Thèmes visuels */
+        body.theme-space {
+            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --card-bg: rgba(20, 20, 40, 0.9);
+            --primary: #4facfe;
+            --success: #00f2fe;
+            --text: #ffffff;
+        }
+
+        body.theme-candy {
+            --bg-gradient: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --primary: #ff3838;
+            --success: #2ed573;
+            --text: #2f3542;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            padding: 15px;
+            overflow-x: hidden;
+            transition: background 0.5s ease;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 550px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            border: 5px solid #fff;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .btn-quit {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 10px rgba(239, 71, 111, 0.4);
+            transition: all 0.2s;
+            font-family: 'Fredoka One', cursive;
+            font-size: 0.9rem;
+        }
+
+        .btn-quit:hover {
+            transform: scale(1.1);
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pill-btn {
+            background: rgba(255,255,255,0.8);
+            border: 2px solid var(--primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--primary);
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .pill-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Mascotte Rigolote */
+        .mascot-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 18px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .mascot-avatar {
+            font-size: 2rem;
+            animation: bounceMascot 2s infinite ease-in-out;
+        }
+
+        .mascot-speech {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        @keyframes bounceMascot {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-5px) rotate(5deg); }
+        }
+
+        /* Score & Badges */
+        .score-board {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
+        }
+
+        /* Mode Selector */
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: 3px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Horloge Magique */
+        .clock-wrapper {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin-bottom: 20px;
+            touch-action: none;
+        }
+
+        .clock {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #ffffff 60%, #f1f2f6 100%);
+            border: 10px solid var(--primary);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .clock-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 18px;
+            height: 18px;
+            background: var(--accent);
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .number {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            text-align: center;
+            line-height: 30px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.2rem;
+            color: var(--text);
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 15px;
+            z-index: 5;
+            transition: transform 0.05s linear;
+        }
+
+        .hour-hand {
+            width: 10px;
+            height: 65px;
+            background: #2f3542;
+            margin-left: -5px;
+            border: 2px solid white;
+        }
+
+        .minute-hand {
+            width: 7px;
+            height: 90px;
+            background: var(--primary);
+            margin-left: -3.5px;
+            border: 2px solid white;
+        }
+
+        /* Zone interactive */
+        .interactive-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 15px;
+        }
+
+        .digital-display {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.8rem;
+            background: #1e1e2f;
+            color: #00ffcc;
+            padding: 8px 25px;
+            border-radius: 20px;
+            letter-spacing: 4px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.6);
+            border: 4px solid var(--accent);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .time-input {
+            width: 75px;
+            height: 55px;
+            font-size: 1.8rem;
+            text-align: center;
+            border: 3px solid var(--primary);
+            border-radius: 15px;
+            font-weight: 700;
+            background: white;
+            color: var(--text);
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .time-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .separator {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .btn-action {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 35px;
+            font-size: 1.3rem;
+            font-family: 'Fredoka One', cursive;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(6, 214, 160, 0.4);
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.08) translateY(-2px);
+        }
+
+        .feedback {
+            margin-top: 10px;
+            font-size: 1.3rem;
+            font-family: 'Fredoka One', cursive;
+            min-height: 30px;
+            text-align: center;
+        }
+
+        .feedback.success { color: var(--success); animation: bounceFeedback 0.5s; }
+        .feedback.error { color: var(--error); animation: shakeFeedback 0.4s; }
+
+        @keyframes bounceFeedback {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(3deg); }
+        }
+
+        @keyframes shakeFeedback {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Effet Confettis */
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: var(--accent);
+            animation: fallConfetti 1s ease-out forwards;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        @keyframes fallConfetti {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) translateX(var(--rand-x)) rotate(720deg) scale(0.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="theme-candy">
+
+    <div class="container" id="mainContainer">
+        <!-- Barre supérieure -->
+        <div class="top-bar">
+            <a href="index.html" class="btn-quit" id="btnQuit">🚪 Quitter</a>
+            <div class="controls-group">
+                <button class="pill-btn" onclick="toggleTheme()">🎨 Thème</button>
+                <button class="pill-btn" id="langSwitch" onclick="toggleLanguage()">🇬🇧 English</button>
+            </div>
+        </div>
+
+        <!-- Mascotte interactive -->
+        <div class="mascot-container" onclick="changeMascot()">
+            <span class="mascot-avatar" id="mascotEmoji">🐶</span>
+            <span class="mascot-speech" id="mascotText">Prêt à jouer ?</span>
+        </div>
+
+        <div class="score-board" id="scoreBoard">🌟 Score : 0</div>
+
+        <!-- Sélecteur de mode -->
+        <div class="mode-selector">
+            <button class="mode-btn active" id="modeMoveBtn" onclick="setGameMode('move')">🖐️ Bouger les aiguilles</button>
+            <button class="mode-btn" id="modeTypeBtn" onclick="setGameMode('type')">⌨️ Taper l'heure</button>
+        </div>
+
+        <!-- Cadran de l'horloge -->
+        <div class="clock-wrapper" id="clockWrapper">
+            <div class="clock" id="clock">
+                <div class="clock-center"></div>
+                <div class="hand hour-hand" id="hourHand"></div>
+                <div class="hand minute-hand" id="minuteHand"></div>
+            </div>
+        </div>
+
+        <!-- Zone interactive -->
+        <div class="interactive-zone">
+            <div id="targetDigitalDisplay" class="digital-display">03:00</div>
+
+            <div id="typeInputsContainer" class="input-group" style="display: none;">
+                <input type="number" id="inputHours" min="1" max="12" class="time-input" placeholder="12">
+                <span class="separator">:</span>
+                <input type="number" id="inputMinutes" min="0" max="59" step="5" class="time-input" placeholder="00">
+            </div>
+
+            <button class="btn-action" id="validateBtn" onclick="checkAnswer()">Vérifier ! 🎉</button>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <script>
+        // Système audio ludique (Synthétiseur Web Audio API intégré sans fichiers externes)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            }
+        }
+
+        // Traductions
+        const translations = {
+            fr: {
+                quit: "🚪 Quitter",
+                score: "🌟 Score : ",
+                modeMove: "🖐️ Bouger les aiguilles",
+                modeType: "⌨️ Taper l'heure",
+                validate: "Vérifier ! 🎉",
+                successMsgs: ["Bravo ! 🌟", "Super héros ! 🚀", "Génial ! 🎯", "Incroyable ! 🦄"],
+                errorMsg: "Oups ! Essaie encore 💪",
+                langBtn: "🇬🇧 English",
+                mascotGreetings: ["Trop facile !", "À toi de jouer !", "Tu es le meilleur !", "Magique ! ✨"]
+            },
+            en: {
+                quit: "🚪 Quit",
+                score: "🌟 Score: ",
+                modeMove: "🖐️ Move Hands",
+                modeType: "⌨️ Type Time",
+                validate: "Check! 🎉",
+                successMsgs: ["Awesome! 🌟", "Superstar! 🚀", "Spot on! 🎯", "Wonderful! 🦄"],
+                errorMsg: "Oops! Try again 💪",
+                langBtn: "🇫🇷 Français",
+                mascotGreetings: ["Too easy!", "Your turn!", "You rock!", "Magical! ✨"]
+            }
+        };
+
+        let currentLang = 'fr';
+        let gameMode = 'move';
+        let score = 0;
+        let targetHours = 3;
+        let targetMinutes = 0;
+        let currentMinutesAngle = 0;
+        let currentHoursAngle = 0;
+
+        // Gestion des mascottes rigolotes
+        const mascots = ['🐶', '🐱', '🐰', '🦊', '🐼', '🦄'];
+        let mascotIndex = 0;
+        function changeMascot() {
+            mascotIndex = (mascotIndex + 1) % mascots.length;
+            document.getElementById('mascotEmoji').textContent = mascots[mascotIndex];
+            const greetings = translations[currentLang].mascotGreetings;
+            document.getElementById('mascotText').textContent = greetings[Math.floor(Math.random() * greetings.length)];
+            playSound('pop');
+        }
+
+        // Gestion des thèmes
+        const themes = ['theme-candy', 'theme-space', ''];
+        let themeIndex = 0;
+        function toggleTheme() {
+            document.body.className = '';
+            themeIndex = (themeIndex + 1) % themes.length;
+            if (themes[themeIndex]) document.body.classList.add(themes[themeIndex]);
+            playSound('pop');
+        }
+
+        // Génération des chiffres sur le cadran
+        const clock = document.getElementById('clock');
+        for (let i = 1; i <= 12; i++) {
+            const number = document.createElement('div');
+            number.className = 'number';
+            const angle = (i * 30 - 90) * (Math.PI / 180);
+            const radius = 95;
+            const x = 125 + radius * Math.cos(angle) - 15;
+            const y = 125 + radius * Math.sin(angle) - 15;
+            number.style.left = `${x}px`;
+            number.style.top = `${y}px`;
+            number.textContent = i;
+            clock.appendChild(number);
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'fr' ? 'en' : 'fr';
+            document.documentElement.setAttribute('data-lang', currentLang);
+            updateTexts();
+            playSound('pop');
+        }
+
+        function updateTexts() {
+            const t = translations[currentLang];
+            document.getElementById('btnQuit').textContent = t.quit;
+            document.getElementById('langSwitch').textContent = t.langBtn;
+            document.getElementById('scoreBoard').textContent = t.score + score;
+            document.getElementById('modeMoveBtn').textContent = t.modeMove;
+            document.getElementById('modeTypeBtn').textContent = t.modeType;
+            document.getElementById('validateBtn').textContent = t.validate;
+        }
+
+        function setGameMode(mode) {
+            gameMode = mode;
+            document.getElementById('modeMoveBtn').classList.toggle('active', mode === 'move');
+            document.getElementById('modeTypeBtn').classList.toggle('active', mode === 'type');
+
+            const digitalDisplay = document.getElementById('targetDigitalDisplay');
+            const typeContainer = document.getElementById('typeInputsContainer');
+
+            if (mode === 'move') {
+                digitalDisplay.style.display = 'block';
+                typeContainer.style.display = 'none';
+            } else {
+                digitalDisplay.style.display = 'none';
+                typeContainer.style.display = 'flex';
+            }
+            document.getElementById('feedback').textContent = '';
+            newQuestion();
+            playSound('pop');
+        }
+
+        function newQuestion() {
+            targetHours = Math.floor(Math.random() * 12) + 1;
+            targetMinutes = Math.floor(Math.random() * 12) * 5;
+            document.getElementById('feedback').textContent = '';
+
+            if (gameMode === 'move') {
+                const formattedH = String(targetHours).padStart(2, '0');
+                const formattedM = String(targetMinutes).padStart(2, '0');
+                document.getElementById('targetDigitalDisplay').textContent = `${formattedH}:${formattedM}`;
+
+                currentMinutesAngle = Math.floor(Math.random() * 12) * 30;
+                currentHoursAngle = Math.floor(Math.random() * 12) * 30;
+                updateClockHands();
+            } else {
+                currentMinutesAngle = targetMinutes * 6;
+                currentHoursAngle = (targetHours % 12) * 30 + (targetMinutes * 0.5);
+                updateClockHands();
+                document.getElementById('inputHours').value = '';
+                document.getElementById('inputMinutes').value = '';
+            }
+        }
+
+        function updateClockHands() {
+            document.getElementById('hourHand').style.transform = `rotate(${currentHoursAngle}deg)`;
+            document.getElementById('minuteHand').style.transform = `rotate(${currentMinutesAngle}deg)`;
+        }
+
+        // Tactile / Souris pour bouger les aiguilles
+        const clockWrapper = document.getElementById('clockWrapper');
+        let isDragging = false;
+
+        clockWrapper.addEventListener('pointerdown', (e) => {
+            if (gameMode !== 'move') return;
+            isDragging = true;
+            handlePointerMove(e);
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging || gameMode !== 'move') return;
+            handlePointerMove(e);
+        });
+
+        window.addEventListener('pointerup', () => { isDragging = false; });
+
+        function handlePointerMove(e) {
+            const rect = clock.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const x = e.clientX - centerX;
+            const y = e.clientY - centerY;
+            
+            let rad = Math.atan2(y, x);
+            let deg = rad * (180 / Math.PI) + 90;
+            if (deg < 0) deg += 360;
+
+            const minuteRaw = Math.round(deg / 6);
+            const snappedMinute = Math.round(minuteRaw / 5) * 5; 
+            
+            currentMinutesAngle = snappedMinute * 6;
+            currentHoursAngle = ((targetHours % 12) * 30) + (currentMinutesAngle * 0.0833);
+            updateClockHands();
+        }
+
+        // Générateur de confettis magiques autour du bouton
+        function triggerConfetti() {
+            const container = document.getElementById('mainContainer');
+            for (let i = 0; i < 20; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = `${Math.random() * 80 + 10}%`;
+                conf.style.top = `${Math.random() * 50 + 40}%`;
+                conf.style.backgroundColor = ['#ffd166', '#06d6a0', '#ef476f', '#118ab2', '#ff9f43'][Math.floor(Math.random() * 5)];
+                conf.style.setProperty('--rand-x', `${(Math.random() - 0.5) * 200}px`);
+                container.appendChild(conf);
+                setTimeout(() => conf.remove(), 1000);
+            }
+        }
+
+        function checkAnswer() {
+            const feedback = document.getElementById('feedback');
+            const t = translations[currentLang];
+            let isCorrect = false;
+
+            if (gameMode === 'move') {
+                const currentMinFromAngle = Math.round(currentMinutesAngle / 6) % 60;
+                let diffMin = Math.abs(currentMinFromAngle - (targetMinutes % 60));
+                if (diffMin > 30) diffMin = 60 - diffMin;
+
+                if (diffMin <= 2) isCorrect = true;
+            } else {
+                const userH = parseInt(document.getElementById('inputHours').value);
+                const userM = parseInt(document.getElementById('inputMinutes').value);
+
+                if (!isNaN(userH) && !isNaN(userM)) {
+                    const normTargetH = targetHours % 12 === 0 ? 12 : targetHours % 12;
+                    const normUserH = userH % 12 === 0 ? 12 : userH % 12;
+                    if (normUserH === normTargetH && userM === targetMinutes) isCorrect = true;
+                }
+            }
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('scoreBoard').textContent = t.score + score;
+                const randomSuccess = t.successMsgs[Math.floor(Math.random() * t.successMsgs.length)];
+                feedback.textContent = randomSuccess;
+                feedback.className = 'feedback success';
+                playSound('success');
+                triggerConfetti();
+
+                document.getElementById('mascotEmoji').textContent = '🤩';
+                document.getElementById('mascotText').textContent = "Waouh !";
+
+                setTimeout(() => {
+                    document.getElementById('mascotEmoji').textContent = mascots[mascotIndex];
+                    document.getElementById('mascotText').textContent = translations[currentLang].mascotGreetings[0];
+                    newQuestion();
+                }, 1600);
+            } else {
+                feedback.textContent = t.errorMsg;
+                feedback.className = 'feedback error';
+                playSound('error');
+                document.getElementById('mascotEmoji').textContent = '🤔';
+            }
+        }
+
+        // Lancement initial
+        newQuestion();
+    </script>
+</body>
+</html>

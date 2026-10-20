@@ -32,12 +32,17 @@
 
     <div class="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 md:p-8 max-w-xl w-full text-center border-4 border-yellow-300 relative overflow-hidden bounce-in my-4">
         
+        <!-- Bouton Quitter discret -->
+        <a href="index.html" class="absolute top-3 right-4 text-xs font-semibold text-gray-400 hover:text-gray-600 transition flex items-center gap-1 bg-gray-100 hover:bg-gray-200 py-1 px-2.5 rounded-full z-20">
+            🚪 Quitter
+        </a>
+
         <!-- Décorations -->
         <div class="absolute -top-10 -right-10 bg-yellow-400 w-32 h-32 rounded-full flex items-end justify-start p-4 text-3xl shadow-inner">🦁</div>
         <div class="absolute -bottom-10 -left-10 bg-pink-400 w-32 h-32 rounded-full flex items-start justify-end p-4 text-3xl shadow-inner">⭐</div>
 
         <!-- Titre & Sous-titre dynamiques -->
-        <h1 id="app-title" class="text-3xl md:text-4xl font-extrabold text-indigo-600 mb-2 fun-font tracking-wide">
+        <h1 id="app-title" class="text-3xl md:text-4xl font-extrabold text-indigo-600 mb-2 fun-font tracking-wide mt-2">
             Le Quiz Magique des Tables 🎈
         </h1>
         <p id="app-subtitle" class="text-gray-600 mb-6 text-sm md:text-base">
@@ -391,7 +396,6 @@
         }
 
         function loadQuestion() {
-            // 1. Stopper et détruire l'ancienne instance du micro pour vider tout résidu en mémoire
             if (recognition) {
                 try { recognition.abort(); } catch(e){}
                 recognition = null;
@@ -418,7 +422,6 @@
 
             document.getElementById('question-text').innerText = questionString;
             
-            // 2. Énoncer la question, puis initialiser un nouveau micro propre
             speakText(speechString, function() {
                 initFreshSpeechRecognition();
             });
@@ -468,7 +471,7 @@
 
             recognition = new SpeechRecognition();
             recognition.lang = currentLang === 'fr' ? 'fr-BE' : 'en-US';
-            recognition.continuous = false; // Mode ponctuel par question pour éviter toute rémanence
+            recognition.continuous = false;
             recognition.interimResults = false;
 
             recognition.onresult = function(event) {
@@ -486,7 +489,6 @@
             recognition.onerror = function() {};
 
             recognition.onend = function() {
-                // Relance automatique uniquement si on n'a pas encore validé
                 if (!isWaitingForNext && recognition) {
                     try { recognition.start(); } catch(e){}
                 }
@@ -499,130 +501,3 @@
 
         function submitAnswer(e) {
             e.preventDefault();
-            if (isWaitingForNext) return;
-
-            const inputElem = document.getElementById('answer-input');
-            const userVal = parseInt(inputElem.value.trim());
-            if (isNaN(userVal)) return;
-
-            isWaitingForNext = true;
-            inputElem.disabled = true;
-
-            // Couper immédiatement le micro pour bloquer toute autre saisie vocale parasite
-            if (recognition) {
-                try { recognition.abort(); } catch(e){}
-                recognition = null;
-            }
-
-            const q = questions[currentIndex];
-            const correctVal = q.a * q.b;
-            const isCorrect = userVal === correctVal;
-
-            userAnswers.push({
-                a: q.a,
-                b: q.b,
-                given: userVal,
-                correct: correctVal,
-                isCorrect: isCorrect
-            });
-
-            const t = translations[currentLang];
-            const feedbackBox = document.getElementById('feedback-box');
-            feedbackBox.classList.remove('hidden');
-
-            document.getElementById('mic-status').innerText = t.micWait;
-
-            const spokenCorrectVal = currentLang === 'fr' ? numberToBelgianText(correctVal) : correctVal;
-
-            if (isCorrect) {
-                score++;
-                feedbackBox.className = "p-4 rounded-2xl text-xl font-bold bg-green-100 text-green-700 border-2 border-green-300 bounce-in";
-                feedbackBox.innerText = t.correct;
-                
-                speakText(currentLang === 'fr' ? "Bravo !" : "Correct!", function() {
-                    proceedToNext();
-                });
-            } else {
-                feedbackBox.className = "p-4 rounded-2xl text-xl font-bold bg-red-100 text-red-600 border-2 border-red-300 bounce-in";
-                feedbackBox.innerText = `${t.incorrect} ${correctVal}`;
-                
-                const oralCorrection = currentLang === 'fr' 
-                    ? `Dommage. La bonne réponse était ${spokenCorrectVal}.` 
-                    : `Too bad. The correct answer was ${correctVal}.`;
-
-                speakText(oralCorrection, function() {
-                    proceedToNext();
-                });
-            }
-        }
-
-        function proceedToNext() {
-            currentIndex++;
-            if (currentIndex < 10) {
-                loadQuestion();
-            } else {
-                showResults();
-            }
-        }
-
-        function showResults() {
-            if (recognition) {
-                try { recognition.abort(); } catch(e){}
-                recognition = null;
-            }
-            window.speechSynthesis.cancel();
-
-            document.getElementById('quiz-screen').classList.add('hidden');
-            document.getElementById('result-screen').classList.remove('hidden');
-
-            const t = translations[currentLang];
-            document.getElementById('result-title').innerText = t.resultsTitle;
-            document.getElementById('result-score').innerText = `${t.finalScore} : ${score} / 10`;
-
-            let msg = t.tryAgain;
-            if (score === 10) msg = t.perfect;
-            else if (score >= 7) msg = t.good;
-
-            document.getElementById('result-message').innerText = msg;
-
-            const summaryContainer = document.getElementById('summary-list');
-            summaryContainer.innerHTML = '';
-
-            userAnswers.forEach((ans, idx) => {
-                const item = document.createElement('div');
-                item.className = "flex justify-between items-center p-2 rounded-xl border font-bold " + 
-                    (ans.isCorrect ? "bg-green-100 border-green-300 text-green-800" : "bg-red-100 border-red-300 text-red-800");
-
-                if (ans.isCorrect) {
-                    item.innerHTML = `
-                        <span>Q${idx + 1}: ${ans.a} × ${ans.b}</span>
-                        <span>${ans.given} ✅</span>
-                    `;
-                } else {
-                    item.innerHTML = `
-                        <span>Q${idx + 1}: ${ans.a} × ${ans.b}</span>
-                        <span>
-                            <span class="text-red-600 line-through mr-2">${ans.given}</span>
-                            <span class="text-green-700 font-extrabold">${ans.correct}</span> ✅
-                        </span>
-                    `;
-                }
-                summaryContainer.appendChild(item);
-            });
-
-            speakText(msg);
-        }
-
-        function resetApp() {
-            if (recognition) {
-                try { recognition.abort(); } catch(e){}
-                recognition = null;
-            }
-            document.getElementById('result-screen').classList.add('hidden');
-            document.getElementById('setup-screen').classList.remove('hidden');
-            selectMode('all');
-            updateTexts();
-        }
-    </script>
-</body>
-</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Calcul Mental - Enlever 9 ou 19</title>
+    <style>
+        :root { --primary: #4A90E2; --success: #2ECC71; --danger: #E74C3C; --dark: #2C3E50; --light: #F8F9FA; }
+        body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #e0eafc, #cfdef3); color: var(--dark); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .container { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; box-sizing: border-box; }
+        .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-exit { background: #7f8c8d; color: white; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; font-size: 0.9rem; }
+        .lang-btn { background: var(--light); border: 2px solid #ccc; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+        .lang-btn.active-fr { background: var(--primary); color: white; border-color: var(--primary); }
+        .lang-btn.active-en { background: var(--danger); color: white; border-color: var(--danger); }
+        .progress-bar-container { background: #edf2f7; border-radius: 10px; height: 12px; width: 100%; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s; }
+        .score-board { display: flex; justify-content: space-around; margin-bottom: 25px; font-weight: bold; background: var(--light); padding: 12px; border-radius: 8px; font-size: 1.05rem; }
+        .expression { font-size: 3.8rem; font-weight: bold; margin: 20px 0; min-height: 90px; display: flex; justify-content: center; align-items: center; }
+        .input-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        input[type="number"] { width: 130px; font-size: 2rem; padding: 8px; text-align: center; border: 3px solid #bdc3c7; border-radius: 10px; outline: none; font-weight: bold; }
+        .btn-submit { color: white; border: none; padding: 0 25px; font-size: 1.2rem; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .feedback { font-size: 1.4rem; font-weight: bold; min-height: 40px; margin-top: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px; }
+        .feedback.correct { color: var(--success); }
+        .feedback.incorrect { color: var(--danger); }
+        .feedback small { font-size: 1.1rem; font-weight: normal; color: var(--dark); }
+        .report-card { text-align: left; max-height: 220px; overflow-y: auto; background: var(--light); padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px solid #e2e8f0; }
+        .error-item { padding: 8px 0; border-bottom: 1px solid #edf2f7; font-size: 0.95rem; }
+        .w { color: var(--danger); text-decoration: line-through; margin: 0 5px; }
+        .r { color: var(--success); font-weight: bold; }
+        .btn-go { background: var(--success); color: white; border: none; padding: 15px 40px; font-size: 1.4rem; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-actions">
+        <a href="index.html" class="btn-exit" id="exit">Quitter</a>
+        <button id="lang" class="lang-btn" style="display:none;" onclick="chgLng()">English 🇬🇧</button>
+    </div>
+    <div id="s-scr">
+        <h2>Calcul Mental</h2>
+        <p style="color:#7f8c8d;">Entraînement : Enlever 9 ou 19</p>
+        <button class="btn-go" onclick="init()">Démarrer</button>
+    </div>
+    <div id="p-scr" style="display: none;">
+        <h1 id="title">Calcul Mental</h1>
+        <p style="color:#7f8c8d;" id="subtitle">Entraînement : Enlever 9 ou 19</p>
+        <div class="progress-bar-container"><div id="progress" class="progress-bar"></div></div>
+        <div class="score-board"><span id="l-score">Score : 0 / 10</span><span id="l-stk">Série : 0</span></div>
+        <div class="expression" id="math">-</div>
+        <div class="input-group">
+            <input type="number" id="user-in" autocomplete="off" inputmode="numeric">
+            <button class="btn-submit" id="btn-ok" onclick="check()">OK</button>
+        </div>
+        <div class="feedback" id="msg"></div>
+    </div>
+    <div id="e-scr" style="display: none;">
+        <h2 id="end-title">Entraînement Terminé !</h2>
+        <div class="score-board"><span id="f-score">0 / 10</span></div>
+        <div id="errors" class="report-card"></div>
+        <button class="btn-go" style="margin-top:20px;" onclick="reset()">Recommencer</button>
+    </div>
+</div>
+<script>
+    const dict = {
+        fr: { t: "Calcul Mental", sub: "Entraînement : Enlever 9 ou 19", sc: "Score : ", st: "Série : ", m: "moins", fx: "Réponse : ", v: "Celine", over: "Entraînement Terminé !", perf: "Parfait ! Aucune erreur.", errs: "Erreurs à corriger :", q: "Quitter", ok: "Bravo", errSpeak: "Faux. La réponse était " },
+        en: { t: "Mental Math", sub: "Practice: Subtract 9 or 19", sc: "Score: ", st: "Streak: ", m: "minus", fx: "Answer: ", v: "Joanna", over: "Training Complete!", perf: "Perfect! No mistakes.", errs: "Review mistakes:", q: "Quit", ok: "Correct", errSpeak: "Incorrect. The answer was " }
+    };
+    let lng = "fr", n1 = 0, n2 = 0, ans = 0, pts = 0, stk = 0, qNum = 0, logs = [], busy = false;
+
+    /* ============ VOICE (chaîne identique à "bon son.html") ============ */
+    /* Voix de qualité identique sur toutes les plateformes (même Chromium Linux
+       sans voix installée) via des serveurs TTS en ligne, lus par <audio>.
+       Chaîne de repli : StreamElements (AWS Polly) -> Google Traduction -> voix du navigateur. */
+    let audioVoice = null;
+    let providerIdx = 0; // index du fournisseur TTS retenu (testé au démarrage)
+    function ttsProviders(text, code){
+        const b = code.split("-")[0];
+        // Voix naturelles StreamElements (AWS Polly) : Céline (fr), Joanna (en-US)
+        const voice = (b === "fr") ? dict.fr.v : dict.en.v;
+        return [
+            "https://api.streamelements.com/kappa/v2/speech?voice=" + voice + "&text=" + encodeURIComponent(text),
+            "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=" + b + "&q=" + encodeURIComponent(text)
+        ];
+    }
+    /* Test au démarrage : retient le premier fournisseur qui répond (audio jouable) */
+    function detectProvider(){
+        const test = ttsProviders("1", "fr-FR");
+        test.forEach((url, i) => {
+            if(providerIdx !== 0 || i !== 0) return; // déjà trouvé
+            const probe = new Audio();
+            probe.addEventListener("canplaythrough", () => { providerIdx = i; }, {once:true});
+            probe.preload = "auto"; probe.src = url;
+        });
+    }
+    /* File d'attente vocale : les phrases sont jouées à la suite, sans chevauchement. */
+    let speakQueue = [], speaking = false;
+    function speak(text){
+        speakQueue.push(text);
+        if(!speaking) drainQueue();
+    }
+    function drainQueue(){
+        if(speakQueue.length === 0){ speaking = false; return; }
+        speaking = true;
+        const text = speakQueue.shift();
+        try{
+            if(audioVoice){ audioVoice.pause(); audioVoice = null; }
+            if("speechSynthesis" in window) speechSynthesis.cancel();
+            playProvider(text, (lng === "fr" ? "fr-FR" : "en-US"), providerIdx, drainQueue);
+        }catch(e){ fallbackSpeak(text, drainQueue); }
+    }
+    function playProvider(text, code, idx, onEnd){
+        const urls = ttsProviders(text, code);
+        if(idx >= urls.length){ fallbackSpeak(text, onEnd); return; }
+        let settled = false; // évite la double lecture (source de l'écho)
+        let endFired = false;
+        const finish = () => { if(!endFired){ endFired = true; if(onEnd) setTimeout(onEnd, 150); } };
+        const a = new Audio(urls[idx]);
+        audioVoice = a;
+        const fail = () => {
+            if(settled) return;
+            settled = true;
+            try{ a.pause(); a.src=""; }catch(e){}
+            playProvider(text, code, idx+1, onEnd);
+        };
+        a.addEventListener("error", fail);
+        a.addEventListener("ended", finish);
+        a.play()
+            .then(() => {
+                if(!settled && a.duration === 0 && a.networkState === a.NETWORK_NO_SOURCE) fail();
+                // garde-fou : si rien ne se joue après 5 s, on considère l'échec
+                setTimeout(() => { if(!endFired && !a.ended && !settled && (a.paused || a.currentTime === 0)) fail(); }, 5000);
+            })
+            .catch(fail);
+    }
+    /* Repli hors-ligne : synthèse vocale du navigateur (voix "Google" si dispo) */
+    let voicesCache = [];
+    function loadVoices(){ voicesCache = speechSynthesis.getVoices() || []; }
+    if("speechSynthesis" in window){
+        loadVoices();
+        if(speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
+    }
+    function pickVoice(code){
+        if(!voicesCache.length) loadVoices();
+        const base = code.split("-")[0];
+        const matching = voicesCache.filter(v => v.lang && v.lang.toLowerCase().startsWith(base));
+        return matching.find(v => /google/i.test(v.name))
+            || matching.find(v => !v.localService)
+            || matching[0] || null;
+    }
+    function fallbackSpeak(text, onEnd){
+        try{
+            if(!("speechSynthesis" in window)){ if(onEnd) onEnd(); return; }
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = lng === "fr" ? "fr-FR" : "en-US"; u.rate = 0.95; u.pitch = 1;
+            const v = pickVoice(u.lang);
+            if(v){ u.voice = v; u.lang = v.lang; }
+            else u.lang = lng === "fr" ? "fr-FR" : "en-US";
+            if(onEnd) u.addEventListener("end", () => setTimeout(onEnd, 150), {once:true});
+            speechSynthesis.speak(u);
+        }catch(e){ if(onEnd) onEnd(); }
+    }
+    /* Promise résolue quand la voix a fini de parler (vérification active) */
+    function speechDone(maxMs){
+        return new Promise(res=>{
+            const start = Date.now();
+            const poll = setInterval(()=>{
+                const audioActive = audioVoice && !audioVoice.paused && !audioVoice.ended;
+                const synthActive = "speechSynthesis" in window && speechSynthesis.speaking;
+                const queueActive = speaking || speakQueue.length > 0;
+                if((!audioActive && !synthActive && !queueActive) || Date.now()-start > maxMs){
+                    clearInterval(poll); res();
+                }
+            }, 150);
+        });
+    }
+
+    /* Nombres à l'oral en français de Belgique : septante, quatre-vingt(s), nonante */
+    function spokenNum(n){
+        if(lng !== "fr") return String(n);
+        const units = ["zéro","un","deux","trois","quatre","cinq","six","sept","huit","neuf"];
+        const tens = {10:"dix",20:"vingt",30:"trente",40:"quarante",50:"cinquante",
+                      60:"soixante",70:"septante",80:"quatre-vingts",90:"nonante"};
+        if(n <= 9) return units[n];
+        if(tens[n]) return tens[n];
+        if(n > 100) return String(n);
+        const t0 = Math.floor(n/10)*10, u = n%10;
+        if(t0 === 80) return u ? "quatre-vingt-" + units[u] : "quatre-vingts";
+        return tens[t0] + "-" + units[u];
+    }
+    /* ============ JEU ============ */
+    function init() {
+        document.getElementById("s-scr").style.display = "none";
+        document.getElementById("p-scr").style.display = "block";
+        document.getElementById("lang").style.display = "block";
+        updateUI(); ask();
+    }
+    function chgLng() { lng = lng === "fr" ? "en" : "fr"; updateUI(); sync(); ask(); }
+    function updateUI() {
+        const b = document.getElementById("lang");
+        b.innerText = lng === "fr" ? "English 🇬🇧" : "Français 🇫🇷";
+        b.className = "lang-btn " + (lng === "fr" ? "active-fr" : "active-en");
+        document.body.style.background = lng === "fr" ? "linear-gradient(135deg, #e0eafc, #cfdef3)" : "linear-gradient(135deg, #ffdee9, #b5fffc)";
+        document.getElementById("progress").style.background = lng === "fr" ? "var(--primary)" : "var(--danger)";
+        document.getElementById("btn-ok").style.background = lng === "fr" ? "var(--primary)" : "var(--danger)";
+        document.getElementById("exit").innerText = dict[lng].q;
+        document.getElementById("title").innerText = dict[lng].t;
+        document.getElementById("subtitle").innerText = dict[lng].sub;
+    }
+    function sync() {
+        document.getElementById("l-score").innerText = dict[lng].sc + pts + " / 10";
+        document.getElementById("l-stk").innerText = dict[lng].st + stk;
+        document.getElementById("progress").style.width = (qNum / 10) * 100 + "%";
+    }
+    function ask() {
+        if (qNum >= 10) { showEnd(); return; }
+        busy = false;
+        document.getElementById("btn-ok").disabled = false;
+        document.getElementById("msg").innerText = "";
+        document.getElementById("msg").className = "feedback";
+        n1 = Math.floor(Math.random() * 75) + 25; n2 = Math.random() < 0.5 ? 9 : 19; ans = n1 - n2;
+        document.getElementById("math").innerText = n1 + " - " + n2;
+        const i = document.getElementById("user-in"); i.value = ""; i.focus();
+        speak(spokenNum(n1) + " " + dict[lng].m + " " + spokenNum(n2));
+    }
+    async function check() {
+        if (busy || qNum >= 10) return;
+        const val = parseInt(document.getElementById("user-in").value, 10); if (isNaN(val)) return;
+        busy = true;
+        document.getElementById("btn-ok").disabled = true;
+        qNum++; const m = document.getElementById("msg");
+        if (val === ans) {
+            pts++; stk++; m.innerText = "✓"; m.className = "feedback correct";
+            speak(dict[lng].ok);
+        } else {
+            stk = 0;
+            m.className = "feedback incorrect";
+            m.innerHTML = "✗ <small>" + dict[lng].fx + ans + "</small>";
+            logs.push({ q: n1 + " - " + n2, w: val, r: ans });
+            speak(dict[lng].errSpeak + spokenNum(ans));
+        }
+        sync();
+        await speechDone(6000);
+        ask();
+    }
+    function showEnd() {
+        document.getElementById("p-scr").style.display = "none"; document.getElementById("e-scr").style.display = "block";
+        document.getElementById("end-title").innerText = dict[lng].over;
+        document.getElementById("f-score").innerText = dict[lng].sc + pts + " / 10";
+        const b = document.getElementById("errors"); b.innerHTML = "";
+        if (logs.length === 0) b.innerHTML = "<p style='color:var(--success);font-weight:bold;text-align:center;'>" + dict[lng].perf + "</p>";
+        else {
+            b.innerHTML = "<p style='font-weight:bold;margin:0 0 10px 0;'>" + dict[lng].errs + "</p>";
+            logs.forEach(i => { b.innerHTML += "<div class='error-item'><b>" + i.q + " = </b><span class='w'>" + i.w + "</span><span class='r'> " + dict[lng].fx + i.r + "</span></div>"; });
+        }
+    }
+    function reset() {
+        pts = 0; stk = 0; qNum = 0; logs = []; document.getElementById("msg").innerText = "";
+        document.getElementById("p-scr").style.display = "block"; document.getElementById("e-scr").style.display = "none";
+        sync(); ask();
+    }
+    document.getElementById("user-in").addEventListener("keypress", e => { if (e.key === "Enter") check(); });
+    detectProvider();
+</script>
+</body>
+</html>
