@@ -178,7 +178,6 @@
             border-radius: 30px;
             font-size: 0.85rem;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
-            display: opacity;
             transition: opacity 0.3s;
             opacity: 0;
             pointer-events: none;
@@ -208,12 +207,16 @@
             ➕ Ajouter un mot
         </button>
 
+        <button class="btn btn-danger" onclick="clearAllWords()">
+            🗑️ Tout vider
+        </button>
+
         <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
             📁 Cliquez ou glissez un fichier CSV ici pour l'importer
         </div>
         <input type="file" id="file-input" accept=".csv" onchange="handleFileSelect(event)">
 
-        <a href="index.html" class="btn btn-danger">
+        <a href="index.html" class="btn btn-secondary">
             🚪 Quitter
         </a>
     </div>
@@ -278,10 +281,10 @@
                 
                 tr.innerHTML = `
                     <td>
-                        <input type="text" value="${escapeHtml(pair[0])}" oninput="updateWord(${index}, 0, this.value)" placeholder="Word in English">
+                        <input type="text" value="${escapeHtml(pair[0])}" oninput="updateWord(${index}, 0, this.value)" onkeydown="handleKeyDown(event, ${index}, 0)" placeholder="Word in English">
                     </td>
                     <td>
-                        <input type="text" value="${escapeHtml(pair[1])}" oninput="updateWord(${index}, 1, this.value)" placeholder="Mot en français">
+                        <input type="text" value="${escapeHtml(pair[1])}" oninput="updateWord(${index}, 1, this.value)" onkeydown="handleKeyDown(event, ${index}, 1)" placeholder="Mot en français">
                     </td>
                     <td class="row-actions">
                         <button class="btn-delete" onclick="deleteRow(${index})" title="Supprimer la ligne">❌</button>
@@ -300,6 +303,31 @@
             autoSave();
         }
 
+        // Gestion de la touche Entrée pour valider / passer à la ligne suivante
+        function handleKeyDown(event, index, col) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                // Si on est sur la colonne Anglais (0), aller sur la colonne Français (1) de la même ligne
+                if (col === 0) {
+                    const nextInput = document.querySelectorAll('tbody tr')[index].querySelectorAll('input')[1];
+                    if (nextInput) nextInput.focus();
+                } 
+                // Si on est sur la colonne Français (1)
+                else {
+                    // S'il y a une ligne suivante, aller sur l'anglais de la ligne suivante
+                    const rows = document.querySelectorAll('tbody tr');
+                    if (index + 1 < rows.length) {
+                        const nextRowInput = rows[index + 1].querySelectorAll('input')[0];
+                        if (nextRowInput) nextRowInput.focus();
+                    } else {
+                        // Sinon, créer une nouvelle ligne automatiquement
+                        addRow();
+                    }
+                }
+            }
+        }
+
         function addRow() {
             words.push(["", ""]);
             renderTable();
@@ -314,6 +342,16 @@
             words.splice(index, 1);
             renderTable();
             autoSave();
+        }
+
+        // Fonction pour tout vider d'un coup
+        function clearAllWords() {
+            if (confirm("Voulez-vous vraiment effacer tous les mots de la liste ?")) {
+                words = [];
+                renderTable();
+                autoSave();
+                showStatus("Liste vidée");
+            }
         }
 
         function autoSave() {
@@ -366,10 +404,8 @@
         function processCSVFile(file) {
             const reader = new FileReader();
             
-            // Premier essai : UTF-8
             reader.onload = function(e) {
                 let content = e.target.result;
-                // Si présence de caractères bizarres d'encodage (ISO-8859-1)
                 if (content.includes('')) {
                     readAsLatin1(file);
                 } else {
@@ -388,7 +424,6 @@
         }
 
         function parseAndLoadCSV(text) {
-            // Nettoyage du BOM UTF-8 si présent
             if (text.charCodeAt(0) === 0xFEFF) {
                 text = text.substring(1);
             }
@@ -396,7 +431,6 @@
             const lines = text.split(/\r\n|\n|\r/);
             const newWords = [];
 
-            // Détection du séparateur (, ou ; ou tab)
             let separator = ',';
             if (lines.length > 0) {
                 const firstLine = lines[0];
@@ -412,7 +446,6 @@
                 const line = lines[i].trim();
                 if (!line) continue;
 
-                // Simple découpage avec nettoyage des guillemets
                 let parts = line.split(separator).map(p => {
                     p = p.trim();
                     if (p.startsWith('"') && p.endsWith('"')) p = p.slice(1, -1);
@@ -421,7 +454,6 @@
                 });
 
                 if (parts.length >= 2) {
-                    // Ignorer les entêtes éventuels
                     const col1 = parts[0].toLowerCase();
                     const col2 = parts[1].toLowerCase();
                     if ((col1 === 'anglais' || col1 === 'english') && (col2 === 'français' || col2 === 'francais' || col2 === 'french')) {
@@ -443,13 +475,12 @@
 
         // Exportation en fichier CSV
         function exportCSV() {
-            let csvContent = "\uFEFFanglais,français\n"; // En-tête + BOM UTF-8 pour Excel
+            let csvContent = "\uFEFFanglais,français\n";
 
             words.forEach(row => {
                 const en = (row[0] || "").replace(/"/g, '""');
                 const fr = (row[1] || "").replace(/"/g, '""');
                 
-                // Entourer de guillemets si le mot contient une virgule
                 const safeEn = en.includes(',') ? `"${en}"` : en;
                 const safeFr = fr.includes(',') ? `"${fr}"` : fr;
                 
