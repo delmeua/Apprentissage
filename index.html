@@ -30,6 +30,31 @@
         100% { background-position: 0% 50%; }
       }
 
+      /* Icône de la boîte à outils en haut à droite */
+      .toolbox-icon {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 4px solid #fff;
+        border-radius: 50%;
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-size: 26px;
+        box-shadow: 0 6px 0 rgba(0,0,0,0.15), 0 10px 20px rgba(0,0,0,0.2);
+        transition: transform 0.2s, background-color 0.2s;
+        z-index: 20;
+      }
+
+      .toolbox-icon:hover {
+        transform: scale(1.1) rotate(10deg);
+        background: #ffffff;
+      }
+
       h1 {
         margin: 0;
         font-size: clamp(2rem, 6vw, 3.6rem);
@@ -141,7 +166,7 @@
         animation-delay: .4s;
       }
 
-      /* Conteneur en grille 2 colonnes pour les sous-boutons de calcul */
+      /* Conteneur en grille 2 colonnes pour les sous-boutons de calcul générés dynamiquement */
       #sousMenuCalculs {
         display: none;
         grid-template-columns: repeat(2, 1fr);
@@ -179,8 +204,8 @@
       .sousBouton:hover { transform: scale(1.03); }
       .sousBouton:active { transform: scale(.95); }
 
-      /* Pour que le dernier bouton (le 7e) s'étale sur les 2 colonnes si on veut le centrer */
-      .sousBouton:nth-child(7) {
+      /* Si le nombre total de sous-boutons est impair, le dernier s'étale sur les 2 colonnes */
+      .sousBouton:nth-last-child(1):nth-child(odd) {
         grid-column: span 2;
         max-width: 310px;
         justify-self: center;
@@ -207,6 +232,11 @@
     </style>
   </head>
   <body>
+    <!-- Icône Boîte à outils vers gestionnaire_de_vocabulaire.html -->
+    <a href="gestionnaire_de_vocabulaire.html" class="toolbox-icon" title="Gestionnaire de vocabulaire">
+      🧰
+    </a>
+
     <h1 id="titre"><span class="emoji">🎉</span> Apprentissage <span class="emoji">🎈</span></h1>
 
     <div id="boitePrenom">
@@ -220,26 +250,54 @@
     <h1 id="prenom"></h1>
 
     <div class="boutons">
-      <div class="grosBouton btnCalculs" id="btnCalculs">
+      <div class="grosBouton btnCalculs" id="btnCalculs" title="Clique ici pour voir tous les exercices de calculs !">
         <span class="icone">🧮</span> Mes calculs
       </div>
-      <a class="grosBouton btnHistoires" id="btnVocabulaire" href="anglais.html">
+      <a class="grosBouton btnHistoires" id="btnVocabulaire" href="anglais.html" title="Clique ici pour accéder au vocabulaire anglais !">
         <span class="icone">🐝</span> Mon vocabulaire anglais
       </a>
     </div>
 
-    <!-- 7 sous-boutons de calcul disposés 2 par 2 -->
-    <div id="sousMenuCalculs">
-      <a class="sousBouton" href="tablesQuiz.html">✖️ Tables de multiplication</a>
-      <a class="sousBouton" href="horloge.html">⏰ L'horloge</a>
-      <a class="sousBouton" href="fractions.html">🍰 Fractions</a>
-      <a class="sousBouton" href="base_10.html">🔟 Base 10</a>
-      <a class="sousBouton" href="suites_logiques.html">🧩 Suites logiques</a>
-      <a class="sousBouton" href="retire9_19.html">➖ Retire 9 ou 19</a>
-      <a class="sousBouton" href="complements.html">➕ Compléments 10 et 100</a>
-    </div>
+    <!-- Conteneur vide : les boutons de calcul seront ajoutés automatiquement par le script -->
+    <div id="sousMenuCalculs"></div>
 
     <script>
+      // =========================================================================
+      // ZONE D'EXTENSION FACILE : 
+      // Pour ajouter un nouvel exercice plus tard, ajoutez simplement une ligne ici :
+      // { titre: "Nom affiché", fichier: "nom_du_fichier.html" },
+      // =========================================================================
+      const listeExercicesCalculs = [
+        { titre: "✖️ Tables de multiplication", fichier: "tablesQuiz.html", aide: "Teste tes connaissances sur les tables de multiplication !" },
+        { titre: "⏰ L'horloge", fichier: "horloge.html", aide: "Apprends à lire l'heure sur une horloge !" },
+        { titre: "🍰 Fractions", fichier: "fractions.html", aide: "Comprends les fractions et leur représentation !" },
+        { titre: "🔟 Base 10", fichier: "base_10.html", aide: "Apprends à compter en base 10 !" },
+        { titre: "🧩 Suites logiques", fichier: "suites_logiques.html", aide: "Développe ton esprit logique !" },
+        { titre: "➖ Retire 9 ou 19", fichier: "retire9_19.html", aide: "Exerce ton calcul mental !" },
+        { titre: "➕ Compléments 10 et 100", fichier: "complements.html", aide: "Apprends à compléter à 10 et 100 !" },
+        { titre: "⚔️ Duel des signes", fichier: "duel_des_signes.html", aide: "Teste ta connaissance des signes mathématiques !" },
+        { titre: "✨ Maths en folie", fichier: "maths_en_folie.html", aide: "Plonge dans un monde de maths amusant !" },
+        { titre: "💱 Le juste prix", fichier: "juste_prix.html", aide: "Donne le juste prix !" },
+        { titre: "🐦 L'arbre aux oiseaux", fichier: "l_arbre_aux_oiseaux.html", aide: "Travaille avec des dizaines et des unités !" },
+        { titre: "🍿 Pop_corn des doubles et moitiés", fichier: "pop_corn_des_doubles_et_moitiés.html", aide: "Exerce-toi avec les doubles et les moitiés !" },
+        { titre: "❎ Les tables magiques", fichier: "tables-magiques.html", aide: "Exerce-toi avec les tables 2, 5 et 10 !" },
+        { titre: "⚖️ La balance des monstres", fichier: "la_balance_des_monstres.html", aide: "Autre exercice pour tester ta connaissance des signes mathématiques !" }
+      ];
+
+      // Génération automatique des boutons de calcul dans la page
+      const conteneurSousMenu = document.getElementById("sousMenuCalculs");
+      listeExercicesCalculs.forEach(exo => {
+        const lien = document.createElement("a");
+        lien.className = "sousBouton";
+        lien.href = exo.fichier;
+        lien.textContent = exo.titre;
+        // C'est cette ligne qui ajoute l'infobulle au survol !
+        if (exo.aide) {
+          lien.title = exo.aide;
+        }
+        conteneurSousMenu.appendChild(lien);
+      });
+
       const champ = document.getElementById("champPrenom");
       const boite = document.getElementById("boitePrenom");
       const prenom = document.getElementById("prenom");
@@ -248,7 +306,6 @@
       
       const btnCalculs = document.getElementById("btnCalculs");
       const btnVocabulaire = document.getElementById("btnVocabulaire");
-      const sousMenuCalculs = document.getElementById("sousMenuCalculs");
 
       // Gestion de l'affichage des sous-boutons de calcul
       btnCalculs.addEventListener("click", () => {

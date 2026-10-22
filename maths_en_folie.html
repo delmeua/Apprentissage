@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#6558d3">
+<title>Les Maths en Folie ! · Maths Fun</title>
+<style>
+:root{--ink:#242047;--purple:#6558d3;--pink:#ff6f91;--yellow:#ffd166;--mint:#9be7c4;--sky:#9bdcff;--paper:#fffdf7;--good:#137547;--bad:#b42343}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--ink);font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif;background:radial-gradient(circle at 10% 10%,#fff2b7 0 8%,transparent 25%),radial-gradient(circle at 90% 20%,#d7f5ff 0 9%,transparent 27%),linear-gradient(135deg,#f8efff,#effcff);display:flex;align-items:center;justify-content:center;padding:18px}
+button,select{font:inherit}button{border:0;cursor:pointer;touch-action:manipulation;transition:transform .12s,filter .12s}button:hover{filter:brightness(1.04);transform:translateY(-2px)}button:focus-visible,select:focus-visible{outline:4px solid #ffbf47;outline-offset:3px}
+.app{width:min(900px,100%);background:var(--paper);border:4px solid white;border-radius:30px;box-shadow:0 18px 50px #39306420;overflow:hidden}
+header{padding:22px 25px;background:linear-gradient(110deg,#6a5add,#9679ed);color:white;display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center}.logo{font-size:2.6rem;filter:drop-shadow(0 3px #4033a2)}h1{font-size:clamp(1.3rem,4vw,2rem);margin:0}header p{margin:4px 0 0;opacity:.9}.language{display:flex;align-items:center;gap:8px;font-weight:800}.language select{border:2px solid #ffffff80;border-radius:12px;padding:9px 10px;color:#30266d;background:white;max-width:100%}
+main{padding:clamp(18px,4vw,35px)}.screen{display:none}.screen.active{display:block}.intro{text-align:center}.mascot{font-size:5rem;line-height:1.2;animation:bob 2s ease-in-out infinite}@keyframes bob{50%{transform:translateY(-7px)}}.intro h2{font-size:clamp(1.5rem,4vw,2.2rem);margin:12px 0}.intro p{font-size:1.05rem;line-height:1.5;max-width:590px;margin:10px auto 24px}.pills{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0}.pill{border-radius:999px;background:#f0ecff;padding:10px 15px;font-weight:800}.primary{background:var(--pink);color:#fff;border-radius:16px;padding:14px 24px;font-weight:900;font-size:1.08rem;box-shadow:0 5px 0 #d94f76}.secondary{background:#eeeaff;color:#3d327f;border-radius:14px;padding:12px 16px;font-weight:800}.exit{background:#fff0cf;color:#714900;border-radius:13px;padding:10px 14px;font-weight:800}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-weight:800}.progress{height:12px;background:#ece9fa;border-radius:99px;overflow:hidden;margin:15px 0 24px}.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,#65d6a5,#9cdbff);border-radius:99px;transition:width .3s}.question-card{background:white;border:3px solid #eeeaff;border-radius:25px;text-align:center;padding:clamp(18px,4vw,32px);box-shadow:0 8px 0 #eeeaff}.operation{font-size:clamp(2.5rem,9vw,4.4rem);font-weight:1000;letter-spacing:1px;margin:12px 0 22px}.prompt{font-size:1.1rem;font-weight:800}.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:530px;margin:0 auto}.answer{border:3px solid #e5e0ff;background:#f8f6ff;border-radius:18px;padding:17px 10px;font-size:clamp(1.3rem,4vw,1.8rem);font-weight:1000;color:#392e81;min-height:68px}.answer.correct{background:#d8f8e7;border-color:#45bd83;color:#075f38}.answer.wrong{background:#ffe1e8;border-color:#ff7998;color:#9c1737}.answer:disabled{cursor:default;transform:none}.feedback{min-height:85px;margin:18px auto 0;padding:12px;border-radius:16px;max-width:650px;font-weight:800;line-height:1.45}.feedback:empty{display:none}.feedback.good{background:#e1f9eb;color:var(--good)}.feedback.bad{background:#fff0f2;color:var(--bad)}.feedback .translation{display:block;margin-top:5px;font-weight:600}.controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}.smallnote{text-align:center;color:#696486;font-size:.9rem;margin-top:17px}.results{text-align:center}.scorebig{font-size:clamp(3rem,12vw,5rem);font-weight:1000;color:var(--purple);margin:10px}.stars{font-size:2rem;letter-spacing:5px}.hidden{display:none!important}footer{padding:0 20px 18px;text-align:center;font-size:.8rem;color:#817b9e}
+@media(min-width:650px){.answers{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand"><div class="logo" aria-hidden="true">🦊</div><div><h1 id="title">Les Maths en Folie !</h1><p id="subtitle">Multiplie, partage et gagne des étoiles !</p></div></div>
+ <label class="language"><span id="languageLabel">Langue</span><select id="language" aria-label="Language / Langue"><option value="fr">🇧🇪 Français</option><option value="en">🇬🇧 English</option></select></label>
+</header>
+<main>
+<section id="home" class="screen active">
+ <div class="intro"><div class="mascot" aria-hidden="true">🦊✨</div><h2 id="welcome">Prêt·e pour un défi de maths ?</h2><p id="introText">Entraîne-toi aux multiplications et aux divisions par 2, 5 et 10. Choisis la bonne réponse, écoute le feedback et collectionne les étoiles !</p>
+ <div class="pills"><span class="pill" id="pill1">✖️ Tables de 2, 5 et 10</span><span class="pill" id="pill2">➗ Divisions exactes</span><span class="pill" id="pill3">🔊 Voix et texte</span></div>
+ <button class="primary" id="start">C'est parti ! 🚀</button></div>
+ <div class="controls"><button class="secondary" id="voiceTest">🔊 <span id="voiceTestText">Tester la voix</span></button><button class="exit" id="quitHome">🚪 <span id="quitText">Quitter</span></button></div>
+ <p class="smallnote" id="voiceNote">Astuce : la voix naturelle utilise un service en ligne ; si cela échoue, le navigateur essaie sa voix locale.</p>
+</section>
+<section id="game" class="screen">
+ <div class="topline"><span id="roundLabel">Question 1 / 10</span><span>⭐ <span id="score">0</span></span><span id="streak">🔥 Série : 0</span></div>
+ <div class="progress" aria-label="Progression"><span id="progressBar"></span></div>
+ <div class="question-card"><div class="prompt" id="prompt">Combien font…</div><div class="operation" id="operation">5 × 4 = ?</div><div class="answers" id="answers"></div><div id="feedback" class="feedback" role="status" aria-live="polite"></div>
+ <div class="controls"><button class="secondary hidden" id="speakAgain">🔊 <span id="repeatText">Répéter</span></button><button class="primary hidden" id="next">Question suivante ➜</button></div></div>
+ <div class="controls"><button class="exit" id="quitGame">🚪 <span id="quitText2">Quitter</span></button></div>
+ <p class="smallnote" id="gameNote">Prends ton temps : tu peux écouter la question et le feedback.</p>
+</section>
+<section id="results" class="screen">
+ <div class="results"><div class="mascot" aria-hidden="true">🏆🦊</div><h2 id="resultTitle">Bravo !</h2><p id="resultMessage">Tu as terminé le défi !</p><div class="scorebig" id="finalScore">8/10</div><div class="stars" id="finalStars">⭐⭐⭐⭐</div><p id="resultSub"></p>
+ <div class="controls"><button class="primary" id="replay">🔁 Rejouer</button><button class="secondary" id="homeButton">🏠 Accueil</button><button class="exit" id="quitResults">🚪 <span id="quitText3">Quitter</span></button></div></div>
+</section>
+</main><footer id="footer">Fait pour apprendre en s'amusant · Belgique 🇧🇪</footer>
+</div>
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+let lang='fr', questions=[], index=0, score=0, streak=0, answered=false, lastSpeech='';
+const copy = {
+fr:{title:'Les Maths en Folie !',subtitle:'Multiplie, partage et gagne des étoiles !',languageLabel:'Langue',welcome:'Prêt·e pour un défi de maths ?',introText:'Entraîne-toi aux multiplications et aux divisions par 2, 5 et 10. Choisis la bonne réponse, écoute le feedback et collectionne les étoiles !',pill1:'✖️ Tables de 2, 5 et 10',pill2:'➗ Divisions exactes',pill3:'🔊 Voix et texte',start:"C'est parti ! 🚀",voiceTestText:'Tester la voix',quitText:'Quitter',voiceNote:'Astuce : la voix naturelle utilise un service en ligne ; si cela échoue, le navigateur essaie sa voix locale.',prompt:'Combien font…',question:'Question',of:'/',streak:'🔥 Série',repeatText:'Répéter',next:'Question suivante ➜',gameNote:'Prends ton temps : tu peux écouter la question et le feedback.',correct:'Bravo ! C’est la bonne réponse ! 🎉',wrong:'Pas tout à fait ! La bonne réponse est',resultTitle:'Défi terminé !',resultMessage:'Super effort !',resultSub:'Chaque question est une occasion d’apprendre. Continue !',replay:'🔁 Rejouer',homeButton:'🏠 Accueil',footer:'Fait pour apprendre en s’amusant · Belgique 🇧🇪',sayQuestion:(a,b,op)=>op==='×'?`Combien font ${a} fois ${b} ?`:`Combien font ${a} divisé par ${b} ?`,correctSpeech:(a,b,op,r)=>`Bravo ! ${a} ${op==='×'?'fois':'divisé par'} ${b} égale ${r}.`,wrongSpeech:(a,b,op,r)=>`Pas tout à fait. La bonne réponse est ${r}. ${a} ${op==='×'?'fois':'divisé par'} ${b} égale ${r}.`,scoreMessage:(s,n)=>`Tu as obtenu ${s} bonne${s>1?'s':''} réponse${s>1?'s':''} sur ${n}.`},
+en:{title:'Maths Fun!',subtitle:'Multiply, share and earn stars!',languageLabel:'Language',welcome:'Ready for a maths challenge?',introText:'Practise multiplying and dividing by 2, 5 and 10. Choose the right answer, listen to the feedback and collect stars!',pill1:'✖️ 2, 5 and 10 times tables',pill2:'➗ Exact divisions',pill3:'🔊 Voice and text',start:"Let's go! 🚀",voiceTestText:'Test the voice',quitText:'Quit',voiceNote:'Tip: natural voice uses an online service; if it fails, the browser tries its local voice.',prompt:'What is…',question:'Question',of:'/',streak:'🔥 Streak',repeatText:'Repeat',next:'Next question ➜',gameNote:'Take your time: you can listen to the question and feedback.',correct:'Well done! That is correct! 🎉',wrong:'Not quite! The correct answer is',resultTitle:'Challenge complete!',resultMessage:'Great effort!',resultSub:'Every question is a chance to learn. Keep going!',replay:'🔁 Play again',homeButton:'🏠 Home',footer:'Learning is fun · Belgium 🇧🇪',sayQuestion:(a,b,op)=>op==='×'?`What is ${a} times ${b}?`:`What is ${a} divided by ${b}?`,correctSpeech:(a,b,op,r)=>`Well done! ${a} ${op==='×'?'times':'divided by'} ${b} equals ${r}.`,wrongSpeech:(a,b,op,r)=>`Not quite. The correct answer is ${r}. ${a} ${op==='×'?'times':'divided by'} ${b} equals ${r}.`,scoreMessage:(s,n)=>`You got ${s} out of ${n} answers correct.`}
+};
+function t(){return copy[lang]}
+function setText(id,value){$(id).textContent=value}
+function show(screen){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(screen).classList.add('active')}
+let audioVoice = null;
+let speechRequestId = 0;
+function stopSpeech(){
+ speechRequestId++;
+ if(audioVoice){try{audioVoice.pause();audioVoice.removeAttribute('src');audioVoice.load()}catch(e){}audioVoice=null}
+ if('speechSynthesis' in window){try{window.speechSynthesis.cancel()}catch(e){}}
+}
+function streamElementsUrl(text){
+ const voice = lang === 'fr' ? 'Celine' : 'Joanna';
+ return 'https://api.streamelements.com/kappa/v2/speech?voice='+voice+'&text='+encodeURIComponent(text);
+}
+function googleTtsUrl(text){
+ const tl = lang === 'fr' ? 'fr' : 'en';
+ return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+tl+'&q='+encodeURIComponent(text);
+}
+function fallbackLocal(text){
+ if(!('speechSynthesis' in window)) return;
+ try{
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = lang === 'fr' ? 'fr-BE' : 'en-GB';
+  u.rate = .88; u.pitch = 1.05;
+  const voices = window.speechSynthesis.getVoices();
+  const prefix = lang === 'fr' ? 'fr' : 'en';
+  const match = voices.find(v=>v.lang.toLowerCase()===(lang==='fr'?'fr-be':'en-gb')) || voices.find(v=>v.lang.toLowerCase().startsWith(prefix));
+  if(match) u.voice=match;
+  window.speechSynthesis.speak(u);
+ }catch(e){console.warn('Local speech fallback unavailable',e)}
+}
+function playProvider(text, urls, idx, requestId){
+ if(requestId !== speechRequestId) return;
+ if(idx >= urls.length){fallbackLocal(text);return}
+ let settled = false;
+ const a = new Audio();
+ audioVoice = a;
+ a.preload = 'auto';
+ const fail = () => {
+  if(settled) return;
+  settled = true;
+  try{a.pause();a.removeAttribute('src');a.load()}catch(e){}
+  if(audioVoice===a) audioVoice=null;
+  playProvider(text, urls, idx+1, requestId);
+ };
+ a.addEventListener('error', fail, {once:true});
+ a.addEventListener('ended', ()=>{if(audioVoice===a)audioVoice=null;}, {once:true});
+ a.src = urls[idx];
+ const p = a.play();
+ if(p && typeof p.catch === 'function') p.catch(fail);
+}
+function speak(text){
+ lastSpeech = text;
+ stopSpeech();
+ const requestId = speechRequestId;
+ playProvider(text, [streamElementsUrl(text), googleTtsUrl(text)], 0, requestId);
+}
+function speechDone(maxMs=8000){
+ return new Promise(resolve=>{
+  const start=Date.now();
+  const poll=setInterval(()=>{
+   const playing=(audioVoice && !audioVoice.paused && !audioVoice.ended) ||
+     ('speechSynthesis' in window && window.speechSynthesis.speaking);
+   if(!playing || Date.now()-start>maxMs){clearInterval(poll);resolve()}
+  },150);
+ });
+}
+function updateLanguage(){
+ document.documentElement.lang=lang;const c=t();
+ ['title','subtitle','languageLabel','welcome','introText','pill1','pill2','pill3','start','voiceTestText','voiceNote','prompt','repeatText','gameNote','resultTitle','resultMessage','resultSub','replay','homeButton','footer'].forEach(id=>{if($(id))setText(id,c[id])});
+ ['quitText','quitText2','quitText3'].forEach(id=>setText(id,c.quitText));
+ setText('next',c.next);setText('prompt',c.prompt);
+ if($('game').classList.contains('active'))renderQuestion();
+}
+function buildQuestions(){
+ const list=[];
+ // Multiplication and related exact division questions for tables 2, 5 and 10.
+ for(const n of [2,5,10]) for(let k=1;k<=10;k++){
+  list.push({a:n,b:k,op:'×',answer:n*k});
+  list.push({a:n*k,b:n,op:'÷',answer:k});
+ }
+ // Shuffle, then use a ten-question round with varied operations.
+ for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]]}
+ questions=list.slice(0,10);
+}
+function startGame(){buildQuestions();index=0;score=0;streak=0;show('game');renderQuestion();speakQuestion()}
+function renderQuestion(){
+ const q=questions[index];if(!q)return;
+ answered=false;setText('roundLabel',`${t().question} ${index+1} ${t().of} ${questions.length}`);setText('score',score);setText('streak',`${t().streak}: ${streak}`);$('progressBar').style.width=`${index/questions.length*100}%`;
+ setText('operation',`${q.a} ${q.op} ${q.b} = ?`);setText('prompt',t().prompt);$('feedback').className='feedback';$('feedback').textContent='';
+ $('next').classList.add('hidden');$('speakAgain').classList.remove('hidden');
+ let opts=new Set([q.answer]);while(opts.size<4){let v=q.answer+Math.floor(Math.random()*11)-5;if(v>=0&&v<=100&&v!==q.answer)opts.add(v)}
+ let arr=[...opts];for(let i=arr.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}
+ const box=$('answers');box.innerHTML='';arr.forEach(v=>{const b=document.createElement('button');b.className='answer';b.textContent=v;b.addEventListener('click',()=>answer(v,b));box.appendChild(b)});
+}
+function speakQuestion(){const q=questions[index];if(q)speak(t().sayQuestion(q.a,q.b,q.op))}
+function answer(value,button){
+ if(answered)return;answered=true;const q=questions[index],correct=value===q.answer;
+ document.querySelectorAll('.answer').forEach(b=>{b.disabled=true;if(Number(b.textContent)===q.answer)b.classList.add('correct')});
+ if(correct){score++;streak++;button.classList.add('correct');$('feedback').className='feedback good';$('feedback').textContent=t().correct; speak(t().correctSpeech(q.a,q.b,q.op,q.answer))}
+ else{streak=0;button.classList.add('wrong');$('feedback').className='feedback bad';$('feedback').textContent=`${t().wrong} ${q.answer}.`;const span=document.createElement('span');span.className='translation';span.textContent=`${q.a} ${q.op==='×'?(lang==='fr'?'fois':'times'):(lang==='fr'?'divisé par':'divided by')} ${q.b} = ${q.answer}`;$('feedback').appendChild(span);speak(t().wrongSpeech(q.a,q.b,q.op,q.answer))}
+ setText('score',score);setText('streak',`${t().streak}: ${streak}`);$('progressBar').style.width=`${(index+1)/questions.length*100}%`;$('next').classList.remove('hidden');$('speakAgain').classList.remove('hidden');
+}
+function nextQuestion(){if(!answered)return;index++;if(index>=questions.length){showResults();return}renderQuestion();speakQuestion()}
+function showResults(){show('results');const c=t();setText('finalScore',`${score}/${questions.length}`);setText('resultTitle',c.resultTitle);setText('resultMessage',score===questions.length?(lang==='fr'?'Incroyable, sans faute ! 🌟':'Amazing, a perfect score! 🌟'):c.resultMessage);setText('resultSub',c.scoreMessage(score,questions.length)+' '+c.resultSub);setText('finalStars','⭐'.repeat(Math.max(1,Math.ceil(score/questions.length*5))));$('progressBar').style.width='100%';speak(`${c.scoreMessage(score,questions.length)} ${c.resultSub}`)}
+function quit(){window.location.href='index.html'}
+$('language').addEventListener('change',e=>{lang=e.target.value;updateLanguage()});
+$('start').addEventListener('click',startGame);$('replay').addEventListener('click',startGame);$('homeButton').addEventListener('click',()=>{show('home');speak(lang==='fr'?'Bienvenue ! Prêt pour jouer ?':'Welcome! Ready to play?')});
+$('voiceTest').addEventListener('click',()=>speak(lang==='fr'?'Bonjour ! Je suis ton compagnon de maths. Bonne chance !':'Hello! I am your maths buddy. Good luck!'));
+$('speakAgain').addEventListener('click',()=>{if(answered){const q=questions[index];const v=$('feedback').textContent;speak(v)}else speakQuestion()});
+$('next').addEventListener('click',nextQuestion);
+['quitHome','quitGame','quitResults'].forEach(id=>$(id).addEventListener('click',quit));
+window.speechSynthesis?.getVoices?.();if(window.speechSynthesis)window.speechSynthesis.onvoiceschanged=()=>{};
+updateLanguage();
+})();
+</script>
+</body>
+</html>

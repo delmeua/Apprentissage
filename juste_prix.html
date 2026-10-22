@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Juste Prix - The Right Price</title>
+  <style>
+    :root {
+      --primary: #4a90e2;
+      --secondary: #f5a623;
+      --success: #2ec4b6;
+      --danger: #e71d36;
+      --bg: #f4f7fe;
+      --card-bg: #ffffff;
+      --text: #2d3748;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: var(--card-bg);
+      padding: 12px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .lang-switch button, .btn-quit {
+      padding: 8px 16px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .lang-switch button {
+      background: #edf2f7;
+      color: #4a5568;
+      margin-left: 5px;
+    }
+
+    .lang-switch button.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-quit {
+      background: #e2e8f0;
+      color: #4a5568;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-quit:hover {
+      background: #cbd5e0;
+    }
+
+    .game-container {
+      width: 100%;
+      max-width: 900px;
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 25px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .score-board {
+      display: flex;
+      justify-content: space-around;
+      background: #ebf8ff;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #2b6cb0;
+    }
+
+    .target-box {
+      text-align: center;
+      background: #fffaf0;
+      border: 3px dashed var(--secondary);
+      padding: 15px;
+      border-radius: 16px;
+    }
+
+    .target-box h2 {
+      font-size: 1.3rem;
+      color: #744210;
+      margin-bottom: 5px;
+    }
+
+    .target-amount {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #dd6b20;
+    }
+
+    .drop-zone {
+      min-height: 150px;
+      background: #f7fafc;
+      border: 3px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 15px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .drop-zone.drag-over {
+      background: #feebc8;
+      border-color: var(--secondary);
+    }
+
+    .money-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: #edf2f7;
+      border-radius: 16px;
+    }
+
+    .money-item {
+      cursor: grab;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.25));
+    }
+
+    .money-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    .money-item:active {
+      cursor: grabbing;
+      transform: scale(1.1);
+    }
+
+    /* Dimensions proportionnelles */
+    .coin-2e  { width: 66px; height: 66px; }
+    .coin-1e  { width: 60px; height: 60px; }
+    .coin-50c { width: 56px; height: 56px; }
+    .coin-20c { width: 50px; height: 50px; }
+    .coin-10c { width: 44px; height: 44px; }
+    .coin-5c  { width: 48px; height: 48px; }
+
+    .note-50e { width: 135px; height: 72px; }
+    .note-20e { width: 125px; height: 67px; }
+    .note-10e { width: 115px; height: 62px; }
+    .note-5e  { width: 105px; height: 57px; }
+
+    .current-total {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #4a5568;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-validate { background: var(--success); color: white; }
+    .btn-reset { background: #cbd5e0; color: #2d3748; }
+
+    .feedback-box {
+      min-height: 50px;
+      text-align: center;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      display: none;
+    }
+
+    .feedback-box.correct {
+      display: block;
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .feedback-box.wrong {
+      display: block;
+      background: #fed7d7;
+      color: #742a2a;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="btn-quit" id="btnQuit">⬅ Quitter</a>
+    <div class="lang-switch">
+      <button id="btnFR" class="active" onclick="setLanguage('fr')">FR 🇫🇷/🇧🇪</button>
+      <button id="btnEN" onclick="setLanguage('en')">EN 🇬🇧</button>
+    </div>
+  </header>
+
+  <main class="game-container">
+    <div class="score-board">
+      <span id="scoreText">Score : 0</span>
+    </div>
+
+    <div class="target-box">
+      <h2 id="targetTitle">Forme la somme suivante :</h2>
+      <div class="target-amount" id="targetAmount">0,00 €</div>
+    </div>
+
+    <!-- Zone de dépôt des pièces et billets -->
+    <div class="drop-zone" id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+    </div>
+
+    <div class="current-total">
+      <span id="currentTotalText">Total actuel : 0,00 €</span>
+    </div>
+
+    <!-- Palette d'argent -->
+    <div class="money-palette" id="moneyPalette">
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-reset" id="btnReset" onclick="resetSelection()">Effacer</button>
+      <button class="btn btn-validate" id="btnValidate" onclick="validateAnswer()">Valider</button>
+    </div>
+
+    <div class="feedback-box" id="feedbackBox"></div>
+  </main>
+
+  <script>
+    // --- DESIGN EN CODE SVG (INTEGRATION SANS FICHIER EXTERNE) ---
+    function makeNoteSvg(value, mainColor, accentColor) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 75" width="100%" height="100%">
+        <defs>
+          <linearGradient id="grad-${value}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${mainColor}" />
+            <stop offset="100%" stop-color="${accentColor}" />
+          </linearGradient>
+        </defs>
+        <rect width="140" height="75" rx="8" fill="url(#grad-${value})" stroke="#3b2d1c" stroke-width="1.5"/>
+        <rect x="6" y="6" width="128" height="63" rx="5" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.6"/>
+        <rect x="45" y="18" width="50" height="38" rx="3" fill="#ffffff" fill-opacity="0.15" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.4"/>
+        <path d="M55 56 L55 35 Q70 25 85 35 L85 56 Z" fill="#ffffff" fill-opacity="0.2"/>
+        <text x="18" y="28" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff">${value}€</text>
+        <text x="122" y="62" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="end">${value}€</text>
+        <text x="70" y="62" font-family="Arial, sans-serif" font-size="8" fill="#ffffff" fill-opacity="0.8" text-anchor="middle">BCE ECB EZB EKT EKP</text>
+      </svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    function makeCoinSvg(valueText, outerColor, innerColor, isBicolor) {
+      let body = isBicolor 
+        ? `<circle cx="35" cy="35" r="33" fill="${outerColor}" stroke="#444" stroke-width="1.5"/>
+           <circle cx="35" cy="35" r="23" fill="${innerColor}" stroke="#666" stroke-width="1"/>`
+        : `<circle cx="35" cy="35" r="33" fill="${outerColor}" stroke="#444" stroke-width="1.5"/>`;
+
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 70" width="100%" height="100%">
+        ${body}
+        <circle cx="35" cy="35" r="30" fill="none" stroke="#ffffff" stroke-width="0.8" stroke-opacity="0.4" stroke-dasharray="2,2"/>
+        <text x="35" y="41" font-family="Arial, sans-serif" font-size="17" font-weight="bold" fill="${isBicolor ? '#222' : (valueText.includes('5c') ? '#fff' : '#5c4300')}" text-anchor="middle">${valueText}</text>
+      </svg>`;
+      return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    // --- DONNÉES DES PIÈCES ET BILLETS ---
+    const moneyValues = [
+      { type: 'note', value: 50, class: 'note-50e', label: '50 €', img: makeNoteSvg(50, '#e68a00', '#cc5200') },
+      { type: 'note', value: 20, class: 'note-20e', label: '20 €', img: makeNoteSvg(20, '#3399ff', '#0066cc') },
+      { type: 'note', value: 10, class: 'note-10e', label: '10 €', img: makeNoteSvg(10, '#ff4d4d', '#cc0000') },
+      { type: 'note', value: 5,  class: 'note-5e',  label: '5 €',  img: makeNoteSvg(5, '#33cc66', '#009933') },
+      { type: 'coin', value: 2,  class: 'coin-2e',  label: '2 €',  img: makeCoinSvg('2 €', '#c0c0c0', '#e6c687', true) },
+      { type: 'coin', value: 1,  class: 'coin-1e',  label: '1 €',  img: makeCoinSvg('1 €', '#e6c687', '#c0c0c0', true) },
+      { type: 'coin', value: 0.50, class: 'coin-50c', label: '50c', img: makeCoinSvg('50c', '#f3c644', null, false) },
+      { type: 'coin', value: 0.20, class: 'coin-20c', label: '20c', img: makeCoinSvg('20c', '#f3c644', null, false) },
+      { type: 'coin', value: 0.10, class: 'coin-10c', label: '10c', img: makeCoinSvg('10c', '#f3c644', null, false) },
+      { type: 'coin', value: 0.05, class: 'coin-5c',  label: '5c',  img: makeCoinSvg('5c', '#d97736', null, false) }
+    ];
+
+    // --- DICTIONNAIRES & VOCABULAIRE BELGE ---
+    const i18n = {
+      fr: {
+        quit: "⬅ Quitter",
+        score: "Score : ",
+        targetTitle: "Forme la somme suivante :",
+        currentTotal: "Total actuel : ",
+        reset: "Effacer",
+        validate: "Valider",
+        correctFeedback: "Bravo ! C'est la bonne somme !",
+        wrongFeedback: "Ce n'est pas tout à fait ça. Il fallait donner : "
+      },
+      en: {
+        quit: "⬅ Exit",
+        score: "Score: ",
+        targetTitle: "Reach the following target:",
+        currentTotal: "Current total: ",
+        reset: "Clear",
+        validate: "Check",
+        correctFeedback: "Great job! That's the correct amount!",
+        wrongFeedback: "Not quite right. The correct amount was: "
+      }
+    };
+
+    let currentLang = 'fr';
+    let targetValue = 0;
+    let selectedItems = [];
+    let score = 0;
+
+    // --- CONVERSION BELGE (Septante, Quatre-vingts, Nonante) ---
+    function numberToBelgianFrench(n) {
+      if (n === 0) return "zéro";
+      const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+      const teens = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
+      const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "septante", "quatre-vingts", "nonante"];
+
+      if (n < 10) return units[n];
+      if (n < 20) return teens[n - 10];
+      if (n < 100) {
+        let ten = Math.floor(n / 10);
+        let unit = n % 10;
+        let tenStr = tens[ten];
+        if (ten === 8 && unit !== 0) tenStr = "quatre-vingt";
+        if (unit === 1 && ten !== 8) return tenStr + " et un";
+        if (unit > 0) return tenStr + "-" + units[unit];
+        return tenStr;
+      }
+      return n.toString();
+    }
+
+    function amountToSpeechText(amount, lang) {
+      const euros = Math.floor(amount);
+      const cents = Math.round((amount - euros) * 100);
+
+      if (lang === 'fr') {
+        let text = "";
+        if (euros > 0) {
+          text += numberToBelgianFrench(euros) + (euros > 1 ? " euros" : " euro");
+        }
+        if (cents > 0) {
+          if (euros > 0) text += " et ";
+          text += numberToBelgianFrench(cents) + (cents > 1 ? " cents" : " cent");
+        }
+        return text || "zéro euro";
+      } else {
+        let text = "";
+        if (euros > 0) {
+          text += euros + (euros > 1 ? " euros" : " euro");
+        }
+        if (cents > 0) {
+          if (euros > 0) text += " and ";
+          text += cents + (cents > 1 ? " cents" : " cent");
+        }
+        return text || "zero euros";
+      }
+    }
+
+    // --- SYNTHÈSE VOCALE ---
+    function speak(text, lang) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang === 'fr' ? 'fr-BE' : 'en-US';
+      utterance.rate = 0.9;
+      
+      const voices = window.speechSynthesis.getVoices();
+      if (lang === 'fr') {
+        const beVoice = voices.find(v => v.lang.includes('fr-BE') || v.lang.includes('fr_BE'));
+        if (beVoice) utterance.voice = beVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // --- LOGIQUE DU JEU ---
+    function init() {
+      renderPalette();
+      nextQuestion();
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.getElementById('btnFR').classList.toggle('active', lang === 'fr');
+      document.getElementById('btnEN').classList.toggle('active', lang === 'en');
+      
+      document.getElementById('btnQuit').textContent = i18n[lang].quit;
+      document.getElementById('scoreText').textContent = i18n[lang].score + score;
+      document.getElementById('targetTitle').textContent = i18n[lang].targetTitle;
+      document.getElementById('btnReset').textContent = i18n[lang].reset;
+      document.getElementById('btnValidate').textContent = i18n[lang].validate;
+      updateTotalDisplay();
+    }
+
+    function renderPalette() {
+      const palette = document.getElementById('moneyPalette');
+      palette.innerHTML = '';
+      moneyValues.forEach((item) => {
+        const el = document.createElement('div');
+        el.className = `money-item ${item.class}`;
+        el.draggable = true;
+        
+        const img = document.createElement('img');
+        img.src = item.img;
+        img.alt = item.label;
+        el.appendChild(img);
+
+        el.onclick = () => addItem(item.value);
+        el.ondragstart = (e) => e.dataTransfer.setData('text/plain', item.value);
+        palette.appendChild(el);
+      });
+    }
+
+    function nextQuestion() {
+      const possibleValues = [0.05, 0.10, 0.20, 0.50, 1, 2, 5, 10, 20, 50];
+      let sum = 0;
+      const nbItems = Math.floor(Math.random() * 4) + 2;
+      for(let i=0; i<nbItems; i++) {
+        sum += possibleValues[Math.floor(Math.random() * possibleValues.length)];
+      }
+      targetValue = Math.round(sum * 100) / 100;
+
+      document.getElementById('targetAmount').textContent = formatCurrency(targetValue);
+      resetSelection();
+
+      const spokenAmount = amountToSpeechText(targetValue, currentLang);
+      const textToSpeak = currentLang === 'fr' 
+        ? `Forme la somme de ${spokenAmount}` 
+        : `Make the amount of ${spokenAmount}`;
+      speak(textToSpeak, currentLang);
+    }
+
+    function addItem(val) {
+      selectedItems.push(val);
+      renderDropZone();
+      updateTotalDisplay();
+    }
+
+    function resetSelection() {
+      selectedItems = [];
+      renderDropZone();
+      updateTotalDisplay();
+      document.getElementById('feedbackBox').className = 'feedback-box';
+      document.getElementById('feedbackBox').style.display = 'none';
+    }
+
+    function renderDropZone() {
+      const zone = document.getElementById('dropZone');
+      zone.innerHTML = '';
+      selectedItems.forEach((val, index) => {
+        const itemInfo = moneyValues.find(m => m.value === val);
+        const el = document.createElement('div');
+        el.className = `money-item ${itemInfo.class}`;
+        
+        const img = document.createElement('img');
+        img.src = itemInfo.img;
+        img.alt = itemInfo.label;
+        el.appendChild(img);
+
+        el.title = "Cliquer pour retirer";
+        el.onclick = () => {
+          selectedItems.splice(index, 1);
+          renderDropZone();
+          updateTotalDisplay();
+        };
+        zone.appendChild(el);
+      });
+    }
+
+    function getCurrentTotal() {
+      const sum = selectedItems.reduce((acc, curr) => acc + curr, 0);
+      return Math.round(sum * 100) / 100;
+    }
+
+    function updateTotalDisplay() {
+      const total = getCurrentTotal();
+      document.getElementById('currentTotalText').textContent = i18n[currentLang].currentTotal + formatCurrency(total);
+    }
+
+    function formatCurrency(val) {
+      return val.toFixed(2).replace('.', ',') + ' €';
+    }
+
+    // --- GLISSER-DÉPOSER ---
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      document.getElementById('dropZone').classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('drag-over');
+      const val = parseFloat(e.dataTransfer.getData('text/plain'));
+      if (!isNaN(val)) {
+        addItem(val);
+      }
+    }
+
+    // --- VALIDATION & FEEDBACK ---
+    function validateAnswer() {
+      const userTotal = getCurrentTotal();
+      const feedbackBox = document.getElementById('feedbackBox');
+      const isCorrect = Math.abs(userTotal - targetValue) < 0.001;
+
+      if (isCorrect) {
+        score += 10;
+        document.getElementById('scoreText').textContent = i18n[currentLang].score + score;
+        feedbackBox.className = 'feedback-box correct';
+        feedbackBox.textContent = i18n[currentLang].correctFeedback;
+        
+        speak(i18n[currentLang].correctFeedback, currentLang);
+
+        setTimeout(() => {
+          nextQuestion();
+        }, 2500);
+      } else {
+        feedbackBox.className = 'feedback-box wrong';
+        const spokenTarget = amountToSpeechText(targetValue, currentLang);
+        const message = i18n[currentLang].wrongFeedback + formatCurrency(targetValue);
+        
+        feedbackBox.textContent = message;
+
+        const spokenMessage = currentLang === 'fr'
+          ? `Ce n'est pas ça. Il fallait donner ${spokenTarget}`
+          : `That is not correct. The answer was ${spokenTarget}`;
+        
+        speak(spokenMessage, currentLang);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        validateAnswer();
+      }
+    });
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {};
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

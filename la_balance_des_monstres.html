@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Balance des Monstres</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* Animations de la balance */
+        .scale-beam {
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-origin: center center;
+        }
+
+        .tilt-left {
+            transform: rotate(-14deg);
+        }
+
+        .tilt-right {
+            transform: rotate(14deg);
+        }
+
+        .level-balanced {
+            transform: rotate(0deg);
+        }
+
+        /* Animations des monstres */
+        @keyframes dance {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            25% { transform: translateY(-18px) rotate(-8deg) scale(1.05); }
+            75% { transform: translateY(-12px) rotate(8deg) scale(1.05); }
+        }
+
+        @keyframes laugh {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1) rotate(5deg); }
+            50% { transform: scale(0.95) rotate(-5deg); }
+            75% { transform: scale(1.08) rotate(3deg); }
+        }
+
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .monster-dance {
+            animation: dance 0.6s infinite ease-in-out;
+        }
+
+        .monster-laugh {
+            animation: laugh 0.3s infinite ease-in-out;
+        }
+
+        .monster-idle {
+            animation: floatSlow 3s infinite ease-in-out;
+        }
+
+        /* Drag and Drop Styling */
+        .symbol-card {
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+
+        .symbol-card:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+
+        .drop-zone {
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.drag-over {
+            transform: scale(1.15);
+            border-color: #f59e0b;
+            background-color: rgba(254, 243, 199, 0.9);
+        }
+
+        /* Responsive plate position adjustments */
+        .pan-container {
+            transition: transform 0.8s ease;
+        }
+
+        /* Balance CSS Structure Cleanup */
+        .scale-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 380px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-sky-300 via-indigo-200 to-purple-300 min-h-screen flex flex-col justify-between overflow-x-hidden text-slate-800">
+
+    <!-- En-tête / Barre supérieure -->
+    <header class="p-3 sm:p-4 flex flex-wrap justify-between items-center bg-white/60 backdrop-blur-md shadow-md rounded-b-2xl mx-2 sm:mx-6 z-20 gap-2">
+        <div class="flex items-center gap-2">
+            <span class="text-3xl sm:text-4xl">⚖️</span>
+            <h1 id="app-title" class="text-xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600">
+                La Balance des Monstres
+            </h1>
+        </div>
+
+        <!-- Score, Langue & Commandes -->
+        <div class="flex items-center gap-2 sm:gap-4 ml-auto">
+            <!-- Score -->
+            <div class="bg-amber-100 border-2 border-amber-400 text-amber-900 px-3 py-1 rounded-full text-base sm:text-lg font-bold flex items-center gap-1 shadow-sm">
+                <span>⭐</span>
+                <span id="score-text">Score: 0</span>
+            </div>
+
+            <!-- Bouton Vocale / Mute -->
+            <button id="btn-audio" onclick="toggleAudio()" class="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg transition active:scale-95" title="Activer/Désactiver le son">
+                <i id="audio-icon" class="fas fa-volume-up text-lg"></i>
+            </button>
+
+            <!-- Sélecteur de langue -->
+            <button id="btn-lang" onclick="toggleLanguage()" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-xl shadow-lg transition active:scale-95 flex items-center gap-1 text-sm sm:text-base">
+                <span id="lang-flag">🇫🇷</span>
+                <span id="lang-label">FR</span>
+            </button>
+
+            <!-- Bouton Quitter -->
+            <a href="index.html" class="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl shadow-lg transition active:scale-95 text-sm sm:text-base flex items-center gap-1">
+                <i class="fas fa-door-open"></i>
+                <span id="txt-exit">Quitter</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Zone Principale du Jeu -->
+    <main class="flex-grow flex flex-col items-center justify-center p-2 sm:p-4 max-w-5xl mx-auto w-full relative">
+        
+        <!-- Feedback Écrit -->
+        <div id="feedback-box" class="min-h-[60px] sm:min-h-[70px] w-full max-w-2xl bg-white/80 backdrop-blur-md rounded-2xl p-3 text-center shadow-lg mb-2 border-2 border-indigo-200 flex items-center justify-center transition-all duration-300">
+            <p id="feedback-text" class="text-base sm:text-xl font-bold text-indigo-900">
+                Glisse ou clique sur le bon monstre-symbole (<, =, >) pour équilibrer la balance !
+            </p>
+        </div>
+
+        <!-- Zone de la Balance -->
+        <div class="scale-container flex items-center justify-center my-2">
+            
+            <!-- Structure fixe du Pivot & Drop Zone (au-dessus du pivot) -->
+            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex flex-col items-center">
+                
+                <!-- Zone d'Opérateur/Symbole propre & au-dessus de la barre -->
+                <div class="bg-amber-100/90 p-1.5 rounded-2xl border-2 border-amber-300 shadow-md mb-2">
+                    <div id="drop-zone" 
+                         class="drop-zone w-16 h-16 sm:w-20 sm:h-20 bg-white border-4 border-dashed border-amber-500 rounded-2xl flex items-center justify-center shadow-inner cursor-pointer"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)"
+                         ondrop="handleDrop(event)"
+                         onclick="handleZoneClick()">
+                        <span id="placed-symbol" class="text-3xl sm:text-4xl font-extrabold text-amber-800">?</span>
+                    </div>
+                </div>
+
+                <!-- Pivot Triangle -->
+                <div class="w-0 h-0 border-l-[30px] border-l-transparent border-r-[30px] border-r-transparent border-b-[80px] border-b-slate-700 sm:border-l-[40px] sm:border-r-[40px] sm:border-b-[100px] relative z-10"></div>
+                <!-- Socle fixe -->
+                <div class="w-40 sm:w-52 h-6 bg-slate-800 rounded-t-xl shadow-2xl z-10"></div>
+            </div>
+
+            <!-- Fléau (Barre horizontale rotative) -->
+            <div id="scale-beam" class="scale-beam absolute top-[52%] left-[8%] right-[8%] h-5 bg-slate-700 rounded-full flex justify-between items-center z-10 shadow-md">
+                
+                <!-- Plateau Gauche -->
+                <div id="pan-left" class="pan-container absolute left-[-20px] sm:left-[0px] top-[-140px] sm:top-[-160px] flex flex-col items-center w-36 sm:w-48">
+                    <!-- Monstre + Valeur Gauche -->
+                    <div id="monster-left" class="monster-idle flex flex-col items-center">
+                        <div class="bg-white/95 border-4 border-purple-400 px-4 py-1.5 rounded-2xl shadow-md mb-2">
+                            <span id="expr-left" class="text-xl sm:text-3xl font-extrabold text-purple-700">45</span>
+                        </div>
+                        <svg id="svg-monster-left" class="w-24 h-24 sm:w-32 sm:h-32 drop-shadow-md" viewBox="0 0 100 100"></svg>
+                    </div>
+                    <!-- Fil de suspension du plateau -->
+                    <div class="w-1 bg-slate-400 h-12 sm:h-16 my-[-2px]"></div>
+                    <!-- Plateau -->
+                    <div class="w-32 sm:w-44 h-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 rounded-full shadow-lg border-b-2 border-amber-700"></div>
+                </div>
+
+                <!-- Plateau Droit -->
+                <div id="pan-right" class="pan-container absolute right-[-20px] sm:right-[0px] top-[-140px] sm:top-[-160px] flex flex-col items-center w-36 sm:w-48">
+                    <!-- Monstre + Valeur Droit -->
+                    <div id="monster-right" class="monster-idle flex flex-col items-center">
+                        <div class="bg-white/95 border-4 border-pink-400 px-4 py-1.5 rounded-2xl shadow-md mb-2">
+                            <span id="expr-right" class="text-xl sm:text-3xl font-extrabold text-pink-700">50 - 8</span>
+                        </div>
+                        <svg id="svg-monster-right" class="w-24 h-24 sm:w-32 sm:h-32 drop-shadow-md" viewBox="0 0 100 100"></svg>
+                    </div>
+                    <!-- Fil de suspension du plateau -->
+                    <div class="w-1 bg-slate-400 h-12 sm:h-16 my-[-2px]"></div>
+                    <!-- Plateau -->
+                    <div class="w-32 sm:w-44 h-4 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 rounded-full shadow-lg border-b-2 border-amber-700"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Monstres-Symboles à Glisser / Cliquer -->
+        <div class="w-full max-w-xl bg-white/50 backdrop-blur-md rounded-3xl p-3 sm:p-4 shadow-xl border-2 border-white/80 mt-2">
+            <p id="txt-instruction" class="text-center font-bold text-slate-700 text-sm sm:text-base mb-2">
+                Glisse un monstre-symbole vers le centre ou clique dessus :
+            </p>
+            
+            <div class="flex justify-around items-center gap-2">
+                
+                <!-- Symbole plus petit < -->
+                <div class="symbol-card bg-emerald-100 border-4 border-emerald-400 hover:bg-emerald-200 rounded-2xl p-2 sm:p-3 flex flex-col items-center w-24 sm:w-32 shadow-md active:scale-95 transition"
+                     draggable="true"
+                     ondragstart="handleDragStart(event, '<')"
+                     onclick="selectSymbol('<')">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="#10B981"/>
+                        <circle cx="35" cy="40" r="8" fill="white"/>
+                        <circle cx="65" cy="40" r="8" fill="white"/>
+                        <circle cx="35" cy="40" r="4" fill="black"/>
+                        <circle cx="65" cy="40" r="4" fill="black"/>
+                        <path d="M 30 70 Q 50 85 70 70" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <span class="text-2xl sm:text-3xl font-black text-emerald-800 mt-1">&lt;</span>
+                    <span id="lbl-less" class="text-xs font-bold text-emerald-700">Plus petit</span>
+                </div>
+
+                <!-- Symbole égal = -->
+                <div class="symbol-card bg-amber-100 border-4 border-amber-400 hover:bg-amber-200 rounded-2xl p-2 sm:p-3 flex flex-col items-center w-24 sm:w-32 shadow-md active:scale-95 transition"
+                     draggable="true"
+                     ondragstart="handleDragStart(event, '=')"
+                     onclick="selectSymbol('=')">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="#F59E0B"/>
+                        <circle cx="35" cy="40" r="8" fill="white"/>
+                        <circle cx="65" cy="40" r="8" fill="white"/>
+                        <circle cx="37" cy="40" r="4" fill="black"/>
+                        <circle cx="63" cy="40" r="4" fill="black"/>
+                        <line x1="30" y1="65" x2="70" y2="65" stroke="white" stroke-width="6" stroke-linecap="round"/>
+                        <line x1="30" y1="75" x2="70" y2="75" stroke="white" stroke-width="6" stroke-linecap="round"/>
+                    </svg>
+                    <span class="text-2xl sm:text-3xl font-black text-amber-800 mt-1">=</span>
+                    <span id="lbl-equal" class="text-xs font-bold text-amber-700">Égal</span>
+                </div>
+
+                <!-- Symbole plus grand > -->
+                <div class="symbol-card bg-indigo-100 border-4 border-indigo-400 hover:bg-indigo-200 rounded-2xl p-2 sm:p-3 flex flex-col items-center w-24 sm:w-32 shadow-md active:scale-95 transition"
+                     draggable="true"
+                     ondragstart="handleDragStart(event, '>')"
+                     onclick="selectSymbol('>')">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="#6366F1"/>
+                        <circle cx="35" cy="40" r="8" fill="white"/>
+                        <circle cx="65" cy="40" r="8" fill="white"/>
+                        <circle cx="35" cy="40" r="4" fill="black"/>
+                        <circle cx="65" cy="40" r="4" fill="black"/>
+                        <path d="M 30 75 Q 50 60 70 75" stroke="white" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    </svg>
+                    <span class="text-2xl sm:text-3xl font-black text-indigo-800 mt-1">&gt;</span>
+                    <span id="lbl-more" class="text-xs font-bold text-indigo-700">Plus grand</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Bouton Suivant (masqué par défaut) -->
+        <button id="btn-next" onclick="nextQuestion()" class="hidden mt-4 px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xl rounded-2xl shadow-xl transform transition hover:scale-105 active:scale-95 flex items-center gap-2">
+            <span id="txt-next">Question suivante</span>
+            <i class="fas fa-arrow-right"></i>
+        </button>
+
+    </main>
+
+    <!-- Pied de page -->
+    <footer class="py-2 text-center text-xs sm:text-sm font-semibold text-slate-600 bg-white/40 backdrop-blur-sm">
+        <p id="txt-footer">Apprends en t'amusant avec La Balance des Monstres ! 🇧🇪</p>
+    </footer>
+
+    <!-- LOGIQUE JAVASCRIPT -->
+    <script>
+        // State Management
+        let currentLang = 'fr'; // 'fr' ou 'en'
+        let audioEnabled = true;
+        let score = 0;
+        let currentQuestion = {};
+        let isAnswered = false;
+        let draggedSymbol = null;
+
+        // Dictionnaires de traduction
+        const i18n = {
+            fr: {
+                title: "La Balance des Monstres",
+                exit: "Quitter",
+                instruction: "Glisse un monstre-symbole vers le centre ou clique dessus :",
+                less: "Plus petit",
+                equal: "Égal",
+                more: "Plus grand",
+                next: "Question suivante",
+                score: "Score : ",
+                footer: "Apprends en t'amusant avec La Balance des Monstres ! 🇧🇪",
+                prompt: "Glisse ou clique sur le bon monstre-symbole (<, =, >) pour équilibrer la balance !",
+                correct: "Bravo ! C'est la bonne réponse !",
+                wrong: "Oups ! Regarde bien la balance.",
+                isLess: "est plus petit que",
+                isEqual: "est égal à",
+                isMore: "est plus grand que",
+                equalsTo: "fait"
+            },
+            en: {
+                title: "Monster Balance",
+                exit: "Exit",
+                instruction: "Drag a symbol-monster to the center or click it:",
+                less: "Smaller",
+                equal: "Equal",
+                more: "Greater",
+                next: "Next Question",
+                score: "Score: ",
+                footer: "Have fun learning with Monster Balance!",
+                prompt: "Drag or click the right symbol-monster (<, =, >) to balance the scale!",
+                correct: "Bravo! That's correct!",
+                wrong: "Oops! Look closely at the scale.",
+                isLess: "is smaller than",
+                isEqual: "is equal to",
+                isMore: "is greater than",
+                equalsTo: "equals"
+            }
+        };
+
+        // Couleurs SVG des monstres
+        const monsterColors = ['#8B5CF6', '#EC4899', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4'];
+
+        // Initialisation audio Web Speech API
+        const synth = window.speechSynthesis;
+
+        window.onload = function() {
+            generateQuestion();
+            updateUIStrings();
+            speak(i18n[currentLang].prompt);
+        };
+
+        // Modificateur de nombres en français de Belgique
+        function formatBelgianNumber(num) {
+            if (currentLang !== 'fr') return num.toString();
+            // La numération belge traduit 70-79 (septante), 80-89 (quatre-vingts), 90-99 (nonante)
+            // Pour la synthèse vocale, on s'assure de remplacer textuellement si besoin
+            return num.toString();
+        }
+
+        // Convertisseur de texte oral avec spécificités belges
+        function getBelgianOralText(text) {
+            if (currentLang !== 'fr') return text;
+            
+            // Remplacements phonétiques / textuels pour WebSpeech API
+            return text
+                .replace(/\b70\b/g, "septante")
+                .replace(/\b71\b/g, "septante et un")
+                .replace(/\b72\b/g, "septante deux")
+                .replace(/\b73\b/g, "septante trois")
+                .replace(/\b74\b/g, "septante quatre")
+                .replace(/\b75\b/g, "septante cinq")
+                .replace(/\b76\b/g, "septante six")
+                .replace(/\b77\b/g, "septante sept")
+                .replace(/\b78\b/g, "septante huit")
+                .replace(/\b79\b/g, "septante neuf")
+                .replace(/\b80\b/g, "quatre-vingts")
+                .replace(/\b81\b/g, "quatre-vingt un")
+                .replace(/\b82\b/g, "quatre-vingt deux")
+                .replace(/\b83\b/g, "quatre-vingt trois")
+                .replace(/\b84\b/g, "quatre-vingt quatre")
+                .replace(/\b85\b/g, "quatre-vingt cinq")
+                .replace(/\b86\b/g, "quatre-vingt six")
+                .replace(/\b87\b/g, "quatre-vingt sept")
+                .replace(/\b88\b/g, "quatre-vingt huit")
+                .replace(/\b89\b/g, "quatre-vingt neuf")
+                .replace(/\b90\b/g, "nonante")
+                .replace(/\b91\b/g, "nonante et un")
+                .replace(/\b92\b/g, "nonante deux")
+                .replace(/\b93\b/g, "nonante trois")
+                .replace(/\b94\b/g, "nonante quatre")
+                .replace(/\b95\b/g, "nonante cinq")
+                .replace(/\b96\b/g, "nonante six")
+                .replace(/\b97\b/g, "nonante sept")
+                .replace(/\b98\b/g, "nonante huit")
+                .replace(/\b99\b/g, "nonante neuf")
+                .replace(/-/g, " moins ")
+                .replace(/\+/g, " plus ");
+        }
+
+        // Synthèse Vocale
+        function speak(text) {
+            if (!audioEnabled || !('speechSynthesis' in window)) return;
+
+            synth.cancel(); // Stoppe la parole en cours
+
+            const oralText = getBelgianOralText(text);
+            const utterance = new SpeechSynthesisUtterance(oralText);
+            
+            utterance.lang = currentLang === 'fr' ? 'fr-BE' : 'en-US';
+            utterance.rate = 0.9; // Vitesse adaptée aux enfants
+            utterance.pitch = 1.1; // Voix joyeuse
+
+            // Sélection d'une voix adaptée si disponible
+            const voices = synth.getVoices();
+            const preferredVoice = voices.find(v => v.lang.startsWith(currentLang === 'fr' ? 'fr' : 'en'));
+            if (preferredVoice) utterance.voice = preferredVoice;
+
+            synth.speak(utterance);
+        }
+
+        // Génération d'une question
+        function generateQuestion() {
+            isAnswered = false;
+            document.getElementById('placed-symbol').innerText = '?';
+            document.getElementById('btn-next').classList.add('hidden');
+            
+            // Réinitialiser les animations et la position de la balance
+            const beam = document.getElementById('scale-beam');
+            beam.className = "scale-beam absolute top-1/2 left-0 right-0 h-4 bg-slate-700 rounded-full flex justify-between items-center px-4 sm:px-12 z-10 level-balanced";
+
+            // Réinitialiser les monstres
+            setMonsterState('idle');
+
+            // Générer types d'expressions (Nombres simples ou additions/soustractions simples)
+            const typeLeft = Math.random() > 0.4 ? 'operation' : 'number';
+            const typeRight = Math.random() > 0.4 ? 'operation' : 'number';
+
+            const leftData = generateExpression(typeLeft);
+            const rightData = generateExpression(typeRight);
+
+            let correctSymbol = '=';
+            if (leftData.value < rightData.value) correctSymbol = '<';
+            else if (leftData.value > rightData.value) correctSymbol = '>';
+
+            currentQuestion = {
+                left: leftData,
+                right: rightData,
+                correctSymbol: correctSymbol
+            };
+
+            // Mise à jour de l'affichage
+            document.getElementById('expr-left').innerText = leftData.text;
+            document.getElementById('expr-right').innerText = rightData.text;
+
+            // Générer des monstres SVG amusants
+            renderMonsterSVG('svg-monster-left', monsterColors[Math.floor(Math.random() * monsterColors.length)], 1);
+            renderMonsterSVG('svg-monster-right', monsterColors[Math.floor(Math.random() * monsterColors.length)], 2);
+
+            // Message initial
+            document.getElementById('feedback-text').innerText = i18n[currentLang].prompt;
+            document.getElementById('feedback-box').className = "min-h-[60px] sm:min-h-[70px] w-full max-w-2xl bg-white/80 backdrop-blur-md rounded-2xl p-3 text-center shadow-lg mb-2 sm:mb-4 border-2 border-indigo-200 flex items-center justify-center";
+        }
+
+        // Génère un nombre ou une opération
+        function generateExpression(type) {
+            if (type === 'number') {
+                const val = Math.floor(Math.random() * 80) + 10; // Nombres entre 10 et 90
+                return { text: val.toString(), value: val, isOp: false };
+            } else {
+                const isAdd = Math.random() > 0.5;
+                if (isAdd) {
+                    const a = Math.floor(Math.random() * 40) + 10;
+                    const b = Math.floor(Math.random() * 30) + 5;
+                    return { text: `${a} + ${b}`, value: a + b, isOp: true, a: a, b: b, op: '+' };
+                } else {
+                    const a = Math.floor(Math.random() * 50) + 20;
+                    const b = Math.floor(Math.random() * 15) + 5;
+                    return { text: `${a} - ${b}`, value: a - b, isOp: true, a: a, b: b, op: '-' };
+                }
+            }
+        }
+
+        // Rendu SVG dynamique des monstres
+        function renderMonsterSVG(elementId, color, eyeStyle) {
+            const svg = document.getElementById(elementId);
+            svg.innerHTML = `
+                <ellipse cx="50" cy="55" rx="35" ry="38" fill="${color}" />
+                <!-- Cornes/Oreilles -->
+                <path d="M 25 25 Q 15 5 35 20" stroke="${color}" stroke-width="8" stroke-linecap="round" fill="none"/>
+                <path d="M 75 25 Q 85 5 65 20" stroke="${color}" stroke-width="8" stroke-linecap="round" fill="none"/>
+                <!-- Yeux -->
+                <circle cx="38" cy="45" r="${eyeStyle === 1 ? 10 : 12}" fill="white" />
+                <circle cx="62" cy="45" r="${eyeStyle === 1 ? 10 : 12}" fill="white" />
+                <circle cx="38" cy="45" r="4" fill="black" />
+                <circle cx="62" cy="45" r="4" fill="black" />
+                <!-- Bouche -->
+                <path d="M 35 68 Q 50 80 65 68" stroke="black" stroke-width="4" fill="none" stroke-linecap="round"/>
+                <!-- Dents -->
+                <polygon points="42,68 46,74 50,68" fill="white" />
+                <polygon points="50,68 54,74 58,68" fill="white" />
+            `;
+        }
+
+        // Sélection du symbole (clic ou drop)
+        function selectSymbol(symbol) {
+            if (isAnswered) return;
+
+            document.getElementById('placed-symbol').innerText = symbol;
+            checkAnswer(symbol);
+        }
+
+        // Vérification de la réponse
+        function checkAnswer(symbol) {
+            isAnswered = true;
+            const isCorrect = (symbol === currentQuestion.correctSymbol);
+            const beam = document.getElementById('scale-beam');
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackText = document.getElementById('feedback-text');
+
+            const valL = currentQuestion.left.value;
+            const valR = currentQuestion.right.value;
+
+            if (isCorrect) {
+                // BONNE RÉPONSE
+                score += 10;
+                document.getElementById('score-text').innerText = i18n[currentLang].score + score;
+
+                // Animation balance : Équilibrée parfaite ou inclinaison réaliste
+                if (valL === valR) {
+                    beam.className = "scale-beam absolute top-1/2 left-0 right-0 h-4 bg-slate-700 rounded-full flex justify-between items-center px-4 sm:px-12 z-10 level-balanced";
+                } else if (valL > valR) {
+                    beam.className = "scale-beam absolute top-1/2 left-0 right-0 h-4 bg-slate-700 rounded-full flex justify-between items-center px-4 sm:px-12 z-10 tilt-left";
+                } else {
+                    beam.className = "scale-beam absolute top-1/2 left-0 right-0 h-4 bg-slate-700 rounded-full flex justify-between items-center px-4 sm:px-12 z-10 tilt-right";
+                }
+
+                // Monstres dansent
+                setMonsterState('dance');
+
+                // Confetti
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+                }
+
+                feedbackBox.className = "min-h-[60px] sm:min-h-[70px] w-full max-w-2xl bg-emerald-100 backdrop-blur-md rounded-2xl p-3 text-center shadow-lg mb-2 sm:mb-4 border-2 border-emerald-400 flex items-center justify-center";
+                
+                let relStr = symbol === '<' ? i18n[currentLang].isLess : (symbol === '>' ? i18n[currentLang].isMore : i18n[currentLang].isEqual);
+                let msg = `${i18n[currentLang].correct} ${currentQuestion.left.text} ${relStr} ${currentQuestion.right.text}!`;
+                
+                feedbackText.innerText = msg;
+                speak(msg);
+
+            } else {
+                // MAUVAISE RÉPONSE
+                // La balance penche brusquement du côté le PLUS LOURD
+                if (valL > valR) {
+                    beam.className = "scale-beam absolute top-1/2 left-0 right-0 h-4 bg-slate-700 rounded-full flex justify-between items-center px-4 sm:px-12 z-10 tilt-left";
+                    document.getElementById('monster-left').className = "monster-laugh flex flex-col items-center";
+                    document.getElementById('monster-right').className = "monster-idle flex flex-col items-center";
+                } else if (valR > valL) {
+                    beam.className = "scale-beam absolute top-1/2 left-0 right-0 h-4 bg-slate-700 rounded-full flex justify-between items-center px-4 sm:px-12 z-10 tilt-right";
+                    document.getElementById('monster-right').className = "monster-laugh flex flex-col items-center";
+                    document.getElementById('monster-left').className = "monster-idle flex flex-col items-center";
+                } else {
+                    beam.className = "scale-beam absolute top-1/2 left-0 right-0 h-4 bg-slate-700 rounded-full flex justify-between items-center px-4 sm:px-12 z-10 level-balanced";
+                    setMonsterState('laugh');
+                }
+
+                feedbackBox.className = "min-h-[60px] sm:min-h-[70px] w-full max-w-2xl bg-rose-100 backdrop-blur-md rounded-2xl p-3 text-center shadow-lg mb-2 sm:mb-4 border-2 border-rose-400 flex items-center justify-center";
+                
+                // Explication détaillée
+                let correctRelStr = currentQuestion.correctSymbol === '<' ? i18n[currentLang].isLess : (currentQuestion.correctSymbol === '>' ? i18n[currentLang].isMore : i18n[currentLang].isEqual);
+                
+                let detailLeft = currentQuestion.left.isOp ? `${currentQuestion.left.text} ${i18n[currentLang].equalsTo} ${currentQuestion.left.value}` : `${currentQuestion.left.value}`;
+                let detailRight = currentQuestion.right.isOp ? `${currentQuestion.right.text} ${i18n[currentLang].equalsTo} ${currentQuestion.right.value}` : `${currentQuestion.right.value}`;
+
+                let msg = `${i18n[currentLang].wrong} ${currentQuestion.left.text} ${correctRelStr} ${currentQuestion.right.text}. (${detailLeft} / ${detailRight})`;
+                
+                feedbackText.innerText = msg;
+                speak(msg);
+            }
+
+            document.getElementById('btn-next').classList.remove('hidden');
+        }
+
+        // Change l'état d'animation des monstres
+        function setMonsterState(state) {
+            const mL = document.getElementById('monster-left');
+            const mR = document.getElementById('monster-right');
+            const className = `monster-${state} flex flex-col items-center`;
+            mL.className = className;
+            mR.className = className;
+        }
+
+        // Question suivante
+        function nextQuestion() {
+            generateQuestion();
+        }
+
+        // Gestion du Drag & Drop
+        function handleDragStart(e, symbol) {
+            draggedSymbol = symbol;
+            e.dataTransfer.setData('text/plain', symbol);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('drop-zone').classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            document.getElementById('drop-zone').classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('drop-zone').classList.remove('drag-over');
+            const symbol = e.dataTransfer.getData('text/plain') || draggedSymbol;
+            if (symbol) selectSymbol(symbol);
+        }
+
+        function handleZoneClick() {
+            // Permet l'interaction tactile directe sur la zone
+        }
+
+        // Basculer la langue (FR <-> EN)
+        function toggleLanguage() {
+            currentLang = currentLang === 'fr' ? 'en' : 'fr';
+            updateUIStrings();
+            generateQuestion();
+        }
+
+        function updateUIStrings() {
+            const langData = i18n[currentLang];
+            document.getElementById('lang-flag').innerText = currentLang === 'fr' ? '🇫🇷' : '🇬🇧';
+            document.getElementById('lang-label').innerText = currentLang.toUpperCase();
+            document.getElementById('app-title').innerText = langData.title;
+            document.getElementById('txt-exit').innerText = langData.exit;
+            document.getElementById('txt-instruction').innerText = langData.instruction;
+            document.getElementById('lbl-less').innerText = langData.less;
+            document.getElementById('lbl-equal').innerText = langData.equal;
+            document.getElementById('lbl-more').innerText = langData.more;
+            document.getElementById('txt-next').innerText = langData.next;
+            document.getElementById('score-text').innerText = langData.score + score;
+            document.getElementById('txt-footer').innerText = langData.footer;
+        }
+
+        // Basculer le son (Mute/Unmute)
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const icon = document.getElementById('audio-icon');
+            if (audioEnabled) {
+                icon.className = "fas fa-volume-up text-lg";
+                speak(i18n[currentLang].prompt);
+            } else {
+                icon.className = "fas fa-volume-mute text-lg";
+                synth.cancel();
+            }
+        }
+    </script>
+</body>
+</html>

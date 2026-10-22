@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur de Vocabulaire - mots_anglais.csv</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --success: #10b981;
+            --success-hover: #059669;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: #1e1b4b;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary { background-color: var(--primary); color: white; }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+
+        .btn-success { background-color: var(--success); color: white; }
+        .btn-success:hover { background-color: var(--success-hover); }
+
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-danger:hover { background-color: var(--danger-hover); }
+
+        .btn-secondary { background-color: #64748b; color: white; }
+        .btn-secondary:hover { background-color: #475569; }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 12px 20px;
+            text-align: center;
+            background: #f1f5f9;
+            cursor: pointer;
+            flex-grow: 1;
+            transition: border-color 0.2s;
+            font-size: 0.85rem;
+            color: #475569;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background: #eef2ff;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 700;
+            color: #334155;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        td input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .row-actions {
+            width: 60px;
+            text-align: center;
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            transition: color 0.2s;
+        }
+
+        .btn-delete:hover {
+            color: var(--danger);
+            background-color: #fef2f2;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1e293b;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+            display: opacity;
+            transition: opacity 0.3s;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .status-bar.show {
+            opacity: 1;
+        }
+
+        #file-input { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Éditeur de Mots Anglais - Français</h1>
+        <p class="subtitle">Modifiez votre liste et téléchargez le fichier <code>mots_anglais.csv</code> pour GitHub</p>
+    </header>
+
+    <div class="controls">
+        <button class="btn btn-success" onclick="exportCSV()">
+            💾 Télécharger mots_anglais.csv
+        </button>
+        
+        <button class="btn btn-primary" onclick="addRow()">
+            ➕ Ajouter un mot
+        </button>
+
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+            📁 Cliquez ou glissez un fichier CSV ici pour l'importer
+        </div>
+        <input type="file" id="file-input" accept=".csv" onchange="handleFileSelect(event)">
+
+        <a href="index.html" class="btn btn-danger">
+            🚪 Quitter
+        </a>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 45%;">Anglais</th>
+                    <th style="width: 45%;">Français</th>
+                    <th class="row-actions"></th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Les lignes de vocabulaire seront insérées ici -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="status" class="status-bar">Sauvegardé automatiquement</div>
+
+    <script>
+        // Mots par défaut
+        const defaultWords = [
+            ["door", "porte"], ["chair", "chaise"], ["desk", "bureau"],
+            ["window", "fenêtre"], ["cupboard", "armoire"], ["bin", "corbeille"],
+            ["glue", "colle"], ["scissors", "ciseaux"], ["markers", "marqueurs"],
+            ["sharpener", "taille crayon"], ["rubler", "gomme"], ["pencils", "crayons"],
+            ["pen", "stylo"], ["fountain pen", "stylo à encre"], ["ink", "encre"],
+            ["eraser", "effaceur"], ["ruler", "règle"], ["pencil case", "plumier"],
+            ["teacher", "professeur"], ["clock", "horloge"], ["books", "livres"],
+            ["schoolbag", "cartable"], ["chalk", "craie"], ["calendar", "calendrier"],
+            ["plant", "plante"], ["spring", "printemps"], ["summer", "été"],
+            ["autumn", "automne"], ["winter", "hiver"]
+        ];
+
+        let words = [];
+
+        // Initialisation
+        function init() {
+            const savedData = localStorage.getItem('vocab_mots_anglais');
+            if (savedData) {
+                try {
+                    words = JSON.parse(savedData);
+                } catch(e) {
+                    words = [...defaultWords];
+                }
+            } else {
+                words = [...defaultWords];
+            }
+            renderTable();
+            setupDragAndDrop();
+        }
+
+        // Affichage du tableau
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            words.forEach((pair, index) => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>
+                        <input type="text" value="${escapeHtml(pair[0])}" oninput="updateWord(${index}, 0, this.value)" placeholder="Word in English">
+                    </td>
+                    <td>
+                        <input type="text" value="${escapeHtml(pair[1])}" oninput="updateWord(${index}, 1, this.value)" placeholder="Mot en français">
+                    </td>
+                    <td class="row-actions">
+                        <button class="btn-delete" onclick="deleteRow(${index})" title="Supprimer la ligne">❌</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function updateWord(index, col, value) {
+            words[index][col] = value;
+            autoSave();
+        }
+
+        function addRow() {
+            words.push(["", ""]);
+            renderTable();
+            autoSave();
+            
+            // Focus sur le nouveau champ
+            const inputs = document.querySelectorAll('tbody tr:last-child input');
+            if (inputs.length > 0) inputs[0].focus();
+        }
+
+        function deleteRow(index) {
+            words.splice(index, 1);
+            renderTable();
+            autoSave();
+        }
+
+        function autoSave() {
+            localStorage.setItem('vocab_mots_anglais', JSON.stringify(words));
+            showStatus("Sauvegardé automatiquement");
+        }
+
+        function showStatus(text) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.classList.add('show');
+            clearTimeout(window.statusTimeout);
+            window.statusTimeout = setTimeout(() => {
+                status.classList.remove('show');
+            }, 2000);
+        }
+
+        // Gestion de l'importation CSV
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('drop-zone');
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    processCSVFile(files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) processCSVFile(file);
+        }
+
+        function processCSVFile(file) {
+            const reader = new FileReader();
+            
+            // Premier essai : UTF-8
+            reader.onload = function(e) {
+                let content = e.target.result;
+                // Si présence de caractères bizarres d'encodage (ISO-8859-1)
+                if (content.includes('')) {
+                    readAsLatin1(file);
+                } else {
+                    parseAndLoadCSV(content);
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function readAsLatin1(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                parseAndLoadCSV(e.target.result);
+            };
+            reader.readAsText(file, 'ISO-8859-1');
+        }
+
+        function parseAndLoadCSV(text) {
+            // Nettoyage du BOM UTF-8 si présent
+            if (text.charCodeAt(0) === 0xFEFF) {
+                text = text.substring(1);
+            }
+
+            const lines = text.split(/\r\n|\n|\r/);
+            const newWords = [];
+
+            // Détection du séparateur (, ou ; ou tab)
+            let separator = ',';
+            if (lines.length > 0) {
+                const firstLine = lines[0];
+                const commas = (firstLine.match(/,/g) || []).length;
+                const semicolons = (firstLine.match(/;/g) || []).length;
+                const tabs = (firstLine.match(/\t/g) || []).length;
+
+                if (semicolons > commas && semicolons >= tabs) separator = ';';
+                else if (tabs > commas && tabs > semicolons) separator = '\t';
+            }
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // Simple découpage avec nettoyage des guillemets
+                let parts = line.split(separator).map(p => {
+                    p = p.trim();
+                    if (p.startsWith('"') && p.endsWith('"')) p = p.slice(1, -1);
+                    if (p.startsWith("'") && p.endsWith("'")) p = p.slice(1, -1);
+                    return p.trim();
+                });
+
+                if (parts.length >= 2) {
+                    // Ignorer les entêtes éventuels
+                    const col1 = parts[0].toLowerCase();
+                    const col2 = parts[1].toLowerCase();
+                    if ((col1 === 'anglais' || col1 === 'english') && (col2 === 'français' || col2 === 'francais' || col2 === 'french')) {
+                        continue;
+                    }
+                    newWords.push([parts[0], parts[1]]);
+                }
+            }
+
+            if (newWords.length > 0) {
+                words = newWords;
+                renderTable();
+                autoSave();
+                showStatus(`Importé avec succès (${words.length} mots)`);
+            } else {
+                alert("Aucun mot n'a pu être extrait du fichier CSV. Vérifiez que le fichier comporte 2 colonnes.");
+            }
+        }
+
+        // Exportation en fichier CSV
+        function exportCSV() {
+            let csvContent = "\uFEFFanglais,français\n"; // En-tête + BOM UTF-8 pour Excel
+
+            words.forEach(row => {
+                const en = (row[0] || "").replace(/"/g, '""');
+                const fr = (row[1] || "").replace(/"/g, '""');
+                
+                // Entourer de guillemets si le mot contient une virgule
+                const safeEn = en.includes(',') ? `"${en}"` : en;
+                const safeFr = fr.includes(',') ? `"${fr}"` : fr;
+                
+                csvContent += `${safeEn},${safeFr}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'mots_anglais.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showStatus("Fichier mots_anglais.csv téléchargé !");
+        }
+
+        // Lancement au chargement de la page
+        window.onload = init;
+    </script>
+</body>
+</html>

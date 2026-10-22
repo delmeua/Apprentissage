@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Duel des Signes ⚔️</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #fdcb6e;
+            --success: #00b894;
+            --danger: #d63031;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #a8c0ff, #3f2b96);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: var(--dark);
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        /* Écrans */
+        .screen { display: none; }
+        .screen.active { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Boutons */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn:active { transform: translateY(1px); }
+        
+        .btn-quit { background: var(--danger); }
+        .btn-lang { background: var(--secondary); color: var(--dark); font-size: 22px; }
+
+        /* Zone de Duel */
+        .duel-zone {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+        }
+
+        .number-box {
+            background: var(--light);
+            border: 4px solid var(--primary);
+            border-radius: 16px;
+            width: 90px;
+            height: 90px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--dark);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .sign-box {
+            font-size: 42px;
+            font-weight: bold;
+            color: var(--primary);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #eee;
+            border-radius: 50%;
+        }
+
+        /* Choix des signes */
+        .choices {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn-sign {
+            background: var(--secondary);
+            color: var(--dark);
+            font-size: 32px;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .btn-sign:hover { transform: scale(1.1); }
+
+        /* Feedback */
+        .feedback {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            display: none;
+        }
+        .feedback.success { background: #d4edda; color: #155724; display: block; }
+        .feedback.error { background: #f8d7da; color: #721c24; display: block; }
+
+        /* Barre d'outils supérieure */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .score-board {
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--dark);
+        }
+
+        .audio-toggle {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <!-- ÉCRAN 1 : LANGUE -->
+        <div id="screen-lang" class="screen active">
+            <h1>⚔️ Le Duel des Signes ⚔️</h1>
+            <p style="margin-bottom: 10px; font-weight: bold; color: #555;">Choisissez votre langue / Choose your language</p>
+            <button class="btn btn-lang" onclick="startGame('fr')">Français 🇧🇪 / 🇫🇷</button>
+            <button class="btn btn-lang" onclick="startGame('en')">English 🇬🇧 / 🇺🇸</button>
+        </div>
+
+        <!-- ÉCRAN 2 : JEU -->
+        <div id="screen-game" class="screen">
+            <div class="top-bar">
+                <button class="audio-toggle" onclick="toggleMute()" id="audio-btn">🔊</button>
+                <div class="score-board" id="score-text">Score : 0</div>
+                <button class="btn btn-quit" id="quit-btn" style="padding: 5px 15px; font-size: 14px;" onclick="quitGame()">Quitter</button>
+            </div>
+
+            <div class="duel-zone">
+                <div class="number-box" id="num1">?</div>
+                <div class="sign-box" id="sign-display">?</div>
+                <div class="number-box" id="num2">?</div>
+            </div>
+
+            <div class="choices" id="choices-container">
+                <button class="btn-sign" onclick="checkAnswer('<')">&lt;</button>
+                <button class="btn-sign" onclick="checkAnswer('=')">=</button>
+                <button class="btn-sign" onclick="checkAnswer('>')">&gt;</button>
+            </div>
+
+            <div id="feedback-box" class="feedback"></div>
+            
+            <button class="btn" id="next-btn" style="display: none;" onclick="nextQuestion()">Suivant ➡️</button>
+        </div>
+
+    </div>
+
+    <script>
+        let lang = 'fr';
+        let score = 0;
+        let num1 = 0;
+        let num2 = 0;
+        let correctAnswer = '';
+        let isMuted = false;
+
+        const translations = {
+            fr: {
+                score: "Score : ",
+                quit: "Quitter",
+                next: "Suivant ➡️",
+                correct: "Excellent ! ",
+                incorrect: "Dommage ! ",
+                equal: "est égal à",
+                less: "est inférieur à",
+                greater: "est supérieur à",
+                and: "et non pas"
+            },
+            en: {
+                score: "Score: ",
+                quit: "Quit",
+                next: "Next ➡️",
+                correct: "Excellent! ",
+                incorrect: "Too bad! ",
+                equal: "is equal to",
+                less: "is less than",
+                greater: "is greater than",
+                and: "and not"
+            }
+        };
+
+        // Fonction de conversion en toutes lettres avec belgicismes (septante, quatre-vingts, nonante)
+        function numberToBelgianFrench(n) {
+            if (n === 0) return "zéro";
+            
+            const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+            const teens = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
+            const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "septante", "quatre-vingt", "nonante"];
+
+            if (n < 10) return units[n];
+            if (n >= 10 && n < 20) return teens[n - 10];
+            
+            if (n === 80) return "quatre-vingts";
+
+            let ten = Math.floor(n / 10);
+            let unit = n % 10;
+
+            if (unit === 0) return tens[ten];
+            if (unit === 1) return tens[ten] + " et un";
+            return tens[ten] + "-" + units[unit];
+        }
+
+        // Fonction standard en anglais pour les nombres < 100
+        function numberToEnglish(n) {
+            if (n === 0) return "zero";
+            const units = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+            const teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+            const tens = ["", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+            if (n < 10) return units[n];
+            if (n >= 10 && n < 20) return teens[n - 10];
+            
+            let ten = Math.floor(n / 10);
+            let unit = n % 10;
+            return unit === 0 ? tens[ten] : tens[ten] + "-" + units[unit];
+        }
+
+        function speak(text) {
+            if (isMuted) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang === 'fr' ? 'fr-BE' : 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('audio-btn').innerText = isMuted ? '🔇' : '🔊';
+        }
+
+        function startGame(selectedLang) {
+            lang = selectedLang;
+            document.getElementById('screen-lang').classList.remove('active');
+            document.getElementById('screen-game').classList.add('active');
+            
+            // Appliquer les traductions des boutons fixes dynamiquement
+            document.getElementById('next-btn').innerText = translations[lang].next;
+            document.getElementById('quit-btn').innerText = translations[lang].quit;
+            
+            updateScoreDisplay();
+            nextQuestion();
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-text').innerText = translations[lang].score + score;
+        }
+
+        function generateNumbers() {
+            num1 = Math.floor(Math.random() * 100);
+            num2 = Math.floor(Math.random() * 100);
+            
+            if (num1 < num2) correctAnswer = '<';
+            else if (num1 > num2) correctAnswer = '>';
+            else correctAnswer = '=';
+        }
+
+        function nextQuestion() {
+            generateNumbers();
+            
+            document.getElementById('num1').innerText = num1;
+            document.getElementById('num2').innerText = num2;
+            document.getElementById('sign-display').innerText = '?';
+            
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.className = 'feedback';
+            feedbackBox.innerText = '';
+            
+            document.getElementById('choices-container').style.pointerEvents = 'auto';
+            document.getElementById('next-btn').style.display = 'none';
+        }
+
+        function getRelationText(symbol) {
+            if (symbol === '<') return translations[lang].less;
+            if (symbol === '>') return translations[lang].greater;
+            return translations[lang].equal;
+        }
+
+        function getNumbersInWords(n1, n2) {
+            if (lang === 'fr') {
+                return { w1: numberToBelgianFrench(n1), w2: numberToBelgianFrench(n2) };
+            } else {
+                return { w1: numberToEnglish(n1), w2: numberToEnglish(n2) };
+            }
+        }
+
+        function checkAnswer(playerChoice) {
+            document.getElementById('choices-container').style.pointerEvents = 'none';
+            document.getElementById('sign-display').innerText = playerChoice;
+            
+            const feedbackBox = document.getElementById('feedback-box');
+            const words = getNumbersInWords(num1, num2);
+            
+            let textFeedback = "";
+            let speechFeedback = "";
+
+            const correctRelation = getRelationText(correctAnswer);
+            const playerRelation = getRelationText(playerChoice);
+
+            if (playerChoice === correctAnswer) {
+                score++;
+                updateScoreDisplay();
+                feedbackBox.className = 'feedback success';
+                
+                textFeedback = `${translations[lang].correct} ${num1} ${correctRelation} ${num2}.`;
+                speechFeedback = `${translations[lang].correct} ${words.w1} ${correctRelation} ${words.w2}.`;
+            } else {
+                feedbackBox.className = 'feedback error';
+                
+                textFeedback = `${translations[lang].incorrect} ${num1} ${correctRelation} ${num2} (${translations[lang].and} ${playerChoice}).`;
+                speechFeedback = `${translations[lang].incorrect} ${words.w1} ${correctRelation} ${words.w2}, ${translations[lang].and} ${words.w1} ${playerRelation} ${words.w2}.`;
+            }
+
+            feedbackBox.innerText = textFeedback;
+            speak(speechFeedback);
+
+            document.getElementById('next-btn').style.display = 'inline-block';
+        }
+
+        function quitGame() {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

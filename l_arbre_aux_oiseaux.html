@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>L'Arbre aux Oiseaux - Dizaines & Unités</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    /* Animation d'envol des oiseaux */
+    @keyframes flyIn {
+      0% {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.3);
+      }
+      70% {
+        transform: translateY(5px) scale(1.1);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .bird-anim {
+      animation: flyIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Animation de gazouillis / chant des oiseaux quand le compte est bon */
+    @keyframes chirpSing {
+      0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+      25% { transform: translateY(-8px) scale(1.15) rotate(-10deg); }
+      75% { transform: translateY(-4px) scale(1.1) rotate(10deg); }
+    }
+
+    .singing-bird {
+      animation: chirpSing 0.4s ease-in-out infinite alternate;
+    }
+
+    /* Effets de pulsation pour boutons */
+    .pulse-btn:active {
+      transform: scale(0.92);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-sky-300 via-sky-100 to-green-200 min-h-screen flex flex-col items-center justify-between p-3 sm:p-5 text-slate-800">
+
+  <!-- En-tête : Navigation & Changement de Langue -->
+  <header class="w-full max-w-4xl bg-white/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 shadow-lg flex justify-between items-center z-20">
+    <a href="index.html" class="bg-red-500 hover:bg-red-600 active:scale-95 text-white font-bold py-2 px-4 rounded-xl shadow-md transition duration-150 flex items-center gap-2 text-sm sm:text-base">
+      <span>←</span>
+      <span id="txt-quit">Quitter</span>
+    </a>
+
+    <!-- Sélecteur de langue -->
+    <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
+      <button id="btn-lang-fr" onclick="changeLanguage('fr')" class="py-1.5 px-3 sm:px-4 rounded-lg font-bold text-xs sm:text-sm transition duration-150 bg-white text-blue-600 shadow-sm">
+        Français (BE) 🇧🇪
+      </button>
+      <button id="btn-lang-en" onclick="changeLanguage('en')" class="py-1.5 px-3 sm:px-4 rounded-lg font-bold text-xs sm:text-sm transition duration-150 text-slate-600 hover:text-slate-900">
+        English 🇬🇧
+      </button>
+    </div>
+  </header>
+
+  <!-- Carte de la Consigne/Question -->
+  <main class="w-full max-w-4xl my-3 flex flex-col items-center gap-3">
+    <div class="w-full bg-white/95 rounded-2xl p-4 shadow-xl text-center border-2 border-white/80">
+      <h2 id="txt-instruction" class="text-slate-600 text-sm sm:text-lg font-semibold mb-1">
+        Installe les oiseaux dans l'arbre pour former le nombre :
+      </h2>
+      <div id="target-number" class="text-4xl sm:text-6xl font-black text-amber-500 tracking-wider my-1 drop-shadow-sm">
+        --
+      </div>
+      <div id="target-words" class="text-base sm:text-xl font-bold text-emerald-600 min-h-[28px]">
+        --
+      </div>
+    </div>
+
+    <!-- Scène Interactive de L'Arbre aux Oiseaux -->
+    <div class="relative w-full h-[360px] sm:h-[420px] bg-sky-200/50 rounded-3xl border-4 border-white/60 shadow-inner overflow-hidden flex flex-col justify-between p-3">
+      
+      <!-- Boutons de réserve d'oiseaux (+10 / +1) -->
+      <div class="flex justify-between w-full z-10 gap-2">
+        <!-- +10 Gros oiseau bleu -->
+        <button onclick="addTens()" class="pulse-btn bg-white/90 hover:bg-white border-2 border-blue-400 p-2 sm:p-3 rounded-2xl shadow-lg flex flex-col items-center cursor-pointer transition transform hover:-translate-y-0.5 active:translate-y-0">
+          <span class="text-3xl sm:text-4xl filter drop-shadow">🐦</span>
+          <span id="txt-add-ten" class="text-xs sm:text-sm font-bold text-blue-700 mt-1">+10 (Nichoir)</span>
+        </button>
+
+        <!-- +1 Petit oiseau jaune -->
+        <button onclick="addUnits()" class="pulse-btn bg-white/90 hover:bg-white border-2 border-amber-400 p-2 sm:p-3 rounded-2xl shadow-lg flex flex-col items-center cursor-pointer transition transform hover:-translate-y-0.5 active:translate-y-0">
+          <span class="text-3xl sm:text-4xl filter drop-shadow">🐤</span>
+          <span id="txt-add-unit" class="text-xs sm:text-sm font-bold text-amber-600 mt-1">+1 (Branche)</span>
+        </button>
+      </div>
+
+      <!-- Visuel de L'Arbre Magique -->
+      <div class="absolute inset-0 flex items-end justify-center pointer-events-none">
+        <!-- Tronc -->
+        <div class="w-16 sm:w-20 h-36 sm:h-44 bg-amber-800 rounded-t-lg shadow-inner"></div>
+        <!-- Feuillage -->
+        <div class="absolute bottom-24 sm:bottom-28 w-72 sm:w-96 h-56 sm:h-64 bg-emerald-500 rounded-full shadow-lg border-4 border-emerald-400">
+          
+          <!-- Zone Nichoirs (Dizaines) -->
+          <div id="nest-area" class="absolute top-4 left-4 right-4 flex flex-wrap justify-center gap-2 pointer-events-auto">
+            <!-- Emplacements générés dynamiquement -->
+          </div>
+
+          <!-- Zone Branches (Unités) -->
+          <div id="branch-area" class="absolute bottom-6 left-4 right-4 flex flex-wrap justify-center gap-1.5 pointer-events-auto">
+            <!-- Oiseaux jaunes générés dynamiquement -->
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Compteur en Temps Réel -->
+      <div class="self-center bg-white/95 px-4 sm:px-6 py-2 rounded-full shadow-lg border border-slate-200 z-10 flex items-center gap-2 text-sm sm:text-lg font-bold">
+        <span class="text-blue-600" id="count-tens">0</span>
+        <span class="text-slate-400">diz. +</span>
+        <span class="text-amber-500" id="count-units">0</span>
+        <span class="text-slate-400">unit. =</span>
+        <span class="text-emerald-600 text-base sm:text-2xl font-black ml-1" id="count-total">0</span>
+      </div>
+    </div>
+
+    <!-- Barre d'actions & Feedback -->
+    <div class="w-full flex flex-col items-center gap-3">
+      <div class="flex gap-3 flex-wrap justify-center">
+        <button id="btn-val" onclick="checkAnswer()" class="pulse-btn bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-6 sm:px-8 rounded-xl shadow-lg text-base sm:text-lg transition">
+          Valider
+        </button>
+        <button id="btn-rst" onclick="resetCurrent()" class="pulse-btn bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 sm:px-8 rounded-xl shadow-lg text-base sm:text-lg transition">
+          Effacer
+        </button>
+        <button id="btn-nxt" onclick="nextQuestion()" class="pulse-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 sm:px-8 rounded-xl shadow-lg text-base sm:text-lg transition hidden">
+          Question suivante ➔
+        </button>
+      </div>
+
+      <!-- Zone de Feedback écrit -->
+      <div id="feedback" class="w-full min-h-[50px] bg-white/90 rounded-xl p-3 text-center font-bold text-sm sm:text-base shadow-md flex items-center justify-center border border-slate-200">
+        Clique sur les oiseaux pour former le nombre !
+      </div>
+    </div>
+  </main>
+
+  <footer class="text-xs text-slate-500 font-medium py-2">
+    L'Arbre aux Oiseaux • Apprentissage des dizaines et unités
+  </footer>
+
+  <!-- LOGIQUE JAVASCRIPT TOTALEMENT AUTONOME ET SÉCURISÉE -->
+  <script>
+    // Dictionnaire multilingue
+    const i18n = {
+      fr: {
+        quit: "Quitter",
+        instruction: "Installe les oiseaux dans l'arbre pour former le nombre :",
+        addTen: "+10 (Nichoir)",
+        addUnit: "+1 (Branche)",
+        validate: "Valider",
+        reset: "Effacer",
+        next: "Question suivante ➔",
+        correct: "Bravo ! Le compte est bon, tous les oiseaux chantent !",
+        welcome: "Clique sur les oiseaux pour commencer !",
+        errorPrefix: "Oups ! Tu as placé ",
+        errorSuffix: ". Il fallait placer "
+      },
+      en: {
+        quit: "Quit",
+        instruction: "Place birds in the tree to match the target number:",
+        addTen: "+10 (Big bird)",
+        addUnit: "+1 (Little bird)",
+        validate: "Check",
+        reset: "Reset",
+        next: "Next Question ➔",
+        correct: "Awesome! You got it right! The birds are singing!",
+        welcome: "Click on the birds to start!",
+        errorPrefix: "Oops! You placed ",
+        errorSuffix: ". You needed "
+      }
+    };
+
+    // État de l'application
+    let currentLang = 'fr';
+    let targetNumber = 0;
+    let currentTens = 0;
+    let currentUnits = 0;
+    let currentAudio = null;
+    let audioCtx = null;
+
+    // --- SYNTHÉTISEUR AUDIO DE BIRD MELODY VIA WEB AUDIO API ---
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Synthétise un gazouillis d'oiseau / mélodie joyeuse
+    function playBirdMelody() {
+      try {
+        initAudioContext();
+        if (!audioCtx) return;
+
+        // Notes joyeuses et légères (Do6, Mi6, Sol6, Do7, Sol6, Do7)
+        const notes = [
+          { freq: 1046.50, duration: 0.1, delay: 0.0 },   // C6
+          { freq: 1318.51, duration: 0.1, delay: 0.1 },   // E6
+          { freq: 1567.98, duration: 0.12, delay: 0.2 },  // G6
+          { freq: 2093.00, duration: 0.25, delay: 0.32 },  // C7
+          { freq: 1760.00, duration: 0.1, delay: 0.6 },   // A6
+          { freq: 2349.32, duration: 0.3, delay: 0.72 }   // D7
+        ];
+
+        const now = audioCtx.currentTime;
+
+        notes.forEach(note => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = 'sine'; // Son pur doux pour l'oiseau
+          osc.frequency.setValueAtTime(note.freq, now + note.delay);
+          
+          // Petit effet de trémolo/pitch bend typique d'un gazouillis d'oiseau
+          osc.frequency.exponentialRampToValueAtTime(note.freq * 1.08, now + note.delay + note.duration * 0.7);
+
+          // Enveloppe du son (attaque douce et déclin)
+          gain.gain.setValueAtTime(0.001, now + note.delay);
+          gain.gain.linearRampToValueAtTime(0.2, now + note.delay + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + note.delay + note.duration);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(now + note.delay);
+          osc.stop(now + note.delay + note.duration);
+        });
+      } catch (err) {
+        console.log("Erreur Web Audio API:", err);
+      }
+    }
+
+    // Convertisseur de nombres en mots avec spécificités BELGES
+    function numberToWordsFr(n) {
+      const units = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+      const teens = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
+
+      if (n < 10) return units[n];
+      if (n >= 10 && n < 20) return teens[n - 10];
+
+      const u = n % 10;
+      const t = Math.floor(n / 10);
+
+      let tensStr = "";
+      switch (t) {
+        case 2: tensStr = "vingt"; break;
+        case 3: tensStr = "trente"; break;
+        case 4: tensStr = "quarante"; break;
+        case 5: tensStr = "cinquante"; break;
+        case 6: tensStr = "soixante"; break;
+        case 7: tensStr = "septante"; break;      // Belgique
+        case 8: tensStr = "quatre-vingts"; break;  // Belgique
+        case 9: tensStr = "nonante"; break;       // Belgique
+      }
+
+      if (u === 0) return tensStr;
+
+      // Gestion du trait d'union & "et un"
+      if (t === 8) {
+        tensStr = "quatre-vingt"; // Accord règle belge
+      }
+
+      if (u === 1 && t !== 8) {
+        return tensStr + " et un";
+      }
+
+      return tensStr + "-" + units[u];
+    }
+
+    function numberToWordsEn(n) {
+      const units = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+      const teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+      const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+      if (n < 10) return units[n];
+      if (n >= 10 && n < 20) return teens[n - 10];
+
+      const u = n % 10;
+      const t = Math.floor(n / 10);
+
+      if (u === 0) return tens[t];
+      return tens[t] + "-" + units[u];
+    }
+
+    function getNumberInWords(n, lang) {
+      return lang === 'fr' ? numberToWordsFr(n) : numberToWordsEn(n);
+    }
+
+    // --- SYNTHÈSE VOCALE SÉCURISÉE (NON-BLOQUANTE) ---
+    function safeSpeak(text) {
+      try {
+        initAudioContext();
+        // Arrêter l'audio en cours
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+
+        // Nettoyer les balises ou émojis pour la synthèse orale
+        const cleanText = text.replace(/[\u{1F300}-\u{1F6FF}]/gu, '');
+
+        const voice = currentLang === 'fr' ? 'Celine' : 'Joanna';
+        const url = `https://api.streamelements.com/kappa/v2/speech?voice=${voice}&text=${encodeURIComponent(cleanText)}`;
+
+        let hasFailed = false;
+        const audio = new Audio(url);
+        currentAudio = audio;
+
+        const triggerFallback = () => {
+          if (hasFailed) return;
+          hasFailed = true;
+          try {
+            if ('speechSynthesis' in window) {
+              const u = new SpeechSynthesisUtterance(cleanText);
+              u.lang = currentLang === 'fr' ? 'fr-BE' : 'en-US';
+              window.speechSynthesis.speak(u);
+            }
+          } catch (e) {
+            console.log("Audio non disponible");
+          }
+        };
+
+        audio.addEventListener("error", triggerFallback);
+        
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(triggerFallback);
+        }
+      } catch (err) {
+        console.log("Échec audio silencieux:", err);
+      }
+    }
+
+    // --- ACTIONS DU JEU ---
+    function changeLanguage(lang) {
+      currentLang = lang;
+
+      const btnFr = document.getElementById('btn-lang-fr');
+      const btnEn = document.getElementById('btn-lang-en');
+
+      if (lang === 'fr') {
+        btnFr.className = "py-1.5 px-3 sm:px-4 rounded-lg font-bold text-xs sm:text-sm transition duration-150 bg-white text-blue-600 shadow-sm";
+        btnEn.className = "py-1.5 px-3 sm:px-4 rounded-lg font-bold text-xs sm:text-sm transition duration-150 text-slate-600 hover:text-slate-900";
+      } else {
+        btnEn.className = "py-1.5 px-3 sm:px-4 rounded-lg font-bold text-xs sm:text-sm transition duration-150 bg-white text-blue-600 shadow-sm";
+        btnFr.className = "py-1.5 px-3 sm:px-4 rounded-lg font-bold text-xs sm:text-sm transition duration-150 text-slate-600 hover:text-slate-900";
+      }
+
+      document.getElementById('txt-quit').innerText = i18n[lang].quit;
+      document.getElementById('txt-instruction').innerText = i18n[lang].instruction;
+      document.getElementById('txt-add-ten').innerText = i18n[lang].addTen;
+      document.getElementById('txt-add-unit').innerText = i18n[lang].addUnit;
+      document.getElementById('btn-val').innerText = i18n[lang].validate;
+      document.getElementById('btn-rst').innerText = i18n[lang].reset;
+      document.getElementById('btn-nxt').innerText = i18n[lang].next;
+
+      updateDisplay();
+    }
+
+    function generateQuestion() {
+      targetNumber = Math.floor(Math.random() * 89) + 11;
+      resetCurrent();
+      updateDisplay();
+
+      const sentence = (currentLang === 'fr' ? "Fais le nombre " : "Make the number ") + getNumberInWords(targetNumber, currentLang);
+      safeSpeak(sentence);
+    }
+
+    function addTens() {
+      initAudioContext();
+      if (currentTens < 9) {
+        currentTens++;
+        renderTree();
+      }
+    }
+
+    function addUnits() {
+      initAudioContext();
+      if (currentUnits < 9) {
+        currentUnits++;
+        renderTree();
+      }
+    }
+
+    function resetCurrent() {
+      currentTens = 0;
+      currentUnits = 0;
+      const feedbackEl = document.getElementById('feedback');
+      feedbackEl.innerText = i18n[currentLang].welcome;
+      feedbackEl.className = "w-full min-h-[50px] bg-white/90 rounded-xl p-3 text-center font-bold text-sm sm:text-base shadow-md flex items-center justify-center border border-slate-200 text-slate-700";
+
+      document.getElementById('btn-nxt').classList.add('hidden');
+      document.getElementById('btn-val').classList.remove('hidden');
+      renderTree();
+    }
+
+    function renderTree(isSinging = false) {
+      const nestArea = document.getElementById('nest-area');
+      const branchArea = document.getElementById('branch-area');
+
+      nestArea.innerHTML = '';
+      branchArea.innerHTML = '';
+
+      const animClass = isSinging ? 'singing-bird' : 'bird-anim';
+
+      // Affichage des Nichoirs (Dizaines)
+      for (let i = 0; i < currentTens; i++) {
+        const nest = document.createElement('div');
+        nest.className = "w-9 h-9 sm:w-11 sm:h-11 bg-amber-900 border-2 border-amber-950 rounded-full flex items-center justify-center shadow-md " + animClass;
+        nest.innerHTML = '<span class="text-xl sm:text-2xl filter drop-shadow">🐦</span>';
+        nestArea.appendChild(nest);
+      }
+
+      // Affichage des Branches (Unités)
+      for (let j = 0; j < currentUnits; j++) {
+        const bird = document.createElement('span');
+        bird.className = "text-xl sm:text-2xl filter drop-shadow " + animClass;
+        bird.innerText = '🐤';
+        branchArea.appendChild(bird);
+      }
+
+      // Mise à jour du compteur
+      const total = currentTens * 10 + currentUnits;
+      document.getElementById('count-tens').innerText = currentTens;
+      document.getElementById('count-units').innerText = currentUnits;
+      document.getElementById('count-total').innerText = total;
+    }
+
+    function updateDisplay() {
+      document.getElementById('target-number').innerText = targetNumber;
+      document.getElementById('target-words').innerText = getNumberInWords(targetNumber, currentLang);
+      renderTree();
+    }
+
+    function checkAnswer() {
+      initAudioContext();
+      const totalPlaced = currentTens * 10 + currentUnits;
+      const feedbackEl = document.getElementById('feedback');
+
+      if (totalPlaced === targetNumber) {
+        const msg = i18n[currentLang].correct;
+        feedbackEl.innerText = msg;
+        feedbackEl.className = "w-full min-h-[50px] bg-emerald-100 rounded-xl p-3 text-center font-bold text-sm sm:text-base shadow-md flex items-center justify-center border-2 border-emerald-500 text-emerald-800";
+
+        // Jouer la véritable mélodie de gazouillis d'oiseaux via Web Audio API
+        playBirdMelody();
+        
+        // Activer l'animation visuelle de chant d'oiseaux
+        renderTree(true);
+
+        // Feedback vocal
+        safeSpeak(msg);
+
+        document.getElementById('btn-val').classList.add('hidden');
+        document.getElementById('btn-nxt').classList.remove('hidden');
+      } else {
+        const placedWords = getNumberInWords(totalPlaced, currentLang);
+        const targetWords = getNumberInWords(targetNumber, currentLang);
+
+        const msgText = i18n[currentLang].errorPrefix + totalPlaced + " (" + placedWords + ")" 
+                      + i18n[currentLang].errorSuffix + targetNumber + " (" + targetWords + ").";
+
+        feedbackEl.innerText = msgText;
+        feedbackEl.className = "w-full min-h-[50px] bg-rose-100 rounded-xl p-3 text-center font-bold text-sm sm:text-base shadow-md flex items-center justify-center border-2 border-rose-500 text-rose-800";
+
+        const spokenMsg = (currentLang === 'fr')
+          ? `Tu as placé ${placedWords}. Il fallait placer ${targetWords}.`
+          : `You placed ${placedWords}. You needed ${targetWords}.`;
+
+        safeSpeak(spokenMsg);
+      }
+    }
+
+    function nextQuestion() {
+      generateQuestion();
+    }
+
+    // Initialisation au chargement
+    window.addEventListener('DOMContentLoaded', () => {
+      generateQuestion();
+    });
+  </script>
+</body>
+</html>

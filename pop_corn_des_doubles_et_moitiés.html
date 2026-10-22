@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Pop-Corn des Doubles et Moitiés</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        popYellow: '#FFD166',
+                        popRed: '#EF476F',
+                        popBlue: '#118AB2',
+                        popGreen: '#06D6A0',
+                        popDark: '#073B4C'
+                    },
+                    fontFamily: {
+                        sans: ['Fredoka', 'Comic Sans MS', 'Segoe UI', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            overflow: hidden;
+            background: linear-gradient(135deg, #fef9e7 0%, #fff3b0 100%);
+        }
+
+        /* Floating Popcorn Animation Area */
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        /* Kernel Bouncing Element */
+        .popcorn-kernel {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.1s ease-out;
+            will-change: transform, left, top;
+            filter: drop-shadow(0px 6px 10px rgba(0,0,0,0.15));
+            touch-action: manipulation;
+        }
+
+        .popcorn-kernel:hover {
+            transform: scale(1.15) rotate(3deg);
+        }
+
+        .popcorn-kernel:active {
+            transform: scale(0.9);
+        }
+
+        /* Golden Bag Pop Animation */
+        @keyframes goldenBurst {
+            0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+            50% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+            70% { transform: scale(1.0) rotate(0deg); opacity: 1; }
+            100% { transform: scale(1.1); opacity: 0; }
+        }
+
+        .golden-pop-anim {
+            animation: goldenBurst 1.2s ease-out forwards;
+        }
+
+        /* Machine Shake Animation */
+        @keyframes shakeMachine {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-3px, 2px) rotate(-1deg); }
+            40% { transform: translate(3px, -2px) rotate(1deg); }
+            60% { transform: translate(-2px, -1px) rotate(-1deg); }
+            80% { transform: translate(2px, 2px) rotate(1deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .machine-shaking {
+            animation: shakeMachine 0.4s ease-in-out infinite;
+        }
+
+        /* Custom Scrollbar for stats/logs if needed */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FFD166;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between p-3 md:p-6 text-popDark relative select-none">
+
+    <!-- Top Navigation & Controls Bar -->
+    <header class="relative z-30 flex justify-between items-center bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-lg border-2 border-popYellow">
+        <div class="flex items-center gap-3">
+            <a href="index.html" id="btn-exit" class="flex items-center gap-2 bg-popRed hover:bg-red-600 text-white font-bold py-2 px-4 rounded-xl shadow transition transform active:scale-95 text-sm md:text-base">
+                <i class="fa-solid font-bold fa-house"></i>
+                <span data-i18n="exit">Quitter</span>
+            </a>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- Audio Mute Toggle -->
+            <button id="btn-audio-toggle" class="bg-gray-100 hover:bg-gray-200 text-popDark font-bold p-2.5 rounded-xl shadow transition transform active:scale-95 flex items-center justify-center w-10 h-10">
+                <i class="fa-solid fa-volume-high text-lg" id="audio-icon"></i>
+            </button>
+
+            <!-- Voice Speed Control Slider -->
+            <div class="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-xl shadow-inner text-xs font-bold text-popDark">
+                <i class="fa-solid fa-gauge-high text-gray-500"></i>
+                <input type="range" id="speech-rate" min="0.5" max="1.5" step="0.1" value="1" class="w-16 accent-popBlue cursor-pointer">
+                <span id="rate-value" class="w-8 text-center">1x</span>
+            </div>
+
+            <!-- Language Switcher -->
+            <div class="flex bg-gray-200 p-1 rounded-xl shadow-inner font-bold text-xs md:text-sm">
+                <button id="lang-fr" class="px-3 py-1.5 rounded-lg transition-all duration-200 bg-popDark text-white shadow">FR</button>
+                <button id="lang-en" class="px-3 py-1.5 rounded-lg transition-all duration-200 text-gray-700 hover:text-popDark">EN</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="relative flex-1 my-3 flex flex-col items-center justify-center relative overflow-hidden rounded-3xl bg-amber-50/60 border-4 border-dashed border-popYellow/50 shadow-inner">
+        
+        <!-- Background Popcorn Machine Graphic -->
+        <div id="popcorn-machine" class="absolute bottom-2 md:bottom-6 z-0 opacity-20 pointer-events-none transition-transform duration-300">
+            <svg width="220" height="280" viewBox="0 0 200 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="30" y="70" width="140" height="130" rx="15" fill="#EF476F" stroke="#073B4C" stroke-width="6"/>
+                <path d="M40 70 L160 70 L140 20 L60 20 Z" fill="#FFD166" stroke="#073B4C" stroke-width="6"/>
+                <circle cx="100" cy="15" r="12" fill="#EF476F" stroke="#073B4C" stroke-width="4"/>
+                <rect x="50" y="85" width="100" height="90" rx="8" fill="#FFFFFF" fill-opacity="0.8" stroke="#073B4C" stroke-width="4"/>
+                <path d="M60 185 L140 185 L150 240 L50 240 Z" fill="#118AB2" stroke="#073B4C" stroke-width="6"/>
+                <text x="100" y="140" font-family="Fredoka" font-size="22" font-weight="bold" fill="#073B4C" text-anchor="middle">POP!</text>
+            </svg>
+        </div>
+
+        <!-- Start Screen Overlay -->
+        <div id="start-screen" class="absolute inset-0 z-40 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-24 h-24 mb-4 animate-bounce">
+                <svg viewBox="0 0 100 100" fill="none">
+                    <path d="M20 50 Q 30 20 50 20 Q 70 20 80 50 Q 85 80 50 85 Q 15 80 20 50 Z" fill="#FFD166" stroke="#073B4C" stroke-width="5"/>
+                    <circle cx="38" cy="45" r="5" fill="#073B4C"/>
+                    <circle cx="62" cy="45" r="5" fill="#073B4C"/>
+                    <path d="M40 65 Q 50 75 60 65" stroke="#073B4C" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black text-popDark mb-2 tracking-wide" data-i18n="gameTitle">
+                Le Pop-Corn des Doubles et Moitiés
+            </h1>
+            <p class="text-gray-600 max-w-md mb-6 text-base md:text-lg font-medium" data-i18n="instructions">
+                Attrape les grains de pop-corn avec le double ou la moitié du nombre affiché avant la fin du chrono de 30 secondes !
+            </p>
+            
+            <button id="btn-start" class="group relative inline-flex items-center justify-center px-8 py-4 text-xl md:text-2xl font-black text-white bg-popGreen rounded-2xl shadow-xl hover:bg-emerald-500 transform hover:-translate-y-1 active:translate-y-0 transition-all duration-200 border-b-4 border-emerald-700">
+                <i class="fa-solid fa-play mr-3"></i>
+                <span data-i18n="startBtn">JOUER (30s)</span>
+            </button>
+        </div>
+
+        <!-- HUD: Timer, Score, Prompt Target Header -->
+        <div id="game-hud" class="relative z-30 w-full max-w-2xl px-4 pt-2 hidden flex flex-col items-center">
+            <!-- Stats bar -->
+            <div class="w-full flex justify-between items-center mb-2 px-4 py-2 bg-white/80 rounded-2xl border-2 border-popYellow shadow-sm">
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-500 font-bold text-xs md:text-sm uppercase tracking-wider" data-i18n="scoreLabel">Score:</span>
+                    <span id="score-display" class="text-2xl md:text-3xl font-black text-popBlue">0</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-500 text-lg"></i>
+                    <span id="streak-display" class="text-base md:text-lg font-bold text-amber-600">x0</span>
+                </div>
+                <div class="flex items-center gap-2 bg-popRed/10 px-3 py-1 rounded-xl border border-popRed/30">
+                    <i class="fa-regular fa-clock text-popRed text-lg md:text-xl animate-pulse"></i>
+                    <span id="timer-display" class="text-2xl md:text-3xl font-black text-popRed">30s</span>
+                </div>
+            </div>
+
+            <!-- Central Question Prompt Display -->
+            <div id="target-box" class="w-full bg-white rounded-2xl p-3 md:p-4 shadow-xl border-4 border-popYellow text-center transform transition-transform duration-200">
+                <div id="target-type" class="text-xs md:text-sm font-bold uppercase tracking-widest text-popRed mb-0.5">---</div>
+                <div class="flex items-center justify-center gap-3">
+                    <span id="target-text" class="text-2xl md:text-4xl font-black text-popDark">---</span>
+                </div>
+                <div id="target-spelled" class="text-xs md:text-sm font-semibold text-gray-500 italic mt-1">---</div>
+            </div>
+        </div>
+
+        <!-- Interactive Kernel Canvas / Playground -->
+        <div id="play-area" class="relative w-full h-full flex-1 z-20 pointer-events-auto"></div>
+
+        <!-- Golden Popcorn Burst Container (Triggered on correct answer) -->
+        <div id="burst-overlay" class="pointer-events-none absolute inset-0 z-40 flex items-center justify-center hidden">
+            <div id="golden-bag" class="golden-pop-anim flex flex-col items-center">
+                <svg width="180" height="220" viewBox="0 0 100 120" fill="none">
+                    <path d="M15 30 L85 30 L75 110 L25 110 Z" fill="#FFD166" stroke="#073B4C" stroke-width="4"/>
+                    <path d="M15 30 Q 50 10 85 30" fill="#EF476F"/>
+                    <!-- Popcorn topping -->
+                    <circle cx="30" cy="20" r="12" fill="#FFF" stroke="#073B4C" stroke-width="3"/>
+                    <circle cx="50" cy="12" r="14" fill="#FFD166" stroke="#073B4C" stroke-width="3"/>
+                    <circle cx="70" cy="20" r="12" fill="#FFF" stroke="#073B4C" stroke-width="3"/>
+                    <circle cx="40" cy="22" r="10" fill="#FFF"/>
+                    <circle cx="60" cy="22" r="10" fill="#FFF"/>
+                    <!-- Star badge -->
+                    <polygon points="50,50 55,62 68,62 57,70 61,82 50,74 39,82 43,70 32,62 45,62" fill="#FFF" stroke="#073B4C" stroke-width="2"/>
+                </svg>
+                <div id="burst-text" class="text-3xl font-black text-amber-600 drop-shadow-md mt-2">+10</div>
+            </div>
+        </div>
+
+        <!-- Text/Spoken Feedback Toast Box -->
+        <div id="feedback-toast" class="pointer-events-none absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-11/12 bg-popDark text-white px-5 py-3 rounded-2xl shadow-2xl border-2 border-popYellow text-center hidden transition-all duration-300">
+            <p id="feedback-main" class="text-base md:text-lg font-bold"></p>
+            <p id="feedback-sub" class="text-xs md:text-sm text-popYellow font-medium mt-1"></p>
+        </div>
+
+        <!-- End Game Screen Overlay -->
+        <div id="end-screen" class="absolute inset-0 z-50 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center hidden">
+            <div class="text-5xl mb-2">🍿</div>
+            <h2 class="text-3xl md:text-4xl font-black text-popDark mb-1" id="end-title" data-i18n="gameOverTitle">Temps Écoulé !</h2>
+            <p class="text-gray-600 text-sm md:text-base mb-4" data-i18n="gameOverSub">Bravo pour tes calculs rapides !</p>
+            
+            <div class="bg-amber-100/80 p-6 rounded-3xl border-2 border-popYellow max-w-xs w-full mb-6 shadow-md">
+                <div class="text-sm font-bold text-gray-500 uppercase" data-i18n="finalScoreLabel">Score Final</div>
+                <div id="final-score" class="text-5xl font-black text-popBlue my-2">0</div>
+                <div class="text-xs font-semibold text-amber-800" id="final-stats">0 réponses correctes</div>
+            </div>
+
+            <div class="flex gap-4">
+                <button id="btn-restart" class="px-6 py-3 text-lg font-bold text-white bg-popGreen rounded-2xl shadow-lg hover:bg-emerald-500 transition active:scale-95 border-b-4 border-emerald-700 cursor-pointer">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> <span data-i18n="restartBtn">Recommencer</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Credit -->
+    <footer class="text-center text-xs text-gray-500 font-medium z-30 py-1">
+        Le Pop-Corn des Doubles et Moitiés &bull; Belgique
+    </footer>
+
+    <!-- Logic & TTS JS Script -->
+    <script>
+        const translations = {
+            fr: {
+                exit: "Quitter",
+                gameTitle: "Le Pop-Corn des Doubles et Moitiés",
+                instructions: "Attrape rapidement le grain de pop-corn qui contient la bonne réponse (double ou moitié) !",
+                startBtn: "JOUER (30s)",
+                scoreLabel: "Score:",
+                gameOverTitle: "Temps Écoulé !",
+                gameOverSub: "Bravo pour tes calculs rapides !",
+                finalScoreLabel: "Score Final",
+                restartBtn: "Recommencer",
+                doubleOf: "Double de",
+                halfOf: "Moitié de",
+                correctFeedback: "Bravo !",
+                wrongFeedback: "Oups ! C'était {answer}.",
+                timeUpSpeech: "Temps écoulé !"
+            },
+            en: {
+                exit: "Exit",
+                gameTitle: "Popcorn Doubles & Halves",
+                instructions: "Quickly catch the popcorn kernel with the correct answer (double or half)!",
+                startBtn: "PLAY (30s)",
+                scoreLabel: "Score:",
+                gameOverTitle: "Time's Up!",
+                gameOverSub: "Great job on your fast mental math!",
+                finalScoreLabel: "Final Score",
+                restartBtn: "Play Again",
+                doubleOf: "Double of",
+                halfOf: "Half of",
+                correctFeedback: "Awesome!",
+                wrongFeedback: "Oops! It was {answer}.",
+                timeUpSpeech: "Time's up!"
+            }
+        };
+
+        function numberToWordsFrBelgiue(n) {
+            if (n === 0) return "zéro";
+            const units = ["", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf"];
+            const teens = ["dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"];
+            const tens = ["", "dix", "vingt", "trente", "quarante", "cinquante", "soixante", "septante", "quatre-vingts", "nonante"];
+
+            if (n < 10) return units[n];
+            if (n >= 10 && n < 20) return teens[n - 10];
+
+            if (n < 100) {
+                const u = n % 10;
+                const t = Math.floor(n / 10);
+                let tenText = tens[t];
+                if (t === 8 && u > 0) tenText = "quatre-vingt";
+
+                if (u === 0) return tenText;
+                if (u === 1 && t !== 8) return `${tenText}-et-un`;
+                return `${tenText}-${units[u]}`;
+            }
+
+            if (n === 100) return "cent";
+            if (n < 200) {
+                const rem = n - 100;
+                return `cent ${numberToWordsFrBelgiue(rem)}`.trim();
+            }
+
+            return n.toString();
+        }
+
+        function numberToWordsEn(n) {
+            if (n === 0) return "zero";
+            const units = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+            const teens = ["ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+            const tens = ["", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+            if (n < 10) return units[n];
+            if (n >= 10 && n < 20) return teens[n - 10];
+            if (n < 100) {
+                const u = n % 10;
+                const t = Math.floor(n / 10);
+                if (u === 0) return tens[t];
+                return `${tens[t]}-${units[u]}`;
+            }
+            if (n === 100) return "one hundred";
+            if (n < 200) return `one hundred ${numberToWordsEn(n - 100)}`.trim();
+            return n.toString();
+        }
+
+        function spellNumber(n, lang) {
+            return lang === "fr" ? numberToWordsFrBelgiue(n) : numberToWordsEn(n);
+        }
+
+        let currentLang = "fr";
+        let audioVoice = null;
+        let isAudioMuted = false;
+        let speechIdCounter = 0;
+        let speechRate = 1.0;
+
+        function stopAudioAndSpeech() {
+            speechIdCounter++; // Invalidates all pending speech operations
+            if (audioVoice) {
+                try {
+                    audioVoice.pause();
+                    audioVoice.currentTime = 0;
+                    audioVoice.src = "";
+                } catch(e) {}
+                audioVoice = null;
+            }
+            if ("speechSynthesis" in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function speakText(text) {
+            if (isAudioMuted || !text) return;
+            
+            // Hard stop previous audio before playing new speech
+            stopAudioAndSpeech();
+
+            // Utilisation directe du Web Speech API de synthèse vocale pour supporter le réglage de la vitesse
+            if ("speechSynthesis" in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = currentLang === "fr" ? "fr-BE" : "en-US";
+                utterance.rate = speechRate;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        let score = 0;
+        let streak = 0;
+        let correctAnswersCount = 0;
+        let timeLeft = 30;
+        let timerInterval = null;
+        let gameActive = false;
+        let animationFrameId = null;
+        let isProcessingClick = false;
+
+        let currentQuestion = {
+            type: "double",
+            baseNumber: 10,
+            correctAnswer: 20,
+            spelledTarget: "",
+            promptText: ""
+        };
+
+        let kernels = [];
+
+        // DOM elements
+        const startScreen = document.getElementById("start-screen");
+        const endScreen = document.getElementById("end-screen");
+        const gameHud = document.getElementById("game-hud");
+        const playArea = document.getElementById("play-area");
+        const scoreDisplay = document.getElementById("score-display");
+        const streakDisplay = document.getElementById("streak-display");
+        const timerDisplay = document.getElementById("timer-display");
+        const targetTypeEl = document.getElementById("target-type");
+        const targetTextEl = document.getElementById("target-text");
+        const targetSpelledEl = document.getElementById("target-spelled");
+        const burstOverlay = document.getElementById("burst-overlay");
+        const feedbackToast = document.getElementById("feedback-toast");
+        const feedbackMain = document.getElementById("feedback-main");
+        const feedbackSub = document.getElementById("feedback-sub");
+
+        function generateQuestion(speakPrompt = true) {
+            const isDouble = Math.random() < 0.5;
+            let base, answer;
+
+            if (isDouble) {
+                base = Math.floor(Math.random() * 45) + 5;
+                answer = base * 2;
+            } else {
+                let even = Math.floor(Math.random() * 46) + 4;
+                base = even * 2;
+                answer = even;
+            }
+
+            const typeKey = isDouble ? "doubleOf" : "halfOf";
+            const promptStr = `${translations[currentLang][typeKey]} ${base}`;
+            const spelledStr = `${translations[currentLang][typeKey]} ${spellNumber(base, currentLang)}`;
+
+            currentQuestion = {
+                type: isDouble ? "double" : "half",
+                baseNumber: base,
+                correctAnswer: answer,
+                spelledTarget: spelledStr,
+                promptText: promptStr
+            };
+
+            renderQuestionPrompt();
+            spawnKernels();
+            
+            if (speakPrompt) {
+                speakText(spelledStr);
+            }
+        }
+
+        function renderQuestionPrompt() {
+            const typeKey = currentQuestion.type === "double" ? "doubleOf" : "halfOf";
+            targetTypeEl.textContent = currentQuestion.type === "double" ? "DOUBLE" : "MOITIÉ / HALF";
+            targetTextEl.textContent = `${translations[currentLang][typeKey]} ${currentQuestion.baseNumber}`;
+            targetSpelledEl.textContent = `${translations[currentLang][typeKey]} "${spellNumber(currentQuestion.baseNumber, currentLang)}"`;
+        }
+
+        class FloatingKernel {
+            constructor(value, isCorrect, x, y) {
+                this.value = value;
+                this.isCorrect = isCorrect;
+                this.x = x;
+                this.y = y;
+                
+                // Slowed down physics for smooth kid-friendly gameplay
+                this.vx = (Math.random() - 0.5) * 0.35; 
+                this.vy = -(Math.random() * 0.4 + 0.3); 
+                this.gravity = 0.005;
+                
+                this.size = Math.min(window.innerWidth * 0.18, 85);
+                this.rotation = Math.random() * 360;
+                this.vRot = (Math.random() - 0.5) * 0.3;
+
+                this.element = document.createElement("div");
+                this.element.className = "popcorn-kernel shadow-md rounded-full flex items-center justify-center font-black text-popDark select-none cursor-pointer";
+                this.element.style.width = `${this.size}px`;
+                this.element.style.height = `${this.size}px`;
+                
+                const bgColors = ["#FFF", "#FFFDED", "#FFF3B0"];
+                const randomBg = bgColors[Math.floor(Math.random() * bgColors.length)];
+                
+                this.element.innerHTML = `
+                    <svg viewBox="0 0 100 100" class="absolute inset-0 w-full h-full pointer-events-none">
+                        <path d="M25 45 Q 15 20 40 20 Q 50 10 65 20 Q 85 20 75 50 Q 85 75 60 80 Q 45 90 30 80 Q 15 70 25 45 Z" fill="${randomBg}" stroke="#073B4C" stroke-width="4"/>
+                        <circle cx="40" cy="40" r="3" fill="#073B4C" opacity="0.3"/>
+                        <circle cx="60" cy="42" r="3" fill="#073B4C" opacity="0.3"/>
+                    </svg>
+                    <span class="relative z-10 text-xl md:text-2xl drop-shadow-sm pointer-events-none">${value}</span>
+                `;
+
+                this.element.addEventListener("pointerdown", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleKernelClick(this);
+                });
+
+                playArea.appendChild(this.element);
+            }
+
+            update(bounds) {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.rotation += this.vRot;
+
+                if (this.x <= 10) {
+                    this.x = 10;
+                    this.vx *= -0.8;
+                } else if (this.x >= bounds.width - this.size - 10) {
+                    this.x = bounds.width - this.size - 10;
+                    this.vx *= -0.8;
+                }
+
+                if (this.y >= bounds.height - this.size - 15) {
+                    this.y = bounds.height - this.size - 15;
+                    this.vy = -(Math.random() * 0.5 + 0.5);
+                }
+
+                if (this.y <= 10) {
+                    this.y = 10;
+                    this.vy = Math.abs(this.vy) * 0.8;
+                }
+
+                this.element.style.transform = `translate3d(${this.x}px, ${this.y}px, 0px) rotate(${this.rotation}deg)`;
+            }
+
+            destroy() {
+                if (this.element && this.element.parentNode) {
+                    this.element.parentNode.removeChild(this.element);
+                }
+            }
+        }
+
+        function clearKernels() {
+            kernels.forEach(k => k.destroy());
+            kernels = [];
+        }
+
+        function spawnKernels() {
+            clearKernels();
+            const bounds = playArea.getBoundingClientRect();
+
+            const count = 4;
+            const values = [currentQuestion.correctAnswer];
+
+            while (values.length < count) {
+                let offset = (Math.floor(Math.random() * 7) - 3) * 2;
+                if (offset === 0) offset = 4;
+                let distractor = Math.max(2, currentQuestion.correctAnswer + offset);
+                if (!values.includes(distractor)) {
+                    values.push(distractor);
+                }
+            }
+
+            values.sort(() => Math.random() - 0.5);
+
+            const areaWidth = bounds.width || window.innerWidth;
+            const areaHeight = bounds.height || (window.innerHeight - 200);
+
+            values.forEach((val, index) => {
+                const startX = (areaWidth / (count + 1)) * (index + 1) - 40;
+                const startY = areaHeight * 0.3 + (Math.random() * 60 - 30);
+                const isCorrect = (val === currentQuestion.correctAnswer);
+                kernels.push(new FloatingKernel(val, isCorrect, startX, startY));
+            });
+        }
+
+        function animatePhysics() {
+            if (!gameActive) return;
+            const bounds = playArea.getBoundingClientRect();
+            kernels.forEach(k => k.update(bounds));
+            animationFrameId = requestAnimationFrame(animatePhysics);
+        }
+
+        function handleKernelClick(kernel) {
+            if (!gameActive || isProcessingClick) return;
+            isProcessingClick = true;
+
+            const isCorrect = kernel.isCorrect;
+
+            if (isCorrect) {
+                streak++;
+                correctAnswersCount++;
+                const pts = 10 + (streak > 1 ? (streak - 1) * 2 : 0);
+                score += pts;
+                
+                scoreDisplay.textContent = score;
+                streakDisplay.textContent = `x${streak}`;
+
+                burstOverlay.classList.remove("hidden");
+                document.getElementById("burst-text").textContent = `+${pts}`;
+                document.getElementById("popcorn-machine").classList.add("machine-shaking");
+
+                const msg = translations[currentLang].correctFeedback;
+                showToast(msg, "");
+                speakText(msg);
+
+                setTimeout(() => {
+                    burstOverlay.classList.add("hidden");
+                    document.getElementById("popcorn-machine").classList.remove("machine-shaking");
+                }, 600);
+
+                setTimeout(() => {
+                    isProcessingClick = false;
+                    if (gameActive) generateQuestion(true); // Énoncé à chaque nouvelle question
+                }, 800);
+
+            } else {
+                streak = 0;
+                streakDisplay.textContent = `x0`;
+
+                const spelledAns = spellNumber(currentQuestion.correctAnswer, currentLang);
+                const feedbackText = translations[currentLang].wrongFeedback.replace("{answer}", `${currentQuestion.correctAnswer}`);
+
+                showToast(`❌ Oups!`, `${currentQuestion.promptText} = ${currentQuestion.correctAnswer}`);
+                speakText(feedbackText);
+
+                setTimeout(() => {
+                    isProcessingClick = false;
+                    if (gameActive) generateQuestion(true); // Énoncé à chaque nouvelle question
+                }, 1600);
+            }
+        }
+
+        let toastTimeout = null;
+        function showToast(mainText, subText) {
+            if (toastTimeout) clearTimeout(toastTimeout);
+            feedbackMain.textContent = mainText;
+            feedbackSub.textContent = subText;
+            feedbackToast.classList.remove("hidden");
+            toastTimeout = setTimeout(() => {
+                feedbackToast.classList.add("hidden");
+            }, 1800);
+        }
+
+        function startGame() {
+            stopAudioAndSpeech();
+            score = 0;
+            streak = 0;
+            correctAnswersCount = 0;
+            timeLeft = 30;
+            isProcessingClick = false;
+
+            scoreDisplay.textContent = "0";
+            streakDisplay.textContent = "x0";
+            timerDisplay.textContent = `${timeLeft}s`;
+
+            startScreen.classList.add("hidden");
+            endScreen.classList.add("hidden");
+            gameHud.classList.remove("hidden");
+
+            gameActive = true;
+            generateQuestion(true);
+
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animatePhysics();
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `${timeLeft}s`;
+
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            clearKernels();
+            gameHud.classList.add("hidden");
+            endScreen.classList.remove("hidden");
+
+            document.getElementById("final-score").textContent = score;
+            document.getElementById("final-stats").textContent = `${correctAnswersCount} ${currentLang === "fr" ? "réponses correctes" : "correct answers"}`;
+
+            speakText(translations[currentLang].timeUpSpeech);
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            stopAudioAndSpeech();
+            
+            document.getElementById("lang-fr").className = lang === "fr" 
+                ? "px-3 py-1.5 rounded-lg transition-all duration-200 bg-popDark text-white shadow cursor-pointer"
+                : "px-3 py-1.5 rounded-lg transition-all duration-200 text-gray-700 hover:text-popDark cursor-pointer";
+                
+            document.getElementById("lang-en").className = lang === "en" 
+                ? "px-3 py-1.5 rounded-lg transition-all duration-200 bg-popDark text-white shadow cursor-pointer"
+                : "px-3 py-1.5 rounded-lg transition-all duration-200 text-gray-700 hover:text-popDark cursor-pointer";
+
+            document.querySelectorAll("[data-i18n]").forEach(el => {
+                const key = el.getAttribute("data-i18n");
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+
+            if (gameActive) {
+                renderQuestionPrompt();
+            }
+        }
+
+        document.getElementById("btn-start").addEventListener("click", () => startGame());
+        document.getElementById("btn-restart").addEventListener("click", () => startGame());
+
+        document.getElementById("lang-fr").addEventListener("click", () => setLanguage("fr"));
+        document.getElementById("lang-en").addEventListener("click", () => setLanguage("en"));
+
+        const rateSlider = document.getElementById("speech-rate");
+        const rateValDisplay = document.getElementById("rate-value");
+        if (rateSlider) {
+            rateSlider.addEventListener("input", (e) => {
+                speechRate = parseFloat(e.target.value);
+                rateValDisplay.textContent = `${speechRate.toFixed(1)}x`;
+            });
+        }
+
+        document.getElementById("btn-audio-toggle").addEventListener("click", () => {
+            isAudioMuted = !isAudioMuted;
+            const icon = document.getElementById("audio-icon");
+            if (isAudioMuted) {
+                icon.className = "fa-solid fa-volume-xmark text-lg text-red-500";
+                stopAudioAndSpeech();
+            } else {
+                icon.className = "fa-solid fa-volume-high text-lg text-popDark";
+            }
+        });
+
+        window.addEventListener("DOMContentLoaded", () => {
+            setLanguage("fr");
+        });
+    </script>
+</body>
+</html>
