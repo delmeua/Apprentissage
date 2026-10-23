@@ -1,0 +1,840 @@
+F<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Syntaxe - La structure de la phrase</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        quicksand: ['Quicksand', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            blue: '#4361EE',
+                            lightBlue: '#4CC9F0',
+                            purple: '#7209B7',
+                            pink: '#F72585',
+                            yellow: '#FFD166',
+                            green: '#06D6A0',
+                            bg: '#EEF2FF',
+                        }
+                    },
+                    boxShadow: {
+                        'fun': '0 8px 0 0 rgba(0, 0, 0, 0.15)',
+                        'fun-sm': '0 4px 0 0 rgba(0, 0, 0, 0.12)',
+                        'fun-lg': '0 12px 0 0 rgba(0, 0, 0, 0.18)',
+                        'fun-active': '0 2px 0 0 rgba(0, 0, 0, 0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .title-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Custom Drag & Drop styles */
+        .dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+
+        .drop-zone-highlight {
+            border-color: #4361EE !important;
+            background-color: #E0E7FF !important;
+        }
+
+        /* Pulse animation for hint/selection */
+        @keyframes gentle-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .pulse-anim {
+            animation: gentle-pulse 2s infinite ease-in-out;
+        }
+
+        /* Shake animation for errors */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .shake-anim {
+            animation: shake 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-blue-100 via-indigo-50 to-purple-100 min-h-full flex flex-col justify-between overflow-x-hidden text-slate-800">
+
+    <!-- TOP HEADER / CONTROL BAR -->
+    <header class="w-full max-w-5xl mx-auto px-4 pt-4 flex justify-between items-center z-10">
+        <!-- Exit Button -->
+        <a href="../index.html" id="btn-exit" class="bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-4 rounded-2xl shadow-fun-sm hover:shadow-fun transition-all transform active:translate-y-1 flex items-center space-x-2 text-sm sm:text-base cursor-pointer">
+            <i class="fa-solid fa-house"></i>
+            <span class="ui-text-exit">Quitter</span>
+        </a>
+
+        <!-- Stars & Score Badge -->
+        <div class="bg-amber-300 border-4 border-amber-400 text-amber-950 font-bold px-4 py-2 rounded-2xl shadow-fun-sm flex items-center space-x-2 text-lg">
+            <i class="fa-solid fa-star text-amber-600 text-xl animate-bounce"></i>
+            <span id="score-counter">0</span>
+            <span class="text-xs uppercase tracking-wider text-amber-900 font-extrabold ml-1 ui-text-stars">Étoiles</span>
+        </div>
+
+        <!-- Settings Group (Sound & Language toggle) -->
+        <div class="flex items-center space-x-2">
+            <!-- Audio Toggle -->
+            <button id="btn-audio-toggle" class="bg-indigo-500 hover:bg-indigo-600 text-white w-11 h-11 rounded-2xl shadow-fun-sm flex items-center justify-center text-lg transition-all active:translate-y-1">
+                <i id="audio-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+
+            <!-- Language Switcher Button -->
+            <button id="btn-lang-toggle" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-2.5 rounded-2xl shadow-fun-sm flex items-center space-x-1.5 text-sm transition-all active:translate-y-1">
+                <i class="fa-solid fa-globe"></i>
+                <span id="lang-indicator">FR</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="w-full max-w-4xl mx-auto px-4 py-4 flex-grow flex flex-col justify-center items-center">
+
+        <!-- CARD CONTAINER -->
+        <div class="w-full bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-indigo-200 flex flex-col items-center">
+            
+            <!-- Progress Bar -->
+            <div class="w-full max-w-lg bg-gray-200 rounded-full h-3.5 mb-6 overflow-hidden border border-gray-300">
+                <div id="progress-bar" class="bg-gradient-to-r from-brand-blue to-brand-lightBlue h-full w-0 transition-all duration-500 rounded-full"></div>
+            </div>
+
+            <!-- Header Instruction Banner -->
+            <div class="text-center mb-6">
+                <div id="instruction-title" class="title-font text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-900 mb-2 flex items-center justify-center gap-2">
+                    <span class="ui-text-instruction">Remets les blocs de mots dans l'ordre pour faire une phrase correcte :</span>
+                    <button id="btn-speak-instruction" class="text-indigo-500 hover:text-indigo-700 text-lg sm:text-xl p-1 focus:outline-none transition-transform active:scale-95" title="Écouter la consigne">
+                        <i class="fa-solid fa-circle-play"></i>
+                    </button>
+                </div>
+                <p class="ui-text-hint text-xs sm:text-sm text-slate-500 font-semibold">
+                    💡 Astuce : La phrase commence par une <span class="text-indigo-600 font-bold">MAJUSCULE</span> et se termine par un <span class="text-pink-600 font-bold">POINT</span> !
+                </p>
+            </div>
+
+            <!-- TARGET DROP ZONE / CONSTRUCTED SENTENCE AREA -->
+            <div class="w-full min-h-[110px] sm:min-h-[130px] bg-slate-100 border-3 border-dashed border-indigo-300 rounded-2xl p-3 sm:p-4 mb-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 transition-colors duration-200 shadow-inner" id="drop-zone">
+                <div id="drop-placeholder" class="text-slate-400 font-semibold italic text-center select-none text-sm sm:text-base">
+                    <i class="fa-solid fa-hand-pointer mr-1 animate-pulse"></i>
+                    <span class="ui-text-placeholder">Clique sur les mots ou glisse-les ici...</span>
+                </div>
+            </div>
+
+            <!-- SOURCE BLOCKS / AVAILABLE WORDS -->
+            <div class="w-full min-h-[90px] bg-indigo-50/70 rounded-2xl p-3 sm:p-4 mb-6 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 border border-indigo-100" id="source-zone">
+                <!-- Word blocks will be injected here dynamically -->
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="flex flex-wrap justify-center items-center gap-3 sm:gap-4 w-full">
+                <!-- Reset / Clear Button -->
+                <button id="btn-reset" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-5 rounded-2xl shadow-fun-sm active:shadow-fun-active transition-all transform active:translate-y-1 flex items-center space-x-2 text-sm sm:text-base">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="ui-text-reset">Effacer</span>
+                </button>
+
+                <!-- Audio Listen to Current Sentence -->
+                <button id="btn-listen" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-5 rounded-2xl shadow-fun-sm active:shadow-fun-active transition-all transform active:translate-y-1 flex items-center space-x-2 text-sm sm:text-base">
+                    <i class="fa-solid fa-volume-low text-lg"></i>
+                    <span class="ui-text-listen">Écouter</span>
+                </button>
+
+                <!-- Validate / Check Answer Button -->
+                <button id="btn-check" class="bg-emerald-500 hover:bg-emerald-600 text-white title-font font-bold text-lg sm:text-xl py-3 px-7 rounded-2xl shadow-fun active:shadow-fun-active transition-all transform active:translate-y-1 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span class="ui-text-validate">Valider</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- FEEDBACK / MODAL DIALOG AREA -->
+        <div id="feedback-card" class="w-full max-w-4xl mt-4 rounded-3xl p-4 sm:p-6 shadow-lg border-4 transition-all duration-300 hidden">
+            <div class="flex items-start space-x-4">
+                <div id="feedback-icon" class="text-3xl sm:text-4xl pt-1"></div>
+                <div class="flex-1">
+                    <h3 id="feedback-title" class="title-font text-lg sm:text-xl font-bold mb-1"></h3>
+                    <p id="feedback-message" class="text-sm sm:text-base mb-2 font-medium"></p>
+                    <div id="correction-box" class="hidden mt-2 p-3 bg-white/80 rounded-xl border border-rose-200">
+                        <span class="text-xs font-bold uppercase tracking-wide text-rose-700 block mb-1 ui-text-correct-sentence">Bonne réponse :</span>
+                        <p id="correct-sentence-text" class="title-font text-base sm:text-lg font-bold text-emerald-700"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="btn-next" class="bg-indigo-600 hover:bg-indigo-700 text-white title-font font-bold py-2.5 px-6 rounded-xl shadow-fun-sm transition-all transform active:translate-y-1 flex items-center space-x-2 text-base">
+                    <span class="ui-text-next">Suivant</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER INFO -->
+    <footer class="w-full text-center py-3 text-slate-500 text-xs font-semibold">
+        <p class="ui-text-footer">Enseignement primaire belge • Syntaxe et Structure de la Phrase</p>
+    </footer>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        /**
+         * EXERCISE DATABASE
+         * All word blocks and target sentences are ALWAYS in French.
+         * Belgian French number terminology (septante, nonante) is respected.
+         */
+        const EXERCISES = [
+            {
+                // Request specified question
+                blocks: ["mange", "Le singe", "une banane."],
+                correct: ["Le singe", "mange", "une banane."]
+            },
+            {
+                blocks: ["dort", "sur le canapé.", "Le chat"],
+                correct: ["Le chat", "dort", "sur le canapé."]
+            },
+            {
+                blocks: ["mange", "La petite fille", "une pomme rouge."],
+                correct: ["La petite fille", "mange", "une pomme rouge."]
+            },
+            {
+                blocks: ["septante bonbons.", "compte", "Thomas"],
+                correct: ["Thomas", "compte", "septante bonbons."]
+            },
+            {
+                blocks: ["dessine", "nonante étoiles.", "Juliette"],
+                correct: ["Juliette", "dessine", "nonante étoiles."]
+            },
+            {
+                blocks: ["jouent", "dans le parc.", "Les enfants"],
+                correct: ["Les enfants", "jouent", "dans le parc."]
+            },
+            {
+                blocks: ["roule", "Le grand bus", "vers Bruxelles."],
+                correct: ["Le grand bus", "roule", "vers Bruxelles."]
+            },
+            {
+                blocks: ["quatre-vingts frites.", "préférez", "Vous"],
+                correct: ["Vous", "préférez", "quatre-vingts frites."]
+            },
+            {
+                blocks: ["regarde", "la télévision.", "Le garçon"],
+                correct: ["Le garçon", "regarde", "la télévision."]
+            },
+            {
+                blocks: ["porte", "un beau cartable.", "L'élève"],
+                correct: ["L'élève", "porte", "un beau cartable."]
+            }
+        ];
+
+        /**
+         * TRANSLATION / UI STRINGS DATABASE
+         */
+        const TRANSLATIONS = {
+            fr: {
+                exit: "Quitter",
+                stars: "Étoiles",
+                instruction: "Remets les blocs de mots dans l'ordre pour faire une phrase correcte :",
+                hint: "💡 Astuce : La phrase commence par une <span class=\"text-indigo-600 font-bold\">MAJUSCULE</span> et se termine par un <span class=\"text-pink-600 font-bold\">POINT</span> !",
+                placeholder: "Clique sur les mots ou glisse-les ici...",
+                reset: "Effacer",
+                listen: "Écouter",
+                validate: "Valider",
+                next: "Suivant",
+                footer: "Enseignement primaire belge • Syntaxe et Structure de la Phrase",
+                correctSentence: "Bonne réponse :",
+                praiseTitle: "Bravo ! Super !",
+                praiseMsg: "Excellente réponse ! La phrase est parfaitement construite.",
+                errorTitle: "Oups ! Essayons encore !",
+                errorMsg: "La phrase n'est pas tout à fait correcte.",
+                emptyError: "Mets au moins un mot dans la zone !",
+                speakInstruction: "Remets les blocs de mots dans l'ordre pour faire une phrase correcte.",
+                correctSpokenPraise: "Bravo ! C'est la bonne réponse !",
+                errorSpokenFeedback: "Oups ! Ce n'est pas tout à fait ça. Voici la bonne phrase :",
+                finishTitle: "Félicitations !",
+                finishMsg: "Tu as terminé tous les exercices avec succès ! Tu es un champion de la syntaxe !",
+                restart: "Recommencer"
+            },
+            en: {
+                exit: "Exit",
+                stars: "Stars",
+                instruction: "Put the word blocks in order to make a correct sentence:",
+                hint: "💡 Hint: The sentence starts with a <span class=\"text-indigo-600 font-bold\">CAPITAL LETTER</span> and ends with a <span class=\"text-pink-600 font-bold\">PERIOD</span>!",
+                placeholder: "Click on words or drag them here...",
+                reset: "Clear",
+                listen: "Listen",
+                validate: "Check",
+                next: "Next",
+                footer: "Belgian Primary Education • Sentence Structure & Syntax",
+                correctSentence: "Correct answer:",
+                praiseTitle: "Great Job!",
+                praiseMsg: "Excellent! The sentence is perfectly constructed.",
+                errorTitle: "Oops! Let's try again!",
+                errorMsg: "The sentence is not quite right.",
+                emptyError: "Place at least one word in the box!",
+                speakInstruction: "Put the word blocks in order to make a correct sentence.",
+                correctSpokenPraise: "Great job! That is correct!",
+                errorSpokenFeedback: "Oops! That's not quite right. Here is the correct sentence:",
+                finishTitle: "Congratulations!",
+                finishMsg: "You completed all exercises successfully! You are a sentence champion!",
+                restart: "Start Again"
+            }
+        };
+
+        // GLOBAL APPLICATION STATE
+        let currentLanguage = 'fr'; // 'fr' or 'en'
+        let currentExerciseIndex = 0;
+        let score = 0;
+        let audioEnabled = true;
+        let userConstructedBlocks = [];
+        let availableBlocks = [];
+        let draggedBlockText = null;
+
+        // DOM ELEMENTS
+        const dropZone = document.getElementById('drop-zone');
+        const sourceZone = document.getElementById('source-zone');
+        const dropPlaceholder = document.getElementById('drop-placeholder');
+        const scoreCounter = document.getElementById('score-counter');
+        const progressBar = document.getElementById('progress-bar');
+        const feedbackCard = document.getElementById('feedback-card');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const feedbackIcon = document.getElementById('feedback-icon');
+        const correctionBox = document.getElementById('correction-box');
+        const correctSentenceText = document.getElementById('correct-sentence-text');
+        const btnNext = document.getElementById('btn-next');
+        const btnCheck = document.getElementById('btn-check');
+        const btnReset = document.getElementById('btn-reset');
+        const btnListen = document.getElementById('btn-listen');
+        const btnAudioToggle = document.getElementById('btn-audio-toggle');
+        const audioIcon = document.getElementById('audio-icon');
+        const btnLangToggle = document.getElementById('btn-lang-toggle');
+        const langIndicator = document.getElementById('lang-indicator');
+        const btnSpeakInstruction = document.getElementById('btn-speak-instruction');
+
+        /**
+         * SPEECH SYNTHESIS ENGINE & DUAL VOICE STRATEGY
+         * Uses native SpeechSynthesis API. Switches between EN and FR voices automatically.
+         */
+        let frVoice = null;
+        let enVoice = null;
+
+        function initVoices() {
+            if ('speechSynthesis' in window) {
+                const updateVoices = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    // Preferred voices: French (BE or FR)
+                    frVoice = voices.find(v => v.lang.startsWith('fr-BE')) ||
+                              voices.find(v => v.lang.startsWith('fr-FR')) ||
+                              voices.find(v => v.lang.startsWith('fr')) || null;
+
+                    // Preferred voices: English
+                    enVoice = voices.find(v => v.lang.startsWith('en-US')) ||
+                              voices.find(v => v.lang.startsWith('en-GB')) ||
+                              voices.find(v => v.lang.startsWith('en')) || null;
+                };
+
+                updateVoices();
+                if (speechSynthesis.onvoiceschanged !== undefined) {
+                    speechSynthesis.onvoiceschanged = updateVoices;
+                }
+            }
+        }
+
+        /**
+         * Speak text with language-aware voice selection
+         * @param {string} text - The text to speak
+         * @param {string} langCode - 'fr' or 'en'
+         * @param {Function} [onEndCallback] - Function executed on finish
+         */
+        function speakText(text, langCode = 'fr', onEndCallback = null) {
+            if (!audioEnabled || !('speechSynthesis' in window)) {
+                if (onEndCallback) onEndCallback();
+                return;
+            }
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; // Slightly slower for primary kids
+            utterance.pitch = 1.05;
+
+            if (langCode === 'en') {
+                utterance.lang = 'en-US';
+                if (enVoice) utterance.voice = enVoice;
+            } else {
+                utterance.lang = 'fr-FR';
+                if (frVoice) utterance.voice = frVoice;
+            }
+
+            if (onEndCallback) {
+                utterance.onend = onEndCallback;
+                utterance.onerror = onEndCallback;
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        /**
+         * Play sound effects using Web Audio API synth tones
+         */
+        function playSoundFx(type) {
+            if (!audioEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.08);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.08);
+                } else if (type === 'success') {
+                    const now = ctx.currentTime;
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start();
+                    osc.stop(now + 0.4);
+                } else if (type === 'error') {
+                    const now = ctx.currentTime;
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.setValueAtTime(180, now + 0.15);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start();
+                    osc.stop(now + 0.3);
+                }
+            } catch (e) {
+                // Fallback gracefully if AudioContext is blocked
+            }
+        }
+
+        /**
+         * INITIALIZATION & UI RENDERERS
+         */
+        window.addEventListener('DOMContentLoaded', () => {
+            initVoices();
+            setupEventListeners();
+            updateLanguageUI();
+            loadExercise(0);
+        });
+
+        function updateLanguageUI() {
+            const t = TRANSLATIONS[currentLanguage];
+
+            document.querySelectorAll('.ui-text-exit').forEach(el => el.textContent = t.exit);
+            document.querySelectorAll('.ui-text-stars').forEach(el => el.textContent = t.stars);
+            document.querySelectorAll('.ui-text-instruction').forEach(el => el.textContent = t.instruction);
+            document.querySelectorAll('.ui-text-hint').forEach(el => el.innerHTML = t.hint);
+            document.querySelectorAll('.ui-text-placeholder').forEach(el => el.textContent = t.placeholder);
+            document.querySelectorAll('.ui-text-reset').forEach(el => el.textContent = t.reset);
+            document.querySelectorAll('.ui-text-listen').forEach(el => el.textContent = t.listen);
+            document.querySelectorAll('.ui-text-validate').forEach(el => el.textContent = t.validate);
+            document.querySelectorAll('.ui-text-next').forEach(el => el.textContent = t.next);
+            document.querySelectorAll('.ui-text-footer').forEach(el => el.textContent = t.footer);
+            document.querySelectorAll('.ui-text-correct-sentence').forEach(el => el.textContent = t.correctSentence);
+
+            langIndicator.textContent = currentLanguage.toUpperCase();
+        }
+
+        function loadExercise(index) {
+            if (index >= EXERCISES.length) {
+                showFinalCompletionScreen();
+                return;
+            }
+
+            currentExerciseIndex = index;
+            const currentEx = EXERCISES[index];
+
+            // Reset buffers
+            userConstructedBlocks = [];
+            // Shallow clone available blocks
+            availableBlocks = [...currentEx.blocks];
+
+            // Hide feedback card
+            feedbackCard.classList.add('hidden');
+
+            // Update Progress Bar
+            const progress = (index / EXERCISES.length) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            renderBlocks();
+        }
+
+        /**
+         * Capital letter indicator & period detector helper
+         */
+        function isCapitalized(str) {
+            if (!str || str.length === 0) return false;
+            const firstChar = str.charAt(0);
+            return firstChar === firstChar.toUpperCase() && firstChar !== firstChar.toLowerCase();
+        }
+
+        function hasPeriod(str) {
+            return str.endsWith('.') || str.endsWith('!') || str.endsWith('?');
+        }
+
+        /**
+         * Render Word Blocks in Drop Zone and Source Zone
+         */
+        function renderBlocks() {
+            // Render Drop Zone
+            dropZone.innerHTML = '';
+            if (userConstructedBlocks.length === 0) {
+                dropZone.appendChild(dropPlaceholder);
+                dropPlaceholder.classList.remove('hidden');
+            } else {
+                dropPlaceholder.classList.add('hidden');
+                userConstructedBlocks.forEach((text, idx) => {
+                    const blockEl = createBlockElement(text, 'constructed', idx);
+                    dropZone.appendChild(blockEl);
+                });
+            }
+
+            // Render Source Zone
+            sourceZone.innerHTML = '';
+            availableBlocks.forEach((text, idx) => {
+                const blockEl = createBlockElement(text, 'available', idx);
+                sourceZone.appendChild(blockEl);
+            });
+        }
+
+        /**
+         * Create styled interactive block element
+         */
+        function createBlockElement(text, zoneType, index) {
+            const block = document.createElement('div');
+            block.className = 'px-4 py-3 rounded-2xl font-bold title-font text-base sm:text-lg cursor-pointer transition-all duration-200 shadow-fun-sm hover:shadow-fun active:translate-y-0.5 flex items-center space-x-2 select-none border-2';
+            
+            // Visual indicators for syntax rules (Capital & Period)
+            const cap = isCapitalized(text);
+            const period = hasPeriod(text);
+
+            if (zoneType === 'constructed') {
+                block.className += ' bg-amber-200 border-amber-400 text-amber-950 hover:bg-amber-300';
+            } else {
+                block.className += ' bg-white border-indigo-200 text-indigo-900 hover:bg-indigo-100 hover:border-indigo-300';
+            }
+
+            // Badge tags for pedagogical highlighting
+            let capBadge = cap ? '<span class="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded-full font-sans uppercase font-black ml-1 shadow-sm">Maj</span>' : '';
+            let periodBadge = period ? '<span class="text-[10px] bg-pink-600 text-white px-1.5 py-0.5 rounded-full font-sans uppercase font-black ml-1 shadow-sm">Point</span>' : '';
+
+            block.innerHTML = `<span>${text}</span>${capBadge}${periodBadge}`;
+
+            // Make Draggable
+            block.draggable = true;
+
+            // Drag Events
+            block.addEventListener('dragstart', (e) => {
+                draggedBlockText = { text, zoneType, index };
+                block.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', text);
+            });
+
+            block.addEventListener('dragend', () => {
+                block.classList.remove('dragging');
+                draggedBlockText = null;
+            });
+
+            // Tap/Click Action
+            block.addEventListener('click', () => {
+                playSoundFx('click');
+                if (zoneType === 'available') {
+                    // Move from available to drop zone
+                    availableBlocks.splice(index, 1);
+                    userConstructedBlocks.push(text);
+                } else {
+                    // Return from drop zone back to available
+                    userConstructedBlocks.splice(index, 1);
+                    availableBlocks.push(text);
+                }
+                renderBlocks();
+            });
+
+            return block;
+        }
+
+        /**
+         * DRAG AND DROP ZONE EVENTS
+         */
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drop-zone-highlight');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drop-zone-highlight');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drop-zone-highlight');
+            if (draggedBlockText && draggedBlockText.zoneType === 'available') {
+                playSoundFx('click');
+                availableBlocks.splice(draggedBlockText.index, 1);
+                userConstructedBlocks.push(draggedBlockText.text);
+                renderBlocks();
+            }
+        });
+
+        sourceZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        sourceZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (draggedBlockText && draggedBlockText.zoneType === 'constructed') {
+                playSoundFx('click');
+                userConstructedBlocks.splice(draggedBlockText.index, 1);
+                availableBlocks.push(draggedBlockText.text);
+                renderBlocks();
+            }
+        });
+
+        /**
+         * EVENT LISTENERS SETUP
+         */
+        function setupEventListeners() {
+            // Reset Button
+            btnReset.addEventListener('click', () => {
+                playSoundFx('click');
+                const currentEx = EXERCISES[currentExerciseIndex];
+                userConstructedBlocks = [];
+                availableBlocks = [...currentEx.blocks];
+                renderBlocks();
+            });
+
+            // Listen Button (Speak current sentence constructed by user)
+            btnListen.addEventListener('click', () => {
+                playSoundFx('click');
+                if (userConstructedBlocks.length === 0) {
+                    const textToSay = currentLanguage === 'en' ? "The sentence is empty!" : "La phrase est vide !";
+                    speakText(textToSay, currentLanguage);
+                    return;
+                }
+                const sentenceToSpeak = userConstructedBlocks.join(' ');
+                speakText(sentenceToSpeak, 'fr');
+            });
+
+            // Speak Instruction Button
+            btnSpeakInstruction.addEventListener('click', () => {
+                playSoundFx('click');
+                const t = TRANSLATIONS[currentLanguage];
+                speakText(t.speakInstruction, currentLanguage);
+            });
+
+            // Language Toggle Button
+            btnLangToggle.addEventListener('click', () => {
+                playSoundFx('click');
+                currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
+                updateLanguageUI();
+            });
+
+            // Mute / Audio Toggle Button
+            btnAudioToggle.addEventListener('click', () => {
+                audioEnabled = !audioEnabled;
+                if (audioEnabled) {
+                    audioIcon.className = 'fa-solid fa-volume-high';
+                    playSoundFx('click');
+                } else {
+                    audioIcon.className = 'fa-solid fa-volume-xmark';
+                    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                }
+            });
+
+            // Validate / Check Button
+            btnCheck.addEventListener('click', checkAnswer);
+
+            // Next Exercise Button
+            btnNext.addEventListener('click', () => {
+                playSoundFx('click');
+                loadExercise(currentExerciseIndex + 1);
+            });
+        }
+
+        /**
+         * ANSWER VALIDATION & FEEDBACK LOGIC
+         */
+        function checkAnswer() {
+            const currentEx = EXERCISES[currentExerciseIndex];
+            const t = TRANSLATIONS[currentLanguage];
+
+            if (userConstructedBlocks.length === 0) {
+                playSoundFx('error');
+                showFeedbackCard('error', t.errorTitle, t.emptyError, null);
+                speakText(t.emptyError, currentLanguage);
+                return;
+            }
+
+            const isCorrect = userConstructedBlocks.length === currentEx.correct.length &&
+                userConstructedBlocks.every((val, index) => val === currentEx.correct[index]);
+
+            const fullCorrectSentence = currentEx.correct.join(' ');
+
+            if (isCorrect) {
+                // Success
+                playSoundFx('success');
+                score += 10;
+                scoreCounter.textContent = score;
+
+                // Launch celebratory confetti
+                if (window.confetti) {
+                    confetti({
+                        particleCount: 70,
+                        spread: 60,
+                        origin: { y: 0.7 }
+                    });
+                }
+
+                showFeedbackCard('success', t.praiseTitle, t.praiseMsg, null);
+
+                // AUDIO FEEDBACK DUAL-VOICE LOGIC:
+                // 1. Speak praise in selected UI language
+                // 2. Speak the full correct sentence in French
+                if (currentLanguage === 'en') {
+                    speakText(t.correctSpokenPraise, 'en', () => {
+                        speakText(fullCorrectSentence, 'fr');
+                    });
+                } else {
+                    speakText(t.correctSpokenPraise + " " + fullCorrectSentence, 'fr');
+                }
+
+            } else {
+                // Incorrect
+                playSoundFx('error');
+                // Add temporary shake animation to drop zone
+                dropZone.classList.add('shake-anim');
+                setTimeout(() => dropZone.classList.remove('shake-anim'), 500);
+
+                showFeedbackCard('error', t.errorTitle, t.errorMsg, fullCorrectSentence);
+
+                // AUDIO FEEDBACK ON ERROR:
+                // Speak error instruction in UI language, then read out correct French sentence cleanly.
+                if (currentLanguage === 'en') {
+                    speakText(t.errorSpokenFeedback, 'en', () => {
+                        speakText(fullCorrectSentence, 'fr');
+                    });
+                } else {
+                    speakText(t.errorSpokenFeedback, 'fr', () => {
+                        speakText(fullCorrectSentence, 'fr');
+                    });
+                }
+            }
+        }
+
+        /**
+         * Display Card for Feedback
+         */
+        function showFeedbackCard(status, title, message, correction) {
+            feedbackCard.classList.remove('hidden', 'bg-emerald-100', 'border-emerald-300', 'bg-rose-100', 'border-rose-300');
+            
+            if (status === 'success') {
+                feedbackCard.classList.add('bg-emerald-100', 'border-emerald-300');
+                feedbackIcon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
+                feedbackTitle.className = 'title-font text-lg sm:text-xl font-bold mb-1 text-emerald-900';
+                feedbackMessage.className = 'text-sm sm:text-base mb-2 font-semibold text-emerald-800';
+                correctionBox.classList.add('hidden');
+            } else {
+                feedbackCard.classList.add('bg-rose-100', 'border-rose-300');
+                feedbackIcon.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-600"></i>';
+                feedbackTitle.className = 'title-font text-lg sm:text-xl font-bold mb-1 text-rose-900';
+                feedbackMessage.className = 'text-sm sm:text-base mb-2 font-semibold text-rose-800';
+
+                if (correction) {
+                    correctionBox.classList.remove('hidden');
+                    correctSentenceText.textContent = correction;
+                } else {
+                    correctionBox.classList.add('hidden');
+                }
+            }
+
+            feedbackTitle.textContent = title;
+            feedbackMessage.textContent = message;
+
+            // Scroll feedback into view smoothly on small screens
+            feedbackCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        /**
+         * Final Completion Screen
+         */
+        function showFinalCompletionScreen() {
+            const t = TRANSLATIONS[currentLanguage];
+            progressBar.style.width = '100%';
+
+            if (window.confetti) {
+                confetti({
+                    particleCount: 150,
+                    spread: 100,
+                    origin: { y: 0.5 }
+                });
+            }
+
+            const container = document.querySelector('main > div');
+            container.innerHTML = `
+                <div class="text-center py-8 px-4">
+                    <div class="text-6xl sm:text-7xl mb-4 animate-bounce">🏆</div>
+                    <h2 class="title-font text-2xl sm:text-4xl font-bold text-indigo-900 mb-3">${t.finishTitle}</h2>
+                    <p class="text-slate-600 text-base sm:text-lg max-w-md mx-auto mb-6 font-semibold">${t.finishMsg}</p>
+                    <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl p-4 inline-flex items-center space-x-3 mb-8">
+                        <i class="fa-solid fa-star text-amber-500 text-3xl"></i>
+                        <span class="title-font text-2xl font-bold text-amber-900">${score} ${t.stars}</span>
+                    </div>
+                    <div>
+                        <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white title-font font-bold text-lg py-3 px-8 rounded-2xl shadow-fun transition-all transform active:translate-y-1">
+                            <i class="fa-solid fa-rotate-right mr-2"></i> ${t.restart}
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const endMsg = currentLanguage === 'en' 
+                ? "Congratulations! You completed all exercises!" 
+                : "Félicitations ! Tu as terminé tous les exercices !";
+            speakText(endMsg, currentLanguage);
+        }
+    </script>
+</body>
+</html>

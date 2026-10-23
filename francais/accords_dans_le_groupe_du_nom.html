@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Les Accords dans le Groupe du Nom</title>
+  <!-- Tailwind CSS pour les styles fluides et modernes -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome pour les icônes -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Canvas Confetti pour les célébrations ludiques -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts - Fredoka pour un style enfants très joyeux -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .btn-bounce {
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.15s;
+    }
+    .btn-bounce:active {
+      transform: scale(0.95);
+    }
+    .card-shadow {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+    .pulse-subtle {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-amber-100 via-sky-100 to-indigo-100 min-h-screen flex flex-col justify-between text-slate-800 p-3 sm:p-6 overflow-x-hidden">
+
+  <!-- En-tête / Barre supérieure -->
+  <header class="w-full max-w-4xl mx-auto flex justify-between items-center bg-white/80 backdrop-blur-md rounded-2xl p-3 sm:p-4 shadow-sm border border-white/50 mb-4">
+    <!-- Bouton Quitter -->
+    <button onclick="quitApp()" class="btn-bounce bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2 rounded-xl flex items-center space-x-2 text-sm sm:text-base shadow-md">
+      <i class="fa-solid fa-house"></i>
+      <span id="txt-quit">Quitter</span>
+    </button>
+
+    <!-- Titre / Marqueur -->
+    <div class="flex items-center space-x-2">
+      <span class="text-2xl sm:text-3xl">✏️</span>
+      <h1 class="text-base sm:text-xl font-bold bg-gradient-to-r from-indigo-600 to-pink-600 bg-clip-text text-transparent hidden sm:inline">
+        Les accords du nom
+      </h1>
+    </div>
+
+    <!-- Saisie active ou Sélecteur de Langue -->
+    <div class="flex items-center space-x-2">
+      <button onclick="setLanguage('fr')" id="lang-fr-btn" class="btn-bounce px-3 py-1.5 rounded-xl border-2 font-bold text-sm flex items-center space-x-1 border-indigo-500 bg-indigo-50 text-indigo-700">
+        <span>🇫🇷</span> <span>FR</span>
+      </button>
+      <button onclick="setLanguage('en')" id="lang-en-btn" class="btn-bounce px-3 py-1.5 rounded-xl border-2 font-bold text-sm flex items-center space-x-1 border-slate-200 bg-white text-slate-600">
+        <span>🇬🇧</span> <span>EN</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Conteneur Principal -->
+  <main class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-center items-center my-2">
+
+    <!-- ÉCRAN 1 : ACCUEIL / SELECTION DU NIVEAU -->
+    <div id="screen-welcome" class="w-full bg-white/90 backdrop-blur-lg rounded-3xl p-6 sm:p-10 text-center card-shadow border border-white flex flex-col items-center">
+      <div class="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center text-5xl mb-4 text-indigo-600 shadow-inner">
+        🐶
+      </div>
+      <div class="flex items-center justify-center space-x-2 mb-2">
+        <h2 id="welcome-title" class="text-2xl sm:text-4xl font-extrabold text-indigo-900">
+          Bienvenue dans le Jeu des Accords !
+        </h2>
+        <button onclick="speakWelcome()" class="btn-bounce bg-amber-400 hover:bg-amber-500 text-indigo-950 p-2 rounded-full text-lg shadow-sm flex items-center justify-center w-10 h-10 shrink-0" title="Écouter la consigne">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+      <p id="welcome-desc" class="text-slate-600 text-base sm:text-lg mb-8 max-w-md">
+        Aide le petit chien à choisir le bon déterminant (un, une, des) pour chaque nom !
+      </p>
+
+      <button onclick="startGame()" class="btn-bounce pulse-subtle w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-xl sm:text-2xl rounded-2xl shadow-lg flex items-center justify-center space-x-3 border-b-4 border-teal-700">
+        <i class="fa-solid fa-play"></i>
+        <span id="txt-start">Jouer !</span>
+      </button>
+    </div>
+
+    <!-- ÉCRAN 2 : JEU / EXERCICES -->
+    <div id="screen-game" class="w-full bg-white/90 backdrop-blur-lg rounded-3xl p-5 sm:p-8 card-shadow border border-white hidden flex-col">
+      
+      <!-- Barre de progression -->
+      <div class="mb-6">
+        <div class="flex justify-between items-center mb-2 font-semibold text-slate-600 text-sm sm:text-base">
+          <span id="txt-progress">Question 1 sur 10</span>
+          <span id="score-counter" class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100 font-bold">
+            Score: 0
+          </span>
+        </div>
+        <div class="w-full bg-slate-200 h-4 rounded-full overflow-hidden p-0.5">
+          <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full rounded-full transition-all duration-300 w-0"></div>
+        </div>
+      </div>
+
+      <!-- Consigne avec bouton haut-parleur -->
+      <div class="text-center mb-6 flex items-center justify-center gap-3">
+        <div id="instruction-txt" class="text-lg sm:text-2xl font-bold text-slate-700 bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
+          Complète avec <span class="text-indigo-600">un</span>, <span class="text-indigo-600">une</span> ou <span class="text-indigo-600">des</span> :
+        </div>
+        <button onclick="speakInstruction()" class="btn-bounce bg-amber-400 hover:bg-amber-500 text-indigo-950 p-3 rounded-2xl text-xl shadow-md flex items-center justify-center w-12 h-12 shrink-0" title="Réécouter la consigne">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+
+      <!-- Phrase / Groupe du nom avec trou -->
+      <div class="bg-indigo-50/80 rounded-2xl p-6 sm:p-10 text-center mb-8 border-2 border-dashed border-indigo-200 flex items-center justify-center min-h-[140px]">
+        <div id="question-text" class="text-2xl sm:text-4xl font-extrabold text-indigo-950 flex flex-wrap justify-center items-center gap-3">
+          <!-- Injecté dynamiquement -->
+        </div>
+      </div>
+
+      <!-- Boutons de Choix Multiple (Grand format tactile) -->
+      <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <!-- Généré par JS -->
+      </div>
+
+      <!-- Zone de feedback oral/écrit -->
+      <div id="feedback-box" class="mt-2 p-4 rounded-2xl text-center font-bold text-lg hidden transition-all duration-300">
+        <p id="feedback-text"></p>
+      </div>
+
+      <!-- Bouton Suivant (masqué au départ) -->
+      <div class="mt-4 flex justify-end">
+        <button id="next-btn" onclick="nextQuestion()" class="btn-bounce bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-md text-base sm:text-lg flex items-center space-x-2 hidden">
+          <span id="txt-next">Suivant</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ÉCRAN 3 : RÉSULTAT FINAL -->
+    <div id="screen-result" class="w-full bg-white/90 backdrop-blur-lg rounded-3xl p-6 sm:p-10 text-center card-shadow border border-white hidden flex-col items-center">
+      <div id="result-emoji" class="text-6xl sm:text-7xl mb-4 animate-bounce">
+        🏆
+      </div>
+      <div class="flex items-center justify-center space-x-2 mb-2">
+        <h2 id="result-title" class="text-2xl sm:text-4xl font-extrabold text-indigo-900">
+          Bravo !
+        </h2>
+        <button onclick="speakResult()" class="btn-bounce bg-amber-400 hover:bg-amber-500 text-indigo-950 p-2 rounded-full text-lg shadow-sm flex items-center justify-center w-10 h-10 shrink-0" title="Écouter le bilan">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+      <p id="result-subtitle" class="text-slate-600 text-lg mb-6">
+        Tu as terminé l'exercice !
+      </p>
+
+      <!-- Carte du score -->
+      <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 mb-8 w-full max-w-md">
+        <div id="txt-final-score-label" class="text-sm uppercase tracking-wider text-amber-700 font-bold mb-1">
+          Ton Score
+        </div>
+        <div id="final-score" class="text-4xl sm:text-5xl font-black text-amber-600 mb-2">
+          8 / 10
+        </div>
+        <p id="final-score-words" class="text-base sm:text-lg font-medium text-amber-800">
+          (huit sur dix)
+        </p>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row gap-4 w-full justify-center max-w-md">
+        <button onclick="restartGame()" class="btn-bounce flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-2xl shadow-lg flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-rotate-right"></i>
+          <span id="txt-replay">Rejouer</span>
+        </button>
+        <button onclick="quitApp()" class="btn-bounce flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-lg rounded-2xl border border-slate-300 shadow-sm flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-door-open"></i>
+          <span id="txt-quit-final">Quitter</span>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Pied de page -->
+  <footer class="w-full text-center text-xs sm:text-sm text-slate-500 py-2">
+    <span>Apprentissage de l'orthographe • Belgique 🇧🇪</span>
+  </footer>
+
+  <!-- SCRIPT LOGIQUE DU JEU -->
+  <script>
+    // --- TRADUCTIONS ET TEXTES ---
+    const i18n = {
+      fr: {
+        quit: "Quitter",
+        start: "Jouer !",
+        welcomeTitle: "Les Accords du Nom",
+        welcomeDesc: "Aide le petit chien à choisir le bon déterminant (un, une, des) !",
+        instruction: "Complète avec un, une ou des :",
+        progress: "Question {current} sur {total}",
+        score: "Score : {score}",
+        next: "Suivant",
+        correctFeedback: ["Bravo ! C'est exact !", "Super ! Bonne réponse !", "Excellent !", "Bien joué !"],
+        wrongFeedback: "Oups ! La bonne réponse était : {answer}",
+        resultTitleGreat: "Félicitations ! 🎉",
+        resultTitleGood: "Bien joué ! 👍",
+        resultTitleTryAgain: "Tu peux encore t'améliorer ! 💪",
+        resultSub: "Tu as terminé l'exercice !",
+        finalScoreLabel: "Ton Score Final",
+        replay: "Rejouer",
+        quitFinal: "Quitter"
+      },
+      en: {
+        quit: "Exit",
+        start: "Play!",
+        welcomeTitle: "Noun Agreement Game",
+        welcomeDesc: "Help the puppy choose the correct article (un, une, des)!",
+        instruction: "Complete with un, une or des:",
+        progress: "Question {current} of {total}",
+        score: "Score: {score}",
+        next: "Next",
+        correctFeedback: ["Great job! That's right!", "Awesome! Correct answer!", "Excellent!", "Well done!"],
+        wrongFeedback: "Oops! The correct answer was: {answer}",
+        resultTitleGreat: "Congratulations! 🎉",
+        resultTitleGood: "Well Done! 👍",
+        resultTitleTryAgain: "Keep practicing! 💪",
+        resultSub: "You completed the exercise!",
+        finalScoreLabel: "Your Final Score",
+        replay: "Play Again",
+        quitFinal: "Exit"
+      }
+    };
+
+    // --- SPÉCIFICITÉ BELGE POUR LES NOMBRES ORAL / ÉCRIT ---
+    const numbersBelgian = {
+      0: "zéro", 1: "un", 2: "deux", 3: "trois", 4: "quatre", 5: "cinq",
+      6: "six", 7: "sept", 8: "huit", 9: "neuf", 10: "dix",
+      11: "onze", 12: "douze", 13: "treize", 14: "quatorze", 15: "quinze",
+      16: "seize", 17: "dix-sept", 18: "dix-huit", 19: "dix-neuf", 20: "vingt",
+      70: "septante", 71: "septante et un", 72: "septante-deux",
+      80: "quatre-vingts", 81: "quatre-vingt-un", 82: "quatre-vingt-deux",
+      90: "nonante", 91: "nonante et un", 92: "nonante-deux", 100: "cent"
+    };
+
+    function getBelgianNumberWord(n) {
+      if (numbersBelgian[n]) return numbersBelgian[n];
+      if (n > 20 && n < 70) {
+        let tens = Math.floor(n / 10) * 10;
+        let units = n % 10;
+        let tensWords = { 20: "vingt", 30: "trente", 40: "quarante", 50: "cinquante", 60: "soixante" };
+        if (units === 0) return tensWords[tens];
+        if (units === 1) return tensWords[tens] + " et un";
+        return tensWords[tens] + "-" + numbersBelgian[units];
+      }
+      if (n > 70 && n < 80) return "septante-" + numbersBelgian[n - 70];
+      if (n > 80 && n < 90) return "quatre-vingt-" + numbersBelgian[n - 80];
+      if (n > 90 && n < 100) return "nonante-" + numbersBelgian[n - 90];
+      return n.toString();
+    }
+
+    // --- BANQUE DE QUESTIONS ---
+    const questionsPool = [
+      { noun: "stylos bleus", answer: "des", options: ["un", "une", "des"] },
+      { noun: "jolie table", answer: "une", options: ["un", "une", "des"] },
+      { noun: "grand chien", answer: "un", options: ["un", "une", "des"] },
+      { noun: "pomme rouge", answer: "une", options: ["un", "une", "des"] },
+      { noun: "grands arbres", answer: "des", options: ["un", "une", "des"] },
+      { noun: "petit chat", answer: "un", options: ["un", "une", "des"] },
+      { noun: "belles fleurs", answer: "des", options: ["un", "une", "des"] },
+      { noun: "maison blanche", answer: "une", options: ["un", "une", "des"] },
+      { noun: "cahier vert", answer: "un", options: ["un", "une", "des"] },
+      { noun: "oiseaux chanteurs", answer: "des", options: ["un", "une", "des"] }
+    ];
+
+    // --- ÉTAT GLOBAL ---
+    let currentLang = 'fr';
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let questions = [];
+    let isAnswered = false;
+
+    // --- INITIALISATION SYNTHÈSE VOCALE AVEC ACCENT BRITANNIQUE & FRANÇAIS ---
+    let synth = window.speechSynthesis;
+    let frenchVoice = null;
+    let britishVoice = null;
+
+    function initSpeech() {
+      if (!synth) return;
+      let voices = synth.getVoices();
+      
+      // Recherche prioritaire de la voix française (fr-BE ou fr-FR)
+      frenchVoice = voices.find(v => v.lang === 'fr-BE') || 
+                    voices.find(v => v.lang.startsWith('fr') || v.lang.startsWith('FR')) || 
+                    voices[0];
+
+      // Recherche EXCLUSIVE de la voix Britannique (en-GB ou en_GB)
+      britishVoice = voices.find(v => v.lang === 'en-GB' || v.lang === 'en_GB' || v.name.includes('UK') || v.name.includes('Hazel') || v.name.includes('George')) ||
+                     voices.find(v => v.lang.startsWith('en')) || 
+                     frenchVoice;
+    }
+
+    if (synth) {
+      initSpeech();
+      if (synth.onvoiceschanged !== undefined) {
+        synth.onvoiceschanged = initSpeech;
+      }
+    }
+
+    // Prononciation audio avec sélection automatique de langue/voix
+    function speak(text, lang = 'fr', callback = null) {
+      if (!synth) {
+        if (callback) callback();
+        return;
+      }
+      synth.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (lang === 'en') {
+        utterance.lang = 'en-GB';
+        if (britishVoice) utterance.voice = britishVoice;
+      } else {
+        utterance.lang = 'fr-FR';
+        if (frenchVoice) utterance.voice = frenchVoice;
+      }
+      utterance.rate = 0.9;
+
+      utterance.onend = function() {
+        if (callback) callback();
+      };
+      utterance.onerror = function() {
+        if (callback) callback();
+      };
+
+      synth.speak(utterance);
+    }
+
+    // Fonction spéciale pour lire un message anglais suivi d'un groupe de mots en français
+    function speakBilingualFeedback(englishText, frenchWord) {
+      if (!synth) return;
+      synth.cancel();
+
+      const utt1 = new SpeechSynthesisUtterance(englishText);
+      utt1.lang = 'en-GB';
+      if (britishVoice) utt1.voice = britishVoice;
+      utt1.rate = 0.9;
+
+      const utt2 = new SpeechSynthesisUtterance(frenchWord);
+      utt2.lang = 'fr-FR';
+      if (frenchVoice) utt2.voice = frenchVoice;
+      utt2.rate = 0.9;
+
+      synth.speak(utt1);
+      synth.speak(utt2);
+    }
+
+    // VOCALISATIONS DES DIRECTIVES
+    function speakWelcome() {
+      const t = i18n[currentLang];
+      const text = `${t.welcomeTitle}. ${t.welcomeDesc}`;
+      speak(text, currentLang);
+    }
+
+    function speakInstruction() {
+      const t = i18n[currentLang];
+      if (currentLang === 'fr') {
+        speak("Complète avec un, une ou des", 'fr');
+      } else {
+        speak("Complete with un, une or des", 'en');
+      }
+    }
+
+    function speakResult() {
+      const t = i18n[currentLang];
+      const scoreWord = getBelgianNumberWord(score);
+      const totalWord = getBelgianNumberWord(questions.length);
+      
+      let text = "";
+      if (currentLang === 'fr') {
+        text = `Bravo ! Tu as obtenu un score de ${scoreWord} sur ${totalWord}.`;
+      } else {
+        text = `Great job! Your final score is ${score} out of ${questions.length}.`;
+      }
+      speak(text, currentLang);
+    }
+
+    // --- LOGIQUE UI ET NAVIGATION ---
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      
+      const btnFr = document.getElementById('lang-fr-btn');
+      const btnEn = document.getElementById('lang-en-btn');
+      
+      if (lang === 'fr') {
+        btnFr.className = "btn-bounce px-3 py-1.5 rounded-xl border-2 font-bold text-sm flex items-center space-x-1 border-indigo-500 bg-indigo-50 text-indigo-700";
+        btnEn.className = "btn-bounce px-3 py-1.5 rounded-xl border-2 font-bold text-sm flex items-center space-x-1 border-slate-200 bg-white text-slate-600";
+      } else {
+        btnEn.className = "btn-bounce px-3 py-1.5 rounded-xl border-2 font-bold text-sm flex items-center space-x-1 border-indigo-500 bg-indigo-50 text-indigo-700";
+        btnFr.className = "btn-bounce px-3 py-1.5 rounded-xl border-2 font-bold text-sm flex items-center space-x-1 border-slate-200 bg-white text-slate-600";
+      }
+
+      updateStaticTexts();
+
+      // Enoncer la consigne adaptée au changement de langue
+      if (!document.getElementById('screen-welcome').classList.contains('hidden')) {
+        speakWelcome();
+      } else if (!document.getElementById('screen-game').classList.contains('hidden')) {
+        updateGameHeader();
+        speakInstruction();
+      } else if (!document.getElementById('screen-result').classList.contains('hidden')) {
+        speakResult();
+      }
+    }
+
+    function updateStaticTexts() {
+      const t = i18n[currentLang];
+      document.getElementById('txt-quit').innerText = t.quit;
+      document.getElementById('txt-start').innerText = t.start;
+      document.getElementById('welcome-title').innerText = t.welcomeTitle;
+      document.getElementById('welcome-desc').innerText = t.welcomeDesc;
+      document.getElementById('instruction-txt').innerHTML = `${t.instruction} <span class="text-indigo-600">un</span>, <span class="text-indigo-600">une</span> ou <span class="text-indigo-600">des</span> :`;
+      document.getElementById('txt-next').innerText = t.next;
+      document.getElementById('txt-replay').innerText = t.replay;
+      document.getElementById('txt-quit-final').innerText = t.quitFinal;
+      document.getElementById('txt-final-score-label').innerText = t.finalScoreLabel;
+    }
+
+    function quitApp() {
+      window.location.href = ".../index.html";
+    }
+
+    function startGame() {
+      questions = [...questionsPool].sort(() => Math.random() - 0.5);
+      currentQuestionIndex = 0;
+      score = 0;
+
+      document.getElementById('screen-welcome').classList.add('hidden');
+      document.getElementById('screen-result').classList.add('hidden');
+      document.getElementById('screen-game').classList.remove('hidden');
+      document.getElementById('screen-game').classList.add('flex');
+
+      loadQuestion();
+    }
+
+    function updateGameHeader() {
+      const t = i18n[currentLang];
+      document.getElementById('txt-progress').innerText = t.progress
+        .replace('{current}', currentQuestionIndex + 1)
+        .replace('{total}', questions.length);
+      
+      document.getElementById('score-counter').innerText = t.score.replace('{score}', score);
+
+      const percent = ((currentQuestionIndex) / questions.length) * 100;
+      document.getElementById('progress-bar').style.width = percent + "%";
+    }
+
+    function loadQuestion() {
+      isAnswered = false;
+      const q = questions[currentQuestionIndex];
+
+      updateGameHeader();
+
+      const feedbackBox = document.getElementById('feedback-box');
+      feedbackBox.classList.add('hidden');
+      feedbackBox.className = "mt-2 p-4 rounded-2xl text-center font-bold text-lg hidden transition-all duration-300";
+      
+      document.getElementById('next-btn').classList.add('hidden');
+
+      const qText = document.getElementById('question-text');
+      qText.innerHTML = `
+        <span class="inline-block border-b-4 border-dashed border-indigo-500 px-4 py-1 text-indigo-600 font-extrabold bg-white rounded-lg shadow-sm">
+          . . .
+        </span>
+        <span class="text-slate-800">${q.noun}</span>
+      `;
+
+      const choicesContainer = document.getElementById('choices-container');
+      choicesContainer.innerHTML = '';
+
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = "btn-bounce bg-white hover:bg-indigo-50 text-indigo-700 font-extrabold text-2xl sm:text-3xl py-4 px-6 rounded-2xl border-2 border-indigo-200 shadow-md hover:border-indigo-400 focus:outline-none flex items-center justify-center space-x-2";
+        btn.onclick = () => selectAnswer(opt, btn);
+        btn.innerHTML = `<span>${opt}</span>`;
+        choicesContainer.appendChild(btn);
+      });
+
+      // Annoncer oralement la consigne à chaque nouvelle question
+      speakInstruction();
+    }
+
+    function selectAnswer(selectedOption, clickedBtn) {
+      if (isAnswered) return;
+      isAnswered = true;
+
+      const q = questions[currentQuestionIndex];
+      const isCorrect = selectedOption === q.answer;
+      const t = i18n[currentLang];
+
+      const allButtons = document.getElementById('choices-container').getElementsByTagName('button');
+      for (let btn of allButtons) {
+        btn.disabled = true;
+        btn.classList.remove('hover:bg-indigo-50', 'btn-bounce');
+        btn.classList.add('opacity-70');
+      }
+
+      const qText = document.getElementById('question-text');
+      qText.innerHTML = `
+        <span class="inline-block border-b-4 ${isCorrect ? 'border-emerald-500 text-emerald-600' : 'border-rose-500 text-rose-600'} px-4 py-1 font-extrabold bg-white rounded-lg shadow-sm">
+          ${selectedOption}
+        </span>
+        <span class="text-slate-800">${q.noun}</span>
+      `;
+
+      const feedbackBox = document.getElementById('feedback-box');
+      const feedbackText = document.getElementById('feedback-text');
+      feedbackBox.classList.remove('hidden');
+
+      let fullPhrase = `${q.answer} ${q.noun}`;
+
+      if (isCorrect) {
+        score++;
+        document.getElementById('score-counter').innerText = t.score.replace('{score}', score);
+        
+        clickedBtn.className = "bg-emerald-500 text-white font-extrabold text-2xl sm:text-3xl py-4 px-6 rounded-2xl border-2 border-emerald-600 shadow-lg scale-105";
+        
+        const randomSuccess = t.correctFeedback[Math.floor(Math.random() * t.correctFeedback.length)];
+        feedbackBox.classList.add('bg-emerald-100', 'text-emerald-800', 'border', 'border-emerald-300');
+        feedbackText.innerText = `${randomSuccess} (${fullPhrase})`;
+
+        if (currentLang === 'fr') {
+          speak(`${randomSuccess} ${fullPhrase}`, 'fr');
+        } else {
+          speakBilingualFeedback(randomSuccess, fullPhrase);
+        }
+
+        confetti({
+          particleCount: 40,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+
+      } else {
+        clickedBtn.className = "bg-rose-500 text-white font-extrabold text-2xl sm:text-3xl py-4 px-6 rounded-2xl border-2 border-rose-600 shadow-lg";
+        
+        for (let btn of allButtons) {
+          if (btn.innerText.trim() === q.answer) {
+            btn.className = "bg-emerald-100 text-emerald-800 font-extrabold text-2xl sm:text-3xl py-4 px-6 rounded-2xl border-2 border-emerald-400 opacity-100";
+          }
+        }
+
+        const msgWrong = t.wrongFeedback.replace('{answer}', fullPhrase);
+        feedbackBox.classList.add('bg-rose-100', 'text-rose-800', 'border', 'border-rose-300');
+        feedbackText.innerText = msgWrong;
+
+        if (currentLang === 'fr') {
+          speak(`Oups ! La bonne réponse était : ${fullPhrase}.`, 'fr');
+        } else {
+          speakBilingualFeedback("Oops! The correct answer was:", fullPhrase);
+        }
+      }
+
+      document.getElementById('next-btn').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        loadQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('screen-game').classList.add('hidden');
+      document.getElementById('screen-result').classList.remove('hidden');
+      document.getElementById('screen-result').classList.add('flex');
+
+      const t = i18n[currentLang];
+      const total = questions.length;
+      const ratio = score / total;
+
+      let title = t.resultTitleGreat;
+      let emoji = "🏆";
+
+      if (ratio < 0.5) {
+        title = t.resultTitleTryAgain;
+        emoji = "💡";
+      } else if (ratio < 0.8) {
+        title = t.resultTitleGood;
+        emoji = "🌟";
+      }
+
+      document.getElementById('result-title').innerText = title;
+      document.getElementById('result-emoji').innerText = emoji;
+      document.getElementById('result-subtitle').innerText = t.resultSub;
+
+      document.getElementById('final-score').innerText = `${score} / ${total}`;
+
+      const scoreWord = getBelgianNumberWord(score);
+      const totalWord = getBelgianNumberWord(total);
+      const scoreInWords = `(${scoreWord} sur ${totalWord})`;
+      document.getElementById('final-score-words').innerText = scoreInWords;
+
+      speakResult();
+
+      if (ratio >= 0.6) {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    window.onload = function() {
+      updateStaticTexts();
+      setTimeout(() => {
+        speakWelcome();
+      }, 500);
+    };
+  </script>
+</body>
+</html>

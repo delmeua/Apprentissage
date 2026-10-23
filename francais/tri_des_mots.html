@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grammaire - Les classes de mots</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 850px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      color: #2b6cb0;
+      font-size: 1.4rem;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    button, .btn-link {
+      padding: 8px 14px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #3182ce;
+      color: white;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    button:hover, .btn-link:hover {
+      background: #2b6cb0;
+    }
+
+    .btn-audio { background: #dd6b20; }
+    .btn-audio:hover { background: #c05621; }
+
+    .btn-quit { background: #718096; }
+    .btn-quit:hover { background: #4a5568; }
+
+    .instructions {
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      background: #edf2f7;
+      padding: 8px 15px;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    /* Banque de mots */
+    #bank {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 15px;
+      background: #fafafa;
+      border: 2px dashed #cbd5e0;
+      border-radius: 8px;
+      min-height: 70px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .word {
+      padding: 8px 16px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      background: white;
+      border: 2px solid #3182ce;
+      color: #3182ce;
+      border-radius: 20px;
+      cursor: grab;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .word.selected {
+      background: #fefcbf;
+      border-color: #d69e2e;
+      color: #975a16;
+    }
+
+    /* Colonnes */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    @media (max-width: 500px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .col {
+      background: #f7fafc;
+      border: 2px dashed #cbd5e0;
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .col.communs { border-color: #dd6b20; }
+    .col.propres { border-color: #805ad5; }
+
+    .col.drag-over {
+      background: #ebf8ff;
+      border-style: solid;
+    }
+
+    .col-title {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .col.communs .col-title { color: #dd6b20; }
+    .col.propres .col-title { color: #805ad5; }
+
+    .placed {
+      padding: 8px;
+      background: white;
+      border-radius: 6px;
+      border-left: 4px solid #cbd5e0;
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+
+    .placed.correct { border-left-color: #38a169; }
+    .placed.incorrect { border-left-color: #e53e3e; background: #fff5f5; }
+
+    #feedback {
+      padding: 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: bold;
+      background: #edf2f7;
+    }
+
+    #feedback.correct { background: #c6f6d5; color: #22543d; }
+    #feedback.incorrect { background: #fed7d7; color: #742a2a; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <h1 id="txt-title">Grammaire : Classes de Mots</h1>
+    <div class="btn-group">
+      <button id="btn-lang" onclick="toggleLanguage()">🌐 English</button>
+      <button class="btn-audio" onclick="readRules()">🔊 Consignes</button>
+      <button onclick="resetGame()">🔄 Rejouer</button>
+      <a href=".../index.html" class="btn-link btn-quit">🚪 Quitter</a>
+    </div>
+  </div>
+
+  <div class="instructions" id="txt-instructions">
+    🎯 <b>Consigne :</b> Glissez chaque mot dans la colonne <b>[ Noms communs ]</b> ou <b>[ Noms propres ]</b> avec la souris, ou cliquez sur un mot puis sur sa colonne.
+  </div>
+
+  <div class="scoreboard">
+    <span>Score : <span id="val-score">0</span> / <span id="val-max">8</span></span>
+    <span>Restaient : <span id="val-rem">8</span></span>
+  </div>
+
+  <!-- Banque de mots -->
+  <div id="bank"></div>
+
+  <!-- Colonnes de tri -->
+  <div class="grid">
+    <div class="col communs" id="col-communs" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event, 'commun')" onclick="clickCol('commun')">
+      <div class="col-title" id="txt-col-communs">Noms communs</div>
+      <div id="list-communs"></div>
+    </div>
+
+    <div class="col propres" id="col-propres" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)" ondrop="handleDrop(event, 'propre')" onclick="clickCol('propre')">
+      <div class="col-title" id="txt-col-propres">Noms propres</div>
+      <div id="list-propres"></div>
+    </div>
+  </div>
+
+  <div id="feedback">
+    <span id="txt-feedback">Prêt à jouer ! Cliquez ou glissez un mot.</span>
+  </div>
+</div>
+
+<script>
+  // Mots du jeu
+  const DATA = [
+    { id: '1', fr: 'Belgique', en: 'Belgium', type: 'propre' },
+    { id: '2', fr: 'chat', en: 'cat', type: 'commun' },
+    { id: '3', fr: 'Bruxelles', en: 'Brussels', type: 'propre' },
+    { id: '4', fr: 'cartable', en: 'schoolbag', type: 'commun' },
+    { id: '5', fr: 'Thomas', en: 'Thomas', type: 'propre' },
+    { id: '6', fr: 'pomme', en: 'apple', type: 'commun' },
+    { id: '7', fr: 'Arthur', en: 'Arthur', type: 'propre' },
+    { id: '8', fr: 'école', en: 'school', type: 'commun' },
+    { id: '9', fr: 'Paris', en: 'Paris', type: 'propre' },
+    { id: '10', fr: 'stylo', en: 'pen', type: 'commun' }
+  ];
+
+  function formatBelgian(n) {
+    if (n === 70) return "septante";
+    if (n === 80) return "quatre-vingts";
+    if (n === 90) return "nonante";
+    return n.toString();
+  }
+
+  let currentLang = 'fr';
+  let activeWords = [];
+  let score = 0;
+  let remaining = 0;
+  let selectedId = null;
+  let currentAudio = null;
+
+  function speak(text) {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+    const voice = (currentLang === 'fr') ? 'Celine' : 'Joanna';
+    const url = "https://api.streamelements.com/kappa/v2/speech?voice=" + voice + "&text=" + encodeURIComponent(text);
+
+    let fallbackTriggered = false;
+    currentAudio = new Audio(url);
+
+    const useLocalFallback = () => {
+      if (fallbackTriggered) return;
+      fallbackTriggered = true;
+      if ('speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = currentLang === 'fr' ? 'fr-FR' : 'en-US';
+        window.speechSynthesis.speak(u);
+      }
+    };
+
+    currentAudio.addEventListener("error", useLocalFallback);
+    currentAudio.play().then(() => { fallbackTriggered = true; }).catch(useLocalFallback);
+  }
+
+  function resetGame() {
+    score = 0;
+    selectedId = null;
+    
+    // Mélange et sélection de 8 mots
+    const shuffled = [...DATA].sort(() => 0.5 - Math.random());
+    activeWords = shuffled.slice(0, 8).map(w => ({ ...w, status: 'pending' }));
+    remaining = activeWords.length;
+
+    document.getElementById('list-communs').innerHTML = '';
+    document.getElementById('list-propres').innerHTML = '';
+
+    updateTextUI();
+    renderBank();
+  }
+
+  function updateTextUI() {
+    const isFR = currentLang === 'fr';
+
+    document.getElementById('txt-title').textContent = isFR ? "Grammaire : Classes de Mots" : "Grammar: Word Classes";
+    document.getElementById('btn-lang').textContent = isFR ? "🌐 English" : "🌐 Français";
+
+    document.getElementById('txt-instructions').innerHTML = isFR ?
+      "🎯 <b>Consigne :</b> Glissez chaque mot dans la colonne <b>[ Noms communs ]</b> ou <b>[ Noms propres ]</b> avec la souris, ou cliquez sur un mot puis sur sa colonne." :
+      "🎯 <b>Instructions:</b> Drag each word into <b>[ Common Nouns ]</b> or <b>[ Proper Nouns ]</b> using your mouse, or click a word then click a column.";
+
+    document.getElementById('txt-col-communs').textContent = isFR ? "Noms communs" : "Common Nouns";
+    document.getElementById('txt-col-propres').textContent = isFR ? "Noms propres" : "Proper Nouns";
+
+    document.getElementById('val-score').textContent = isFR ? formatBelgian(score) : score;
+    document.getElementById('val-max').textContent = isFR ? formatBelgian(activeWords.length) : activeWords.length;
+    document.getElementById('val-rem').textContent = isFR ? formatBelgian(remaining) : remaining;
+  }
+
+  function renderBank() {
+    const bank = document.getElementById('bank');
+    bank.innerHTML = '';
+
+    const pending = activeWords.filter(w => w.status === 'pending');
+    if (pending.length === 0) {
+      bank.innerHTML = `<i>${currentLang === 'fr' ? 'Bravo ! Tous les mots sont triés.' : 'Great job! All words are sorted.'}</i>`;
+      return;
+    }
+
+    pending.forEach(w => {
+      const card = document.createElement('div');
+      card.className = 'word' + (selectedId === w.id ? ' selected' : '');
+      card.textContent = currentLang === 'fr' ? w.fr : w.en;
+      card.draggable = true;
+
+      // Événements Drag HTML5 Natif (Souris)
+      card.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', w.id);
+      };
+
+      // Clic (Méthode alternative Tap/Click)
+      card.onclick = (e) => {
+        e.stopPropagation();
+        selectedId = (selectedId === w.id) ? null : w.id;
+        renderBank();
+      };
+
+      bank.appendChild(card);
+    });
+  }
+
+  function allowDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  }
+
+  function leaveDrop(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+
+  function handleDrop(e, category) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const wordId = e.dataTransfer.getData('text/plain');
+    if (wordId) {
+      placeWord(wordId, category);
+    }
+  }
+
+  function clickCol(category) {
+    if (selectedId) {
+      placeWord(selectedId, category);
+    }
+  }
+
+  function placeWord(id, category) {
+    const word = activeWords.find(w => w.id === id);
+    if (!word || word.status !== 'pending') return;
+
+    selectedId = null;
+    const isCorrect = word.type === category;
+
+    word.status = isCorrect ? 'correct' : 'incorrect';
+    remaining--;
+    if (isCorrect) score += 1;
+
+    const listId = category === 'commun' ? 'list-communs' : 'list-propres';
+    const container = document.getElementById(listId);
+
+    const item = document.createElement('div');
+    item.className = `placed ${isCorrect ? 'correct' : 'incorrect'}`;
+    const wordText = currentLang === 'fr' ? word.fr : word.en;
+    item.innerHTML = `<span>${wordText}</span> <span>${isCorrect ? '✅' : '❌'}</span>`;
+    container.appendChild(item);
+
+    giveFeedback(word, isCorrect);
+    updateTextUI();
+    renderBank();
+  }
+
+  function giveFeedback(word, isCorrect) {
+    const feedbackBox = document.getElementById('feedback');
+    const wordText = currentLang === 'fr' ? word.fr : word.en;
+    const correctCat = currentLang === 'fr' ?
+      (word.type === 'commun' ? 'Nom commun' : 'Nom propre') :
+      (word.type === 'commun' ? 'Common Noun' : 'Proper Noun');
+
+    let written = "";
+    let spoken = "";
+
+    if (isCorrect) {
+      feedbackBox.className = "correct";
+      written = currentLang === 'fr' ? `Bravo ! « ${wordText} » est un ${correctCat.toLowerCase()}.` : `Great! "${wordText}" is a ${correctCat.toLowerCase()}.`;
+      spoken = currentLang === 'fr' ? `Bravo ! ${wordText} est un ${correctCat}.` : `Great job! ${wordText} is a ${correctCat}.`;
+    } else {
+      feedbackBox.className = "incorrect";
+      written = currentLang === 'fr' ? `Erreur ! « ${wordText} » est un ${correctCat}.` : `Incorrect! "${wordText}" is a ${correctCat}.`;
+      spoken = currentLang === 'fr' ? `Attention ! ${wordText} n'est pas à sa place. La bonne réponse est : ${correctCat}.` : `Incorrect! ${wordText} is a ${correctCat}.`;
+    }
+
+    document.getElementById('txt-feedback').textContent = written;
+    speak(spoken);
+  }
+
+  function readRules() {
+    const msg = currentLang === 'fr' ?
+      "Glissez chaque mot dans la colonne des noms communs ou des noms propres avec la souris, ou cliquez sur un mot puis sur sa colonne." :
+      "Drag each word into Common Nouns or Proper Nouns using your mouse, or click a word then click a column.";
+    speak(msg);
+  }
+
+  function toggleLanguage() {
+    currentLang = currentLang === 'fr' ? 'en' : 'fr';
+    updateTextUI();
+    renderBank();
+    readRules();
+  }
+
+  // Démarrage instantané au chargement
+  window.onload = function() {
+    resetGame();
+  };
+</script>
+</body>
+</html>

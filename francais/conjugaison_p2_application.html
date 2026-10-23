@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conjugaison P2 - Le présent de l'indicatif</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .bounce-hover {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bounce-hover:hover {
+            transform: translateY(-4px) scale(1.02);
+        }
+        .bounce-hover:active {
+            transform: translateY(2px) scale(0.98);
+        }
+        .bubble-btn {
+            box-shadow: 0 8px 0 rgba(0,0,0,0.12);
+        }
+        .bubble-btn:active {
+            box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+        }
+        .star-pop {
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800">
+
+    <!-- Header Navigation -->
+    <header class="p-4 w-full max-w-4xl mx-auto flex justify-between items-center z-10">
+        <!-- Bouton Quitter -->
+        <a href=".../index.html" class="bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-2xl shadow-md transition flex items-center gap-2 bubble-btn text-lg">
+            <i class="fa-solid fa-door-open"></i>
+            <span id="txt-exit">Quitter</span>
+        </a>
+
+        <!-- Controls: Audio & Language Switch -->
+        <div class="flex items-center gap-3">
+            <!-- Toggle Language -->
+            <button id="btn-lang" onclick="toggleLanguage()" class="bg-white text-indigo-700 font-bold px-4 py-2.5 rounded-2xl shadow-md border-2 border-indigo-200 hover:bg-indigo-50 transition flex items-center gap-2 bubble-btn text-base">
+                <i class="fa-solid fa-globe text-lg"></i>
+                <span id="txt-lang-indicator">FR</span>
+            </button>
+
+            <!-- Toggle Audio / Sound -->
+            <button id="btn-audio-toggle" onclick="toggleAudio()" class="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold px-4 py-2.5 rounded-2xl shadow-md transition flex items-center gap-2 bubble-btn text-base">
+                <i id="icon-audio-toggle" class="fa-solid fa-volume-high text-lg"></i>
+                <span id="txt-audio-toggle">Son : Activé</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="w-full max-w-3xl bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-10 shadow-2xl border-4 border-white relative overflow-hidden">
+            
+            <!-- 1. ÉCRAN D'ACCUEIL (HOME) -->
+            <section id="screen-home" class="flex flex-col items-center text-center space-y-6">
+                <div class="bg-indigo-100 text-indigo-700 p-4 rounded-full text-5xl shadow-inner">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h1 id="txt-home-title" class="text-3xl md:text-5xl font-extrabold text-indigo-600 drop-shadow">
+                    La Magie des Verbes !
+                </h1>
+                <p id="txt-home-subtitle" class="text-lg md:text-xl text-slate-600 font-semibold max-w-xl">
+                    Entraîne-toi à conjuguer les verbes de 2ème primaire (P2) au présent.
+                </p>
+
+                <!-- Zone Consignes Orales + Écrit -->
+                <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 w-full max-w-md flex flex-col items-center gap-3 shadow-sm">
+                    <p id="txt-instructions" class="text-sm md:text-base text-amber-900 font-medium">
+                        📜 <b>Consignes :</b> Lis la phrase, écoute l'énoncé et choisis la bonne étiquette pour conjuguer le verbe.
+                    </p>
+                    <button id="btn-read-instructions" onclick="speakHomeInstructions()" class="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold px-5 py-2.5 rounded-xl transition flex items-center gap-2 shadow bounce-hover">
+                        <i class="fa-solid fa-bullhorn text-lg"></i>
+                        <span id="txt-btn-instructions">Écouter les consignes</span>
+                    </button>
+                </div>
+
+                <!-- Start Button -->
+                <button onclick="startGame()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-2xl font-black px-10 py-5 rounded-3xl shadow-lg border-b-8 border-emerald-700 bounce-hover flex items-center gap-4 mt-2">
+                    <span id="txt-start-btn">JOUER</span>
+                    <i class="fa-solid fa-play text-2xl"></i>
+                </button>
+            </section>
+
+            <!-- 2. ÉCRAN DE JEU (GAME SCREEN) -->
+            <section id="screen-game" class="hidden flex-col items-center text-center space-y-6">
+                <!-- Top Header Bar: Progress & Score -->
+                <div class="w-full flex justify-between items-center text-lg font-bold text-slate-700 bg-indigo-50 p-3 rounded-2xl border border-indigo-100">
+                    <div class="flex items-center gap-2">
+                        <span id="txt-progress-label">Question</span>
+                        <span id="current-question-num" class="text-indigo-600">1</span>/10
+                    </div>
+                    <div class="w-1/3 bg-slate-200 rounded-full h-4 overflow-hidden border border-slate-300">
+                        <div id="progress-bar" class="bg-indigo-500 h-full transition-all duration-300" style="width: 10%;"></div>
+                    </div>
+                    <div class="flex items-center gap-2 text-amber-500">
+                        <i class="fa-solid fa-star text-2xl"></i>
+                        <span id="score-val" class="text-2xl text-slate-800">0</span>
+                    </div>
+                </div>
+
+                <!-- Audio Replay Button -->
+                <button id="btn-replay-audio" onclick="speakCurrentQuestion()" class="bg-sky-400 hover:bg-sky-500 text-sky-950 font-bold px-5 py-2 rounded-full text-base shadow transition flex items-center gap-2 bounce-hover">
+                    <i class="fa-solid fa-volume-high text-lg"></i>
+                    <span id="txt-replay-audio">Réécouter l'énoncé</span>
+                </button>
+
+                <!-- Exercise Sentence Display -->
+                <div class="bg-slate-100 p-6 md:p-8 rounded-3xl w-full border-2 border-slate-200 min-h-[140px] flex items-center justify-center shadow-inner">
+                    <p id="sentence-display" class="text-2xl md:text-4xl font-extrabold text-slate-800 leading-relaxed">
+                        <!-- Loaded dynamically -->
+                    </p>
+                </div>
+
+                <!-- Feedback Zone -->
+                <div id="feedback-card" class="w-full min-h-[70px] p-4 rounded-2xl text-lg md:text-xl font-extrabold transition-all duration-300 opacity-0 flex flex-col items-center justify-center text-center gap-3">
+                    <span id="feedback-text"></span>
+                    
+                    <!-- Bouton Continuer / Suivant après erreur -->
+                    <button id="btn-next-question" onclick="advanceToNextQuestion()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-2xl shadow-md bounce-hover text-lg items-center gap-2">
+                        <span id="txt-next-btn">Question Suivante</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Answer Options Buttons -->
+                <div id="choices-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- 3. ÉCRAN DE RÉSULTAT (RESULTS SCREEN) -->
+            <section id="screen-result" class="hidden flex-col items-center text-center space-y-6">
+                <div class="text-amber-400 text-7xl star-pop">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h2 id="txt-result-title" class="text-3xl md:text-5xl font-black text-indigo-600">
+                    Bravo !
+                </h2>
+                <p id="txt-result-subtitle" class="text-xl text-slate-600 font-semibold">
+                    Tu as terminé l'exercice !
+                </p>
+
+                <!-- Belgian Format Score Box -->
+                <div class="bg-amber-50 border-2 border-amber-200 p-6 rounded-3xl w-full max-w-md space-y-2 shadow-inner">
+                    <p id="txt-score-label" class="text-slate-600 font-bold text-lg">Ton score final :</p>
+                    <p id="final-score-num" class="text-4xl font-black text-amber-600">0 / 10</p>
+                    <p id="belgian-number-txt" class="text-lg font-bold text-indigo-700 italic mt-2">
+                        <!-- e.g. (septante sur cent / sept sur dix) -->
+                    </p>
+                </div>
+
+                <!-- Restart Button -->
+                <button onclick="startGame()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xl font-bold px-8 py-4 rounded-2xl shadow-lg border-b-4 border-emerald-700 bounce-hover flex items-center gap-3">
+                    <i class="fa-solid fa-rotate-right"></i>
+                    <span id="txt-restart-btn">Recommencer</span>
+                </button>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA: QUESTIONS ESSENTIELLES P2 (Belgique) ---
+        const questionsData = [
+            { prefix: "Aujourd'hui, nous ", suffix: " à la plaine de jeux.", answer: "jouons", options: ["jouons", "jouez", "jouent"], fullText: "Aujourd'hui, nous jouons à la plaine de jeux." },
+            { prefix: "Tu ", suffix: " un bel ordinateur.", answer: "as", options: ["as", "a", "es"], fullText: "Tu as un bel ordinateur." },
+            { prefix: "Les enfants ", suffix: " fatigués ce soir.", answer: "sont", options: ["sont", "ont", "es"], fullText: "Les enfants sont fatigués ce soir." },
+            { prefix: "Je ", suffix: " à la maison.", answer: "suis", options: ["suis", "es", "est"], fullText: "Je suis à la maison." },
+            { prefix: "Il ", suffix: " septante images dans son album.", answer: "a", options: ["ai", "as", "a"], fullText: "Il a septante images dans son album." },
+            { prefix: "Nous ", suffix: " nos devoirs.", answer: "aimons", options: ["aime", "aimons", "aiment"], fullText: "Nous aimons nos devoirs." },
+            { prefix: "Vous ", suffix: " très bien au ballon.", answer: "jouez", options: ["jouons", "jouez", "jouent"], fullText: "Vous jouez très bien au ballon." },
+            { prefix: "Elle ", suffix: " contente de te voir.", answer: "est", options: ["es", "est", "sont"], fullText: "Elle est contente de te voir." },
+            { prefix: "J' ", suffix: " nonante bonbons colorés.", answer: "ai", options: ["ai", "as", "a"], fullText: "J'ai nonante bonbons colorés." },
+            { prefix: "Ils ", suffix: " quatre-vingts livres.", answer: "ont", options: ["ont", "avons", "avez"], fullText: "Ils ont quatre-vingts livres." }
+        ];
+
+        // Numbers in Belgian French context
+        const belgianNumbers = {
+            0: "zéro", 1: "un", 2: "deux", 3: "trois", 4: "quatre",
+            5: "cinq", 6: "six", 7: "sept", 8: "huit", 9: "neuf",
+            10: "dix", 70: "septante", 80: "quatre-vingts", 90: "nonante"
+        };
+
+        // --- TRANSLATIONS FOR INTERFACE ---
+        const translations = {
+            fr: {
+                exit: "Quitter",
+                audioOn: "Son : Activé",
+                audioOff: "Son : Désactivé",
+                homeTitle: "La Magie des Verbes !",
+                homeSubtitle: "Entraîne-toi à conjuguer les verbes de 2ème primaire (P2) au présent.",
+                instructions: "📜 <b>Consignes :</b> Lis la phrase, écoute l'énoncé et choisis la bonne étiquette pour conjuguer le verbe.",
+                btnInstructions: "Écouter les consignes",
+                startBtn: "JOUER",
+                progressLabel: "Question",
+                replayAudio: "Réécouter l'énoncé",
+                resultTitle: "Bravo !",
+                resultSubtitle: "Tu as terminé l'exercice !",
+                scoreLabel: "Ton score final :",
+                restartBtn: "Recommencer",
+                nextBtn: "Question Suivante",
+                homeSpeech: "Bienvenue ! Lis la phrase, écoute bien et choisis la bonne réponse avec la souris ou le doigt.",
+                correctFeedbackText: "Bravo ! C'est la bonne réponse !",
+                wrongFeedbackText: "Oups ! Ce n'est pas ça.",
+                correctFeedbackSpeech: "Bravo ! ",
+                wrongFeedbackSpeech: "Dommage ! La bonne réponse était : "
+            },
+            en: {
+                exit: "Exit",
+                audioOn: "Sound: On",
+                audioOff: "Sound: Off",
+                homeTitle: "Verb Magic!",
+                homeSubtitle: "Practice 2nd grade French verb conjugations in the present tense.",
+                instructions: "📜 <b>Instructions:</b> Read the sentence, listen to the audio, and choose the correct verb tag.",
+                btnInstructions: "Listen to instructions",
+                startBtn: "PLAY",
+                progressLabel: "Question",
+                replayAudio: "Replay audio",
+                resultTitle: "Great Job!",
+                resultSubtitle: "You completed the exercise!",
+                scoreLabel: "Your final score:",
+                restartBtn: "Play Again",
+                nextBtn: "Next Question",
+                homeSpeech: "Welcome! Read the sentence, listen carefully and choose the correct answer with your mouse or finger.",
+                correctFeedbackText: "Great job! That's correct!",
+                wrongFeedbackText: "Oops! That's incorrect.",
+                correctFeedbackSpeech: "Well done! ",
+                wrongFeedbackSpeech: "Oops! The correct answer was: "
+            }
+        };
+
+        // --- STATE VARIABLES ---
+        let currentLang = 'fr';
+        let isAudioEnabled = true;
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let synth = window.speechSynthesis;
+        let audioCtx = null;
+        let autoAdvanceTimer = null;
+
+        // Sound Synthesis Effects (Web Audio API)
+        function playTone(freq, type, duration) {
+            if (!isAudioEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log("Audio not supported");
+            }
+        }
+
+        function playSuccessSound() {
+            playTone(523.25, 'triangle', 0.15); // C5
+            setTimeout(() => playTone(659.25, 'triangle', 0.25), 120); // E5
+        }
+
+        function playErrorSound() {
+            playTone(220, 'sawtooth', 0.2); // A3
+            setTimeout(() => playTone(185, 'sawtooth', 0.3), 150); // F#3
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            updateUI();
+        };
+
+        // --- AUDIO & LANGUAGE CONTROLS ---
+        function toggleAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            if (!isAudioEnabled && synth) {
+                synth.cancel();
+            }
+            updateAudioButtonUI();
+        }
+
+        function updateAudioButtonUI() {
+            const btnAudio = document.getElementById('txt-audio-toggle');
+            const iconAudio = document.getElementById('icon-audio-toggle');
+            const t = translations[currentLang];
+            
+            if (isAudioEnabled) {
+                btnAudio.textContent = t.audioOn;
+                iconAudio.className = "fa-solid fa-volume-high text-lg";
+            } else {
+                btnAudio.textContent = t.audioOff;
+                iconAudio.className = "fa-solid fa-volume-xmark text-lg";
+            }
+        }
+
+        function toggleLanguage() {
+            currentLang = (currentLang === 'fr') ? 'en' : 'fr';
+            document.getElementById('txt-lang-indicator').textContent = currentLang.toUpperCase();
+            updateUI();
+        }
+
+        function updateUI() {
+            const t = translations[currentLang];
+            document.getElementById('txt-exit').textContent = t.exit;
+            document.getElementById('txt-home-title').textContent = t.homeTitle;
+            document.getElementById('txt-home-subtitle').textContent = t.homeSubtitle;
+            document.getElementById('txt-instructions').innerHTML = t.instructions;
+            document.getElementById('txt-btn-instructions').textContent = t.btnInstructions;
+            document.getElementById('txt-start-btn').textContent = t.startBtn;
+            document.getElementById('txt-progress-label').textContent = t.progressLabel;
+            document.getElementById('txt-replay-audio').textContent = t.replayAudio;
+            document.getElementById('txt-result-title').textContent = t.resultTitle;
+            document.getElementById('txt-result-subtitle').textContent = t.resultSubtitle;
+            document.getElementById('txt-score-label').textContent = t.scoreLabel;
+            document.getElementById('txt-restart-btn').textContent = t.restartBtn;
+            document.getElementById('txt-next-btn').textContent = t.nextBtn;
+
+            updateAudioButtonUI();
+        }
+
+        // --- SPEECH SYNTHESIS FUNCTIONS ---
+        function speakHomeInstructions() {
+            if (!isAudioEnabled || !synth) return;
+            synth.cancel();
+
+            const text = translations[currentLang].homeSpeech;
+            const langCode = (currentLang === 'fr') ? 'fr-FR' : 'en-US';
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCode;
+            utterance.rate = 0.9;
+            synth.speak(utterance);
+        }
+
+        function speakCurrentQuestion() {
+            if (!isAudioEnabled || !synth) return;
+            synth.cancel();
+
+            const q = currentQuestions[currentIndex];
+            const textToSpeak = `${q.prefix} ... ${q.suffix}`;
+            
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 0.85;
+            synth.speak(utterance);
+        }
+
+        function speakFeedback(isCorrect, fullSentence, onCompleteCallback) {
+            if (!isAudioEnabled || !synth) {
+                if (onCompleteCallback) onCompleteCallback();
+                return;
+            }
+            synth.cancel();
+
+            const t = translations[currentLang];
+            const introText = isCorrect ? t.correctFeedbackSpeech : t.wrongFeedbackSpeech;
+            const introLang = (currentLang === 'fr') ? 'fr-FR' : 'en-US';
+
+            const introUtterance = new SpeechSynthesisUtterance(introText);
+            introUtterance.lang = introLang;
+            introUtterance.rate = 0.9;
+
+            const sentenceUtterance = new SpeechSynthesisUtterance(fullSentence);
+            sentenceUtterance.lang = 'fr-FR';
+            sentenceUtterance.rate = 0.85;
+
+            // Chain audio reading and invoke completion callback on finish
+            introUtterance.onend = () => {
+                synth.speak(sentenceUtterance);
+            };
+            
+            introUtterance.onerror = () => {
+                synth.speak(sentenceUtterance);
+            };
+
+            if (onCompleteCallback) {
+                sentenceUtterance.onend = onCompleteCallback;
+                sentenceUtterance.onerror = onCompleteCallback;
+            }
+
+            synth.speak(introUtterance);
+        }
+
+        // --- GAME LOGIC ---
+        function startGame() {
+            if (synth) synth.cancel();
+            if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
+
+            currentQuestions = [...questionsData].sort(() => 0.5 - Math.random());
+            currentIndex = 0;
+            score = 0;
+
+            document.getElementById('score-val').textContent = score;
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('screen-game').classList.add('flex');
+
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (synth) synth.cancel();
+            if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
+
+            const q = currentQuestions[currentIndex];
+            
+            // Progress Update
+            document.getElementById('current-question-num').textContent = currentIndex + 1;
+            document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / 10) * 100}%`;
+
+            // Display question
+            const sentenceEl = document.getElementById('sentence-display');
+            sentenceEl.innerHTML = `${q.prefix}<span class="inline-block border-b-4 border-indigo-500 text-indigo-600 px-4 py-1 mx-2 bg-indigo-50 rounded-xl shadow-inner">[ ... ]</span>${q.suffix}`;
+
+            // Reset feedback card and hide manual Next button
+            const feedbackCard = document.getElementById('feedback-card');
+            feedbackCard.className = "w-full min-h-[70px] p-4 rounded-2xl text-lg md:text-xl font-extrabold transition-all duration-300 opacity-0 flex flex-col items-center justify-center text-center gap-3";
+            document.getElementById('feedback-text').textContent = "";
+            document.getElementById('btn-next-question').classList.add('hidden');
+
+            // Render option buttons
+            const choicesContainer = document.getElementById('choices-container');
+            choicesContainer.innerHTML = '';
+
+            q.options.forEach(optionText => {
+                const btn = document.createElement('button');
+                btn.className = "bg-white hover:bg-indigo-50 text-indigo-700 font-extrabold text-2xl py-5 px-6 rounded-2xl border-4 border-indigo-200 shadow-md bounce-hover transition cursor-pointer flex items-center justify-center gap-2";
+                btn.onclick = () => checkAnswer(optionText, btn);
+                btn.innerHTML = `<span>${optionText}</span>`;
+                choicesContainer.appendChild(btn);
+            });
+
+            // Automatically speak exercise prompt
+            setTimeout(() => {
+                speakCurrentQuestion();
+            }, 300);
+        }
+
+        function checkAnswer(selectedOption, clickedBtn) {
+            const q = currentQuestions[currentIndex];
+            const isCorrect = (selectedOption === q.answer);
+            const feedbackCard = document.getElementById('feedback-card');
+            const feedbackText = document.getElementById('feedback-text');
+            const nextBtn = document.getElementById('btn-next-question');
+            const t = translations[currentLang];
+
+            // Disable all option buttons
+            const allBtns = document.getElementById('choices-container').querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true);
+
+            // Update sentence display
+            const sentenceEl = document.getElementById('sentence-display');
+            sentenceEl.innerHTML = `${q.prefix}<span class="inline-block border-b-4 ${isCorrect ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-rose-500 text-rose-600 bg-rose-50'} px-4 py-1 mx-2 rounded-xl">${selectedOption}</span>${q.suffix}`;
+
+            if (isCorrect) {
+                score++;
+                document.getElementById('score-val').textContent = score;
+                playSuccessSound();
+
+                clickedBtn.className = "bg-emerald-500 text-white font-extrabold text-2xl py-5 px-6 rounded-2xl border-4 border-emerald-600 shadow-lg scale-105 transition flex items-center justify-center gap-2";
+                clickedBtn.innerHTML += ` <i class="fa-solid fa-circle-check"></i>`;
+
+                feedbackCard.className = "w-full min-h-[70px] p-4 rounded-2xl text-lg md:text-xl font-extrabold transition-all duration-300 opacity-100 bg-emerald-100 text-emerald-800 border-2 border-emerald-300 flex flex-col items-center justify-center text-center gap-3";
+                feedbackText.textContent = `${t.correctFeedbackText} (${q.fullText})`;
+
+                // Speak feedback and automatically advance after speech finishes
+                speakFeedback(true, q.fullText, () => {
+                    autoAdvanceTimer = setTimeout(advanceToNextQuestion, 1200);
+                });
+
+            } else {
+                playErrorSound();
+
+                clickedBtn.className = "bg-rose-500 text-white font-extrabold text-2xl py-5 px-6 rounded-2xl border-4 border-rose-600 shadow-lg transition flex items-center justify-center gap-2";
+                clickedBtn.innerHTML += ` <i class="fa-solid fa-circle-xmark"></i>`;
+
+                // Highlight correct answer button
+                allBtns.forEach(b => {
+                    if (b.textContent.trim() === q.answer) {
+                        b.className = "bg-emerald-100 text-emerald-800 font-extrabold text-2xl py-5 px-6 rounded-2xl border-4 border-emerald-400 shadow-lg transition flex items-center justify-center gap-2";
+                    }
+                });
+
+                feedbackCard.className = "w-full min-h-[70px] p-4 rounded-2xl text-lg md:text-xl font-extrabold transition-all duration-300 opacity-100 bg-rose-100 text-rose-800 border-2 border-rose-300 flex flex-col items-center justify-center text-center gap-3";
+                feedbackText.textContent = `${t.wrongFeedbackText} ${t.correctFeedbackSpeech} "${q.fullText}"`;
+
+                // Display "Question Suivante" button on error so the user has time to review and listen
+                nextBtn.classList.remove('hidden');
+                nextBtn.classList.add('flex');
+
+                // Read full correction out loud without auto-advancing prematurely
+                speakFeedback(false, q.fullText, null);
+            }
+        }
+
+        function advanceToNextQuestion() {
+            if (synth) synth.cancel();
+            if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
+
+            currentIndex++;
+            if (currentIndex < 10) {
+                loadQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            if (synth) synth.cancel();
+
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('flex');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('screen-result').classList.add('flex');
+
+            document.getElementById('final-score-num').textContent = `${score} / 10`;
+
+            // Score display in Belgian French
+            const scoreInBelgian = belgianNumbers[score] || score;
+            document.getElementById('belgian-number-txt').textContent = `(${scoreInBelgian} sur dix)`;
+
+            // Celebrate good scores with confetti
+            if (score >= 7 && typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
