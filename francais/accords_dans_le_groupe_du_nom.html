@@ -56,7 +56,7 @@
       </h1>
     </div>
 
-    <!-- Saisie active ou Sélecteur de Langue -->
+    <!-- Sélecteur de Langue -->
     <div class="flex items-center space-x-2">
       <button onclick="setLanguage('fr')" id="lang-fr-btn" class="btn-bounce px-3 py-1.5 rounded-xl border-2 font-bold text-sm flex items-center space-x-1 border-indigo-500 bg-indigo-50 text-indigo-700">
         <span>🇫🇷</span> <span>FR</span>
@@ -70,7 +70,7 @@
   <!-- Conteneur Principal -->
   <main class="w-full max-w-3xl mx-auto flex-1 flex flex-col justify-center items-center my-2">
 
-    <!-- ÉCRAN 1 : ACCUEIL / SELECTION DU NIVEAU -->
+    <!-- ÉCRAN 1 : ACCUEIL -->
     <div id="screen-welcome" class="w-full bg-white/90 backdrop-blur-lg rounded-3xl p-6 sm:p-10 text-center card-shadow border border-white flex flex-col items-center">
       <div class="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center text-5xl mb-4 text-indigo-600 shadow-inner">
         🐶
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <!-- Boutons de Choix Multiple (Grand format tactile) -->
+      <!-- Boutons de Choix Multiple -->
       <div id="choices-container" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
         <!-- Généré par JS -->
       </div>
@@ -136,7 +136,7 @@
         <p id="feedback-text"></p>
       </div>
 
-      <!-- Bouton Suivant (masqué au départ) -->
+      <!-- Bouton Suivant -->
       <div class="mt-4 flex justify-end">
         <button id="next-btn" onclick="nextQuestion()" class="btn-bounce bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl shadow-md text-base sm:text-lg flex items-center space-x-2 hidden">
           <span id="txt-next">Suivant</span>
@@ -244,40 +244,77 @@
       0: "zéro", 1: "un", 2: "deux", 3: "trois", 4: "quatre", 5: "cinq",
       6: "six", 7: "sept", 8: "huit", 9: "neuf", 10: "dix",
       11: "onze", 12: "douze", 13: "treize", 14: "quatorze", 15: "quinze",
-      16: "seize", 17: "dix-sept", 18: "dix-huit", 19: "dix-neuf", 20: "vingt",
-      70: "septante", 71: "septante et un", 72: "septante-deux",
-      80: "quatre-vingts", 81: "quatre-vingt-un", 82: "quatre-vingt-deux",
-      90: "nonante", 91: "nonante et un", 92: "nonante-deux", 100: "cent"
+      16: "seize", 17: "dix-sept", 18: "dix-huit", 19: "dix-neuf", 20: "vingt"
     };
 
     function getBelgianNumberWord(n) {
       if (numbersBelgian[n]) return numbersBelgian[n];
-      if (n > 20 && n < 70) {
-        let tens = Math.floor(n / 10) * 10;
-        let units = n % 10;
-        let tensWords = { 20: "vingt", 30: "trente", 40: "quarante", 50: "cinquante", 60: "soixante" };
-        if (units === 0) return tensWords[tens];
-        if (units === 1) return tensWords[tens] + " et un";
-        return tensWords[tens] + "-" + numbersBelgian[units];
-      }
-      if (n > 70 && n < 80) return "septante-" + numbersBelgian[n - 70];
-      if (n > 80 && n < 90) return "quatre-vingt-" + numbersBelgian[n - 80];
-      if (n > 90 && n < 100) return "nonante-" + numbersBelgian[n - 90];
       return n.toString();
     }
 
-    // --- BANQUE DE QUESTIONS ---
+    // --- BANQUE DE QUESTIONS (55 MOTS ET GROUPES NOMINAUX DIVERSIFIÉS) ---
     const questionsPool = [
+      // Pluriels (des)
       { noun: "stylos bleus", answer: "des", options: ["un", "une", "des"] },
-      { noun: "jolie table", answer: "une", options: ["un", "une", "des"] },
-      { noun: "grand chien", answer: "un", options: ["un", "une", "des"] },
-      { noun: "pomme rouge", answer: "une", options: ["un", "une", "des"] },
       { noun: "grands arbres", answer: "des", options: ["un", "une", "des"] },
-      { noun: "petit chat", answer: "un", options: ["un", "une", "des"] },
       { noun: "belles fleurs", answer: "des", options: ["un", "une", "des"] },
+      { noun: "oiseaux chanteurs", answer: "des", options: ["un", "une", "des"] },
+      { noun: "petits chats", answer: "des", options: ["un", "une", "des"] },
+      { noun: "grosses pommes", answer: "des", options: ["un", "une", "des"] },
+      { noun: "chaussures neuves", answer: "des", options: ["un", "une", "des"] },
+      { noun: "histoires drôles", answer: "des", options: ["un", "une", "des"] },
+      { noun: "images magnifiques", answer: "des", options: ["un", "une", "des"] },
+      { noun: "jouets rigolos", answer: "des", options: ["un", "une", "des"] },
+      { noun: "bonbons sucrés", answer: "des", options: ["un", "une", "des"] },
+      { noun: "étoiles brillantes", answer: "des", options: ["un", "une", "des"] },
+      { noun: "vélos rapides", answer: "des", options: ["un", "une", "des"] },
+      { noun: "poissons rouges", answer: "des", options: ["un", "une", "des"] },
+      { noun: "nuages blancs", answer: "des", options: ["un", "une", "des"] },
+      { noun: "belles chansons", answer: "des", options: ["un", "une", "des"] },
+      { noun: "crayons de couleur", answer: "des", options: ["un", "une", "des"] },
+      { noun: "livres captivants", answer: "des", options: ["un", "une", "des"] },
+
+      // Féminin singulier (une)
+      { noun: "jolie table", answer: "une", options: ["un", "une", "des"] },
+      { noun: "pomme rouge", answer: "une", options: ["un", "une", "des"] },
       { noun: "maison blanche", answer: "une", options: ["un", "une", "des"] },
+      { noun: "petite fille", answer: "une", options: ["un", "une", "des"] },
+      { noun: "grande porte", answer: "une", options: ["un", "une", "des"] },
+      { noun: "voiture rapide", answer: "une", options: ["un", "une", "des"] },
+      { noun: "belle fleur", answer: "une", options: ["un", "une", "des"] },
+      { noun: "gentille maîtresse", answer: "une", options: ["un", "une", "des"] },
+      { noun: "chaise confortable", answer: "une", options: ["un", "une", "des"] },
+      { noun: "tasse chaude", answer: "une", options: ["un", "une", "des"] },
+      { noun: "étoile brillante", answer: "une", options: ["un", "une", "des"] },
+      { noun: "longue rue", answer: "une", options: ["un", "une", "des"] },
+      { noun: "tortue lente", answer: "une", options: ["un", "une", "des"] },
+      { noun: "guitare acoustique", answer: "une", options: ["un", "une", "des"] },
+      { noun: "fenêtre ouverte", answer: "une", options: ["un", "une", "des"] },
+      { noun: "tarte aux fraises", answer: "une", options: ["un", "une", "des"] },
+      { noun: "chemise propre", answer: "une", options: ["un", "une", "des"] },
+      { noun: "bouteille d'eau", answer: "une", options: ["un", "une", "des"] },
+      { noun: "horloge ancienne", answer: "une", options: ["un", "une", "des"] },
+
+      // Masculin singulier (un)
+      { noun: "grand chien", answer: "un", options: ["un", "une", "des"] },
+      { noun: "petit chat", answer: "un", options: ["un", "une", "des"] },
       { noun: "cahier vert", answer: "un", options: ["un", "une", "des"] },
-      { noun: "oiseaux chanteurs", answer: "des", options: ["un", "une", "des"] }
+      { noun: "gros ballon", answer: "un", options: ["un", "une", "des"] },
+      { noun: "beau gâteau", answer: "un", options: ["un", "une", "des"] },
+      { noun: "oiseau bleu", answer: "un", options: ["un", "une", "des"] },
+      { noun: "stylo noir", answer: "un", options: ["un", "une", "des"] },
+      { noun: "livre intéressant", answer: "un", options: ["un", "une", "des"] },
+      { noun: "manteau chaud", answer: "un", options: ["un", "une", "des"] },
+      { noun: "chapeau rigolo", answer: "un", options: ["un", "une", "des"] },
+      { noun: "camion rouge", answer: "un", options: ["un", "une", "des"] },
+      { noun: "sac à dos", answer: "un", options: ["un", "une", "des"] },
+      { noun: "lapin blanc", answer: "un", options: ["un", "une", "des"] },
+      { noun: "jardin fleuri", answer: "un", options: ["un", "une", "des"] },
+      { noun: "soleil brillant", answer: "un", options: ["un", "une", "des"] },
+      { noun: "bonbon acidulé", answer: "un", options: ["un", "une", "des"] },
+      { noun: "pantalon bleu", answer: "un", options: ["un", "une", "des"] },
+      { noun: "robot intelligent", answer: "un", options: ["un", "une", "des"] },
+      { noun: "cheval rapide", answer: "un", options: ["un", "une", "des"] }
     ];
 
     // --- ÉTAT GLOBAL ---
@@ -287,7 +324,7 @@
     let questions = [];
     let isAnswered = false;
 
-    // --- INITIALISATION SYNTHÈSE VOCALE AVEC ACCENT BRITANNIQUE & FRANÇAIS ---
+    // --- INITIALISATION SYNTHÈSE VOCALE ---
     let synth = window.speechSynthesis;
     let frenchVoice = null;
     let britishVoice = null;
@@ -296,12 +333,10 @@
       if (!synth) return;
       let voices = synth.getVoices();
       
-      // Recherche prioritaire de la voix française (fr-BE ou fr-FR)
       frenchVoice = voices.find(v => v.lang === 'fr-BE') || 
                     voices.find(v => v.lang.startsWith('fr') || v.lang.startsWith('FR')) || 
                     voices[0];
 
-      // Recherche EXCLUSIVE de la voix Britannique (en-GB ou en_GB)
       britishVoice = voices.find(v => v.lang === 'en-GB' || v.lang === 'en_GB' || v.name.includes('UK') || v.name.includes('Hazel') || v.name.includes('George')) ||
                      voices.find(v => v.lang.startsWith('en')) || 
                      frenchVoice;
@@ -314,7 +349,6 @@
       }
     }
 
-    // Prononciation audio avec sélection automatique de langue/voix
     function speak(text, lang = 'fr', callback = null) {
       if (!synth) {
         if (callback) callback();
@@ -332,17 +366,12 @@
       }
       utterance.rate = 0.9;
 
-      utterance.onend = function() {
-        if (callback) callback();
-      };
-      utterance.onerror = function() {
-        if (callback) callback();
-      };
+      utterance.onend = function() { if (callback) callback(); };
+      utterance.onerror = function() { if (callback) callback(); };
 
       synth.speak(utterance);
     }
 
-    // Fonction spéciale pour lire un message anglais suivi d'un groupe de mots en français
     function speakBilingualFeedback(englishText, frenchWord) {
       if (!synth) return;
       synth.cancel();
@@ -361,7 +390,6 @@
       synth.speak(utt2);
     }
 
-    // VOCALISATIONS DES DIRECTIVES
     function speakWelcome() {
       const t = i18n[currentLang];
       const text = `${t.welcomeTitle}. ${t.welcomeDesc}`;
@@ -369,7 +397,6 @@
     }
 
     function speakInstruction() {
-      const t = i18n[currentLang];
       if (currentLang === 'fr') {
         speak("Complète avec un, une ou des", 'fr');
       } else {
@@ -378,7 +405,6 @@
     }
 
     function speakResult() {
-      const t = i18n[currentLang];
       const scoreWord = getBelgianNumberWord(score);
       const totalWord = getBelgianNumberWord(questions.length);
       
@@ -409,7 +435,6 @@
 
       updateStaticTexts();
 
-      // Enoncer la consigne adaptée au changement de langue
       if (!document.getElementById('screen-welcome').classList.contains('hidden')) {
         speakWelcome();
       } else if (!document.getElementById('screen-game').classList.contains('hidden')) {
@@ -434,11 +459,12 @@
     }
 
     function quitApp() {
-      window.location.href = ".../index.html";
+      window.location.href = "../index.html";
     }
 
     function startGame() {
-      questions = [...questionsPool].sort(() => Math.random() - 0.5);
+      // Sélectionne 10 questions au hasard parmi les 55 disponibles
+      questions = [...questionsPool].sort(() => Math.random() - 0.5).slice(0, 10);
       currentQuestionIndex = 0;
       score = 0;
 
@@ -493,7 +519,6 @@
         choicesContainer.appendChild(btn);
       });
 
-      // Annoncer oralement la consigne à chaque nouvelle question
       speakInstruction();
     }
 

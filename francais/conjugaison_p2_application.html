@@ -50,7 +50,7 @@
     <!-- Header Navigation -->
     <header class="p-4 w-full max-w-4xl mx-auto flex justify-between items-center z-10">
         <!-- Bouton Quitter -->
-        <a href=".../index.html" class="bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-2xl shadow-md transition flex items-center gap-2 bubble-btn text-lg">
+        <a href="../index.html" class="bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-2xl shadow-md transition flex items-center gap-2 bubble-btn text-lg">
             <i class="fa-solid fa-door-open"></i>
             <span id="txt-exit">Quitter</span>
         </a>
@@ -140,7 +140,7 @@
                     <span id="feedback-text"></span>
                     
                     <!-- Bouton Continuer / Suivant après erreur -->
-                    <button id="btn-next-question" onclick="advanceToNextQuestion()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-2xl shadow-md bounce-hover text-lg items-center gap-2">
+                    <button id="btn-next-question" onclick="advanceToNextQuestion()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3 rounded-2xl shadow-lg bounce-hover text-xl items-center gap-3 border-b-4 border-indigo-800">
                         <span id="txt-next-btn">Question Suivante</span>
                         <i class="fa-solid fa-arrow-right"></i>
                     </button>
@@ -185,21 +185,48 @@
 
     <!-- JavaScript Logic -->
     <script>
-        // --- DATA: QUESTIONS ESSENTIELLES P2 (Belgique) ---
-        const questionsData = [
-            { prefix: "Aujourd'hui, nous ", suffix: " à la plaine de jeux.", answer: "jouons", options: ["jouons", "jouez", "jouent"], fullText: "Aujourd'hui, nous jouons à la plaine de jeux." },
-            { prefix: "Tu ", suffix: " un bel ordinateur.", answer: "as", options: ["as", "a", "es"], fullText: "Tu as un bel ordinateur." },
+        // --- LARGE BANK OF 32 P2 CONJUGAISON QUESTIONS (Belgique) ---
+        const masterQuestionsBank = [
+            // --- VERBE ÊTRE ---
+            { prefix: "Je ", suffix: " très sage à l'école.", answer: "suis", options: ["suis", "es", "est"], fullText: "Je suis très sage à l'école." },
+            { prefix: "Tu ", suffix: " un bon camarade.", answer: "es", options: ["es", "suis", "est"], fullText: "Tu es un bon camarade." },
+            { prefix: "Il ", suffix: " très grand aujourd'hui.", answer: "est", options: ["est", "es", "sont"], fullText: "Il est très grand aujourd'hui." },
+            { prefix: "Elle ", suffix: " heureuse de jouer.", answer: "est", options: ["est", "es", "sont"], fullText: "Elle est heureuse de jouer." },
+            { prefix: "Nous ", suffix: " prêts pour le départ.", answer: "sommes", options: ["sommes", "êtes", "sont"], fullText: "Nous sommes prêts pour le départ." },
+            { prefix: "Vous ", suffix: " en retard ce matin.", answer: "êtes", options: ["êtes", "sommes", "sont"], fullText: "Vous êtes en retard ce matin." },
             { prefix: "Les enfants ", suffix: " fatigués ce soir.", answer: "sont", options: ["sont", "ont", "es"], fullText: "Les enfants sont fatigués ce soir." },
-            { prefix: "Je ", suffix: " à la maison.", answer: "suis", options: ["suis", "es", "est"], fullText: "Je suis à la maison." },
-            { prefix: "Il ", suffix: " septante images dans son album.", answer: "a", options: ["ai", "as", "a"], fullText: "Il a septante images dans son album." },
-            { prefix: "Nous ", suffix: " nos devoirs.", answer: "aimons", options: ["aime", "aimons", "aiment"], fullText: "Nous aimons nos devoirs." },
-            { prefix: "Vous ", suffix: " très bien au ballon.", answer: "jouez", options: ["jouons", "jouez", "jouent"], fullText: "Vous jouez très bien au ballon." },
-            { prefix: "Elle ", suffix: " contente de te voir.", answer: "est", options: ["es", "est", "sont"], fullText: "Elle est contente de te voir." },
+            { prefix: "Elles ", suffix: " dans la classe de P2.", answer: "sont", options: ["sont", "sommes", "êtes"], fullText: "Elles sont dans la classe de P2." },
+
+            // --- VERBE AVOIR ---
             { prefix: "J' ", suffix: " nonante bonbons colorés.", answer: "ai", options: ["ai", "as", "a"], fullText: "J'ai nonante bonbons colorés." },
-            { prefix: "Ils ", suffix: " quatre-vingts livres.", answer: "ont", options: ["ont", "avons", "avez"], fullText: "Ils ont quatre-vingts livres." }
+            { prefix: "Tu ", suffix: " un bel ordinateur.", answer: "as", options: ["as", "a", "es"], fullText: "Tu as un bel ordinateur." },
+            { prefix: "Il ", suffix: " septante images dans son album.", answer: "a", options: ["a", "ai", "as"], fullText: "Il a septante images dans son album." },
+            { prefix: "Elle ", suffix: " un joli vélo rouge.", answer: "a", options: ["a", "as", "ont"], fullText: "Elle a un joli vélo rouge." },
+            { prefix: "Nous ", suffix: " une grande cour d'école.", answer: "avons", options: ["avons", "avez", "ont"], fullText: "Nous avons une grande cour d'école." },
+            { prefix: "Vous ", suffix: " beaucoup de devoirs.", answer: "avez", options: ["avez", "avons", "ont"], fullText: "Vous avez beaucoup de devoirs." },
+            { prefix: "Ils ", suffix: " quatre-vingts livres illustrés.", answer: "ont", options: ["ont", "avons", "avez"], fullText: "Ils ont quatre-vingts livres illustrés." },
+
+            // --- VERBES RÉGULIERS EN -ER ---
+            { prefix: "Aujourd'hui, nous ", suffix: " à la plaine de jeux.", answer: "jouons", options: ["jouons", "jouez", "jouent"], fullText: "Aujourd'hui, nous jouons à la plaine de jeux." },
+            { prefix: "Je ", suffix: " mon dessin avec soin.", answer: "regarde", options: ["regarde", "regardes", "regardons"], fullText: "Je regarde mon dessin avec soin." },
+            { prefix: "Tu ", suffix: " dans la cour de récréation.", answer: "chantes", options: ["chantes", "chante", "chantez"], fullText: "Tu chantes dans la cour de récréation." },
+            { prefix: "Le chien ", suffix: " par-dessus le banc.", answer: "saute", options: ["saute", "sautes", "sautent"], fullText: "Le chien saute par-dessus le banc." },
+            { prefix: "Nous ", suffix: " le maître d'école.", answer: "écoutons", options: ["écoutons", "écoutez", "écoutent"], fullText: "Nous écoutons le maître d'école." },
+            { prefix: "Vous ", suffix: " gentiment votre voisin.", answer: "aidez", options: ["aidez", "aidons", "aident"], fullText: "Vous aidez gentiment votre voisin." },
+            { prefix: "Les filles ", suffix: " dans le gymnase.", answer: "dansent", options: ["dansent", "danse", "dansez"], fullText: "Les filles dansent dans le gymnase." },
+            { prefix: "Nous ", suffix: " notre lecture ensemble.", answer: "aimons", options: ["aimons", "aime", "aiment"], fullText: "Nous aimons notre lecture ensemble." },
+            { prefix: "Vous ", suffix: " très bien au ballon.", answer: "jouez", options: ["jouez", "jouons", "jouent"], fullText: "Vous jouez très bien au ballon." },
+            { prefix: "J' ", suffix: " à Bruxelles en Belgique.", answer: "habite", options: ["habite", "habites", "habitons"], fullText: "J'habite à Bruxelles en Belgique." },
+            { prefix: "Tu ", suffix: " une belle coquille sur la plage.", answer: "trouves", options: ["trouves", "trouve", "trouvez"], fullText: "Tu trouves une belle coquille sur la plage." },
+            { prefix: "Il ", suffix: " la porte du réfectoire.", answer: "ferme", options: ["ferme", "fermes", "ferment"], fullText: "Il ferme la porte du réfectoire." },
+            { prefix: "Nous ", suffix: " le français tous les jours.", answer: "parlons", options: ["parlons", "parlez", "parlent"], fullText: "Nous parlons le français tous les jours." },
+            { prefix: "Vous ", suffix: " les belles histoires du livre.", answer: "racontez", options: ["racontez", "racontons", "racontent"], fullText: "Vous racontez les belles histoires du livre." },
+            { prefix: "Les élèves ", suffix: " la cour avec attention.", answer: "traversent", options: ["traversent", "traverse", "traversez"], fullText: "Les élèves traversent la cour avec attention." },
+            { prefix: "Tu ", suffix: " ton jus de pomme.", answer: "manges", options: ["manges", "mange", "mangez"], fullText: "Tu manges ton jus de pomme." },
+            { prefix: "Elles ", suffix: " de magnifiques fleurs.", answer: "dessinent", options: ["dessinent", "dessine", "dessinez"], fullText: "Elles dessinent de magnifiques fleurs." }
         ];
 
-        // Numbers in Belgian French context
+        // Belgian spoken numbers mapping
         const belgianNumbers = {
             0: "zéro", 1: "un", 2: "deux", 3: "trois", 4: "quatre",
             5: "cinq", 6: "six", 7: "sept", 8: "huit", 9: "neuf",
@@ -228,7 +255,7 @@
                 correctFeedbackText: "Bravo ! C'est la bonne réponse !",
                 wrongFeedbackText: "Oups ! Ce n'est pas ça.",
                 correctFeedbackSpeech: "Bravo ! ",
-                wrongFeedbackSpeech: "Dommage ! La bonne réponse était : "
+                wrongFeedbackSpeech: "Attention ! La bonne réponse était : "
             },
             en: {
                 exit: "Exit",
@@ -250,7 +277,7 @@
                 correctFeedbackText: "Great job! That's correct!",
                 wrongFeedbackText: "Oops! That's incorrect.",
                 correctFeedbackSpeech: "Well done! ",
-                wrongFeedbackSpeech: "Oops! The correct answer was: "
+                wrongFeedbackSpeech: "Watch out! The correct answer was: "
             }
         };
 
@@ -396,7 +423,7 @@
             sentenceUtterance.lang = 'fr-FR';
             sentenceUtterance.rate = 0.85;
 
-            // Chain audio reading and invoke completion callback on finish
+            // Chain utterances
             introUtterance.onend = () => {
                 synth.speak(sentenceUtterance);
             };
@@ -418,7 +445,16 @@
             if (synth) synth.cancel();
             if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
 
-            currentQuestions = [...questionsData].sort(() => 0.5 - Math.random());
+            // 1. Pick 10 random questions from bank
+            const shuffledBank = [...masterQuestionsBank].sort(() => 0.5 - Math.random());
+            currentQuestions = shuffledBank.slice(0, 10).map(q => {
+                return {
+                    ...q,
+                    // Shuffle choices per question
+                    shuffledOptions: [...q.options].sort(() => 0.5 - Math.random())
+                };
+            });
+
             currentIndex = 0;
             score = 0;
 
@@ -441,11 +477,11 @@
             document.getElementById('current-question-num').textContent = currentIndex + 1;
             document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / 10) * 100}%`;
 
-            // Display question
+            // Display question sentence
             const sentenceEl = document.getElementById('sentence-display');
             sentenceEl.innerHTML = `${q.prefix}<span class="inline-block border-b-4 border-indigo-500 text-indigo-600 px-4 py-1 mx-2 bg-indigo-50 rounded-xl shadow-inner">[ ... ]</span>${q.suffix}`;
 
-            // Reset feedback card and hide manual Next button
+            // Reset feedback card and hide Next button
             const feedbackCard = document.getElementById('feedback-card');
             feedbackCard.className = "w-full min-h-[70px] p-4 rounded-2xl text-lg md:text-xl font-extrabold transition-all duration-300 opacity-0 flex flex-col items-center justify-center text-center gap-3";
             document.getElementById('feedback-text').textContent = "";
@@ -455,7 +491,7 @@
             const choicesContainer = document.getElementById('choices-container');
             choicesContainer.innerHTML = '';
 
-            q.options.forEach(optionText => {
+            q.shuffledOptions.forEach(optionText => {
                 const btn = document.createElement('button');
                 btn.className = "bg-white hover:bg-indigo-50 text-indigo-700 font-extrabold text-2xl py-5 px-6 rounded-2xl border-4 border-indigo-200 shadow-md bounce-hover transition cursor-pointer flex items-center justify-center gap-2";
                 btn.onclick = () => checkAnswer(optionText, btn);
@@ -463,7 +499,7 @@
                 choicesContainer.appendChild(btn);
             });
 
-            // Automatically speak exercise prompt
+            // Automatically speak exercise sentence prompt
             setTimeout(() => {
                 speakCurrentQuestion();
             }, 300);
@@ -481,7 +517,7 @@
             const allBtns = document.getElementById('choices-container').querySelectorAll('button');
             allBtns.forEach(b => b.disabled = true);
 
-            // Update sentence display
+            // Update sentence display with choice
             const sentenceEl = document.getElementById('sentence-display');
             sentenceEl.innerHTML = `${q.prefix}<span class="inline-block border-b-4 ${isCorrect ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-rose-500 text-rose-600 bg-rose-50'} px-4 py-1 mx-2 rounded-xl">${selectedOption}</span>${q.suffix}`;
 
@@ -507,7 +543,7 @@
                 clickedBtn.className = "bg-rose-500 text-white font-extrabold text-2xl py-5 px-6 rounded-2xl border-4 border-rose-600 shadow-lg transition flex items-center justify-center gap-2";
                 clickedBtn.innerHTML += ` <i class="fa-solid fa-circle-xmark"></i>`;
 
-                // Highlight correct answer button
+                // Highlight correct answer button in green
                 allBtns.forEach(b => {
                     if (b.textContent.trim() === q.answer) {
                         b.className = "bg-emerald-100 text-emerald-800 font-extrabold text-2xl py-5 px-6 rounded-2xl border-4 border-emerald-400 shadow-lg transition flex items-center justify-center gap-2";
@@ -515,9 +551,9 @@
                 });
 
                 feedbackCard.className = "w-full min-h-[70px] p-4 rounded-2xl text-lg md:text-xl font-extrabold transition-all duration-300 opacity-100 bg-rose-100 text-rose-800 border-2 border-rose-300 flex flex-col items-center justify-center text-center gap-3";
-                feedbackText.textContent = `${t.wrongFeedbackText} ${t.correctFeedbackSpeech} "${q.fullText}"`;
+                feedbackText.textContent = `${t.wrongFeedbackText} ${t.wrongFeedbackSpeech} "${q.fullText}"`;
 
-                // Display "Question Suivante" button on error so the user has time to review and listen
+                // Display "Question Suivante" button on error so child can review and advance when ready
                 nextBtn.classList.remove('hidden');
                 nextBtn.classList.add('flex');
 

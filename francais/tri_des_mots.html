@@ -195,7 +195,7 @@
       <button id="btn-lang" onclick="toggleLanguage()">🌐 English</button>
       <button class="btn-audio" onclick="readRules()">🔊 Consignes</button>
       <button onclick="resetGame()">🔄 Rejouer</button>
-      <a href=".../index.html" class="btn-link btn-quit">🚪 Quitter</a>
+      <a href="../index.html" class="btn-link btn-quit">🚪 Quitter</a>
     </div>
   </div>
 
@@ -230,18 +230,51 @@
 </div>
 
 <script>
-  // Mots du jeu
+ // Mots du jeu enrichis
   const DATA = [
+    // --- Noms Propres ---
     { id: '1', fr: 'Belgique', en: 'Belgium', type: 'propre' },
-    { id: '2', fr: 'chat', en: 'cat', type: 'commun' },
     { id: '3', fr: 'Bruxelles', en: 'Brussels', type: 'propre' },
-    { id: '4', fr: 'cartable', en: 'schoolbag', type: 'commun' },
     { id: '5', fr: 'Thomas', en: 'Thomas', type: 'propre' },
-    { id: '6', fr: 'pomme', en: 'apple', type: 'commun' },
     { id: '7', fr: 'Arthur', en: 'Arthur', type: 'propre' },
-    { id: '8', fr: 'école', en: 'school', type: 'commun' },
     { id: '9', fr: 'Paris', en: 'Paris', type: 'propre' },
-    { id: '10', fr: 'stylo', en: 'pen', type: 'commun' }
+    { id: '11', fr: 'France', en: 'France', type: 'propre' },
+    { id: '12', fr: 'Canada', en: 'Canada', type: 'propre' },
+    { id: '13', fr: 'Emma', en: 'Emma', type: 'propre' },
+    { id: '14', fr: 'Lucas', en: 'Lucas', type: 'propre' },
+    { id: '15', fr: 'Europe', en: 'Europe', type: 'propre' },
+    { id: '16', fr: 'Chine', en: 'China', type: 'propre' },
+    { id: '17', fr: 'Londres', en: 'London', type: 'propre' },
+    { id: '18', fr: 'Tokyo', en: 'Tokyo', type: 'propre' },
+    { id: '19', fr: 'Lune', en: 'Moon', type: 'propre' },
+    { id: '20', fr: 'Soleil', en: 'Sun', type: 'propre' },
+    { id: '21', fr: 'Sahara', en: 'Sahara', type: 'propre' },
+    { id: '22', fr: 'Eiffel', en: 'Eiffel', type: 'propre' },
+    { id: '23', fr: 'Lego', en: 'Lego', type: 'propre' },
+    { id: '24', fr: 'Nil', en: 'Nile', type: 'propre' },
+    { id: '25', fr: 'Océan Atlantique', en: 'Atlantic Ocean', type: 'propre' },
+
+    // --- Noms Communs ---
+    { id: '2', fr: 'chat', en: 'cat', type: 'commun' },
+    { id: '4', fr: 'cartable', en: 'schoolbag', type: 'commun' },
+    { id: '6', fr: 'pomme', en: 'apple', type: 'commun' },
+    { id: '8', fr: 'école', en: 'school', type: 'commun' },
+    { id: '10', fr: 'stylo', en: 'pen', type: 'commun' },
+    { id: '26', fr: 'chien', en: 'dog', type: 'commun' },
+    { id: '27', fr: 'voiture', en: 'car', type: 'commun' },
+    { id: '28', fr: 'maison', en: 'house', type: 'commun' },
+    { id: '29', fr: 'arbre', en: 'tree', type: 'commun' },
+    { id: '30', fr: 'soleil', en: 'sunlight', type: 'commun' },
+    { id: '31', fr: 'fleur', en: 'flower', type: 'commun' },
+    { id: '32', fr: 'livre', en: 'book', type: 'commun' },
+    { id: '33', fr: 'ordinateur', en: 'computer', type: 'commun' },
+    { id: '34', fr: 'amitié', en: 'friendship', type: 'commun' },
+    { id: '35', fr: 'courage', en: 'courage', type: 'commun' },
+    { id: '36', fr: 'professeur', en: 'teacher', type: 'commun' },
+    { id: '37', fr: 'musique', en: 'music', type: 'commun' },
+    { id: '38', fr: 'rivière', en: 'river', type: 'commun' },
+    { id: '39', fr: 'montagne', en: 'mountain', type: 'commun' },
+    { id: '40', fr: 'bonbon', en: 'candy', type: 'commun' }
   ];
 
   function formatBelgian(n) {

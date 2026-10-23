@@ -1,4 +1,4 @@
-F<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr" class="h-full">
 <head>
     <meta charset="UTF-8">
@@ -122,8 +122,30 @@ F<!DOCTYPE html>
     <!-- MAIN CONTAINER -->
     <main class="w-full max-w-4xl mx-auto px-4 py-4 flex-grow flex flex-col justify-center items-center">
 
+        <!-- START SCREEN : LEVEL CHOICE -->
+        <div id="start-screen" class="w-full bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-indigo-200 flex flex-col items-center text-center">
+            <div class="text-6xl mb-3">🧩</div>
+            <h1 class="title-font text-2xl sm:text-4xl font-bold text-indigo-900 mb-2 ui-text-start-title">Choisis ton niveau</h1>
+            <p class="text-slate-600 font-semibold mb-3 ui-text-start-sub">Tu vas remettre 10 phrases en ordre. Prêt(e) ?</p>
+            <button id="btn-repeat-start" class="mb-5 bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-2xl shadow-fun-sm active:shadow-fun-active transition-all transform active:translate-y-1 flex items-center space-x-2 text-sm">
+                <i class="fa-solid fa-volume-high"></i>
+                <span class="ui-text-repeat">Répéter les consignes</span>
+            </button>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+                <button id="btn-level-easy" class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-3xl p-5 shadow-fun transition-all transform active:translate-y-1 active:shadow-fun-active">
+                    <div class="title-font text-2xl font-bold mb-1">🌱 <span class="ui-text-easy-title">Facile</span></div>
+                    <div class="text-sm font-semibold ui-text-easy-desc">3 blocs : le sujet, le verbe et le complément.</div>
+                </button>
+                <button id="btn-level-hard" class="bg-orange-500 hover:bg-orange-600 text-white rounded-3xl p-5 shadow-fun transition-all transform active:translate-y-1 active:shadow-fun-active">
+                    <div class="title-font text-2xl font-bold mb-1">🔥 <span class="ui-text-hard-title">Difficile</span></div>
+                    <div class="text-sm font-semibold ui-text-hard-desc">4 blocs. Parfois, plusieurs ordres sont corrects !</div>
+                </button>
+            </div>
+        </div>
+
         <!-- CARD CONTAINER -->
-        <div class="w-full bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-indigo-200 flex flex-col items-center">
+        <div id="game-card" style="display:none" class="w-full bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-8 shadow-xl border-4 border-indigo-200 flex flex-col items-center">
+            <div id="question-counter" class="title-font text-sm sm:text-base font-bold text-indigo-700 mb-2"></div>
             
             <!-- Progress Bar -->
             <div class="w-full max-w-lg bg-gray-200 rounded-full h-3.5 mb-6 overflow-hidden border border-gray-300">
@@ -134,13 +156,14 @@ F<!DOCTYPE html>
             <div class="text-center mb-6">
                 <div id="instruction-title" class="title-font text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-900 mb-2 flex items-center justify-center gap-2">
                     <span class="ui-text-instruction">Remets les blocs de mots dans l'ordre pour faire une phrase correcte :</span>
-                    <button id="btn-speak-instruction" class="text-indigo-500 hover:text-indigo-700 text-lg sm:text-xl p-1 focus:outline-none transition-transform active:scale-95" title="Écouter la consigne">
+                    <button id="btn-speak-instruction" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-600 hover:text-indigo-800 text-lg sm:text-xl w-9 h-9 rounded-full flex items-center justify-center shrink-0 focus:outline-none transition-transform active:scale-95" title="Écouter la consigne">
                         <i class="fa-solid fa-circle-play"></i>
                     </button>
                 </div>
                 <p class="ui-text-hint text-xs sm:text-sm text-slate-500 font-semibold">
                     💡 Astuce : La phrase commence par une <span class="text-indigo-600 font-bold">MAJUSCULE</span> et se termine par un <span class="text-pink-600 font-bold">POINT</span> !
                 </p>
+                <p id="multi-note" style="display:none" class="ui-text-multi text-xs sm:text-sm text-orange-600 font-bold mt-1"></p>
             </div>
 
             <!-- TARGET DROP ZONE / CONSTRUCTED SENTENCE AREA -->
@@ -191,8 +214,9 @@ F<!DOCTYPE html>
                     </div>
                 </div>
             </div>
+            <p id="last-note" class="hidden mt-3 text-sm sm:text-base font-bold text-indigo-700 text-right ui-text-last"></p>
             <div class="mt-4 flex justify-end">
-                <button id="btn-next" class="bg-indigo-600 hover:bg-indigo-700 text-white title-font font-bold py-2.5 px-6 rounded-xl shadow-fun-sm transition-all transform active:translate-y-1 flex items-center space-x-2 text-base">
+                <button id="btn-next" class="bg-indigo-600 hover:bg-indigo-700 text-white title-font font-bold py-2.5 px-6 rounded-xl shadow-fun-sm transition-all transform active:translate-y-1 flex items-center space-x-2 text-base disabled:opacity-50 disabled:cursor-not-allowed">
                     <span class="ui-text-next">Suivant</span>
                     <i class="fa-solid fa-arrow-right"></i>
                 </button>
@@ -212,49 +236,1333 @@ F<!DOCTYPE html>
          * All word blocks and target sentences are ALWAYS in French.
          * Belgian French number terminology (septante, nonante) is respected.
          */
-        const EXERCISES = [
-            {
-                // Request specified question
-                blocks: ["mange", "Le singe", "une banane."],
-                correct: ["Le singe", "mange", "une banane."]
-            },
-            {
-                blocks: ["dort", "sur le canapé.", "Le chat"],
-                correct: ["Le chat", "dort", "sur le canapé."]
-            },
-            {
-                blocks: ["mange", "La petite fille", "une pomme rouge."],
-                correct: ["La petite fille", "mange", "une pomme rouge."]
-            },
-            {
-                blocks: ["septante bonbons.", "compte", "Thomas"],
-                correct: ["Thomas", "compte", "septante bonbons."]
-            },
-            {
-                blocks: ["dessine", "nonante étoiles.", "Juliette"],
-                correct: ["Juliette", "dessine", "nonante étoiles."]
-            },
-            {
-                blocks: ["jouent", "dans le parc.", "Les enfants"],
-                correct: ["Les enfants", "jouent", "dans le parc."]
-            },
-            {
-                blocks: ["roule", "Le grand bus", "vers Bruxelles."],
-                correct: ["Le grand bus", "roule", "vers Bruxelles."]
-            },
-            {
-                blocks: ["quatre-vingts frites.", "préférez", "Vous"],
-                correct: ["Vous", "préférez", "quatre-vingts frites."]
-            },
-            {
-                blocks: ["regarde", "la télévision.", "Le garçon"],
-                correct: ["Le garçon", "regarde", "la télévision."]
-            },
-            {
-                blocks: ["porte", "un beau cartable.", "L'élève"],
-                correct: ["L'élève", "porte", "un beau cartable."]
-            }
-        ];
+        const EXERCISE_POOLS = {
+            easy: [
+                {
+                    "blocks": [
+                        "Le singe",
+                        "une banane.",
+                        "mange"
+                    ],
+                    "correct": [
+                        "Le singe",
+                        "mange",
+                        "une banane."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "sur le canapé.",
+                        "Le chat",
+                        "dort"
+                    ],
+                    "correct": [
+                        "Le chat",
+                        "dort",
+                        "sur le canapé."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "une pomme rouge.",
+                        "mange",
+                        "La petite fille"
+                    ],
+                    "correct": [
+                        "La petite fille",
+                        "mange",
+                        "une pomme rouge."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "compte",
+                        "Thomas",
+                        "septante bonbons."
+                    ],
+                    "correct": [
+                        "Thomas",
+                        "compte",
+                        "septante bonbons."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "nonante étoiles.",
+                        "dessine",
+                        "Juliette"
+                    ],
+                    "correct": [
+                        "Juliette",
+                        "dessine",
+                        "nonante étoiles."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "dans le parc.",
+                        "Les enfants",
+                        "jouent"
+                    ],
+                    "correct": [
+                        "Les enfants",
+                        "jouent",
+                        "dans le parc."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "roule",
+                        "vers Bruxelles.",
+                        "Le grand bus"
+                    ],
+                    "correct": [
+                        "Le grand bus",
+                        "roule",
+                        "vers Bruxelles."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "quatre-vingts frites.",
+                        "Vous",
+                        "préférez"
+                    ],
+                    "correct": [
+                        "Vous",
+                        "préférez",
+                        "quatre-vingts frites."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "regarde",
+                        "Le garçon",
+                        "la télévision."
+                    ],
+                    "correct": [
+                        "Le garçon",
+                        "regarde",
+                        "la télévision."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "porte",
+                        "L'élève",
+                        "un beau cartable."
+                    ],
+                    "correct": [
+                        "L'élève",
+                        "porte",
+                        "un beau cartable."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "aboie",
+                        "dans le jardin.",
+                        "Le chien"
+                    ],
+                    "correct": [
+                        "Le chien",
+                        "aboie",
+                        "dans le jardin."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "écrit",
+                        "au tableau.",
+                        "La maîtresse"
+                    ],
+                    "correct": [
+                        "La maîtresse",
+                        "écrit",
+                        "au tableau."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "prépare",
+                        "Mon papa",
+                        "le souper."
+                    ],
+                    "correct": [
+                        "Mon papa",
+                        "prépare",
+                        "le souper."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Les oiseaux",
+                        "dans l'arbre.",
+                        "chantent"
+                    ],
+                    "correct": [
+                        "Les oiseaux",
+                        "chantent",
+                        "dans l'arbre."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "un livre passionnant.",
+                        "Lucas",
+                        "lit"
+                    ],
+                    "correct": [
+                        "Lucas",
+                        "lit",
+                        "un livre passionnant."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "joue",
+                        "Ma sœur",
+                        "du piano."
+                    ],
+                    "correct": [
+                        "Ma sœur",
+                        "joue",
+                        "du piano."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "du pain frais.",
+                        "Le boulanger",
+                        "vend"
+                    ],
+                    "correct": [
+                        "Le boulanger",
+                        "vend",
+                        "du pain frais."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "écoutent",
+                        "Les élèves",
+                        "la maîtresse."
+                    ],
+                    "correct": [
+                        "Les élèves",
+                        "écoutent",
+                        "la maîtresse."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Maman",
+                        "des frites dorées.",
+                        "cuisine"
+                    ],
+                    "correct": [
+                        "Maman",
+                        "cuisine",
+                        "des frites dorées."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "une carotte.",
+                        "Le petit lapin",
+                        "mange"
+                    ],
+                    "correct": [
+                        "Le petit lapin",
+                        "mange",
+                        "une carotte."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "à l'école.",
+                        "Nous",
+                        "allons"
+                    ],
+                    "correct": [
+                        "Nous",
+                        "allons",
+                        "à l'école."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "nagent",
+                        "dans la rivière.",
+                        "Les poissons"
+                    ],
+                    "correct": [
+                        "Les poissons",
+                        "nagent",
+                        "dans la rivière."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "range",
+                        "Emma",
+                        "sa chambre."
+                    ],
+                    "correct": [
+                        "Emma",
+                        "range",
+                        "sa chambre."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "le courrier.",
+                        "Le facteur",
+                        "distribue"
+                    ],
+                    "correct": [
+                        "Le facteur",
+                        "distribue",
+                        "le courrier."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Tu",
+                        "un joli cheval.",
+                        "dessines"
+                    ],
+                    "correct": [
+                        "Tu",
+                        "dessines",
+                        "un joli cheval."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "s'arrête",
+                        "devant la maison.",
+                        "La voiture rouge"
+                    ],
+                    "correct": [
+                        "La voiture rouge",
+                        "s'arrête",
+                        "devant la maison."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "habitent",
+                        "Mes cousins",
+                        "à Namur."
+                    ],
+                    "correct": [
+                        "Mes cousins",
+                        "habitent",
+                        "à Namur."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "souffle",
+                        "très fort.",
+                        "Le vent"
+                    ],
+                    "correct": [
+                        "Le vent",
+                        "souffle",
+                        "très fort."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "une gaufre de Liège.",
+                        "mange",
+                        "Léa"
+                    ],
+                    "correct": [
+                        "Léa",
+                        "mange",
+                        "une gaufre de Liège."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Papy",
+                        "dans l'étang.",
+                        "pêche"
+                    ],
+                    "correct": [
+                        "Papy",
+                        "pêche",
+                        "dans l'étang."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "l'herbe verte.",
+                        "Les vaches",
+                        "broutent"
+                    ],
+                    "correct": [
+                        "Les vaches",
+                        "broutent",
+                        "l'herbe verte."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "brille",
+                        "Le soleil",
+                        "dans le ciel."
+                    ],
+                    "correct": [
+                        "Le soleil",
+                        "brille",
+                        "dans le ciel."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "des moules et des frites.",
+                        "Nous",
+                        "mangeons"
+                    ],
+                    "correct": [
+                        "Nous",
+                        "mangeons",
+                        "des moules et des frites."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Je",
+                        "mon cartable.",
+                        "prends"
+                    ],
+                    "correct": [
+                        "Je",
+                        "prends",
+                        "mon cartable."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "le feu.",
+                        "éteint",
+                        "Le pompier"
+                    ],
+                    "correct": [
+                        "Le pompier",
+                        "éteint",
+                        "le feu."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "construisent",
+                        "un château de sable.",
+                        "Les enfants"
+                    ],
+                    "correct": [
+                        "Les enfants",
+                        "construisent",
+                        "un château de sable."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "tricote",
+                        "une écharpe bleue.",
+                        "Mamie"
+                    ],
+                    "correct": [
+                        "Mamie",
+                        "tricote",
+                        "une écharpe bleue."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "arrive",
+                        "à Tournai.",
+                        "Le train"
+                    ],
+                    "correct": [
+                        "Le train",
+                        "arrive",
+                        "à Tournai."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Antoine",
+                        "septante billes.",
+                        "compte"
+                    ],
+                    "correct": [
+                        "Antoine",
+                        "compte",
+                        "septante billes."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "ramasse",
+                        "nonante œufs.",
+                        "La fermière"
+                    ],
+                    "correct": [
+                        "La fermière",
+                        "ramasse",
+                        "nonante œufs."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "quatre-vingts fleurs.",
+                        "Les élèves",
+                        "dessinent"
+                    ],
+                    "correct": [
+                        "Les élèves",
+                        "dessinent",
+                        "quatre-vingts fleurs."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "chantez",
+                        "Vous",
+                        "une belle chanson."
+                    ],
+                    "correct": [
+                        "Vous",
+                        "chantez",
+                        "une belle chanson."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Le cheval",
+                        "dans le pré.",
+                        "galope"
+                    ],
+                    "correct": [
+                        "Le cheval",
+                        "galope",
+                        "dans le pré."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "des pommes au marché.",
+                        "achète",
+                        "Ma tante"
+                    ],
+                    "correct": [
+                        "Ma tante",
+                        "achète",
+                        "des pommes au marché."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "une petite souris.",
+                        "Le chat noir",
+                        "chasse"
+                    ],
+                    "correct": [
+                        "Le chat noir",
+                        "chasse",
+                        "une petite souris."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "le tableau.",
+                        "nettoie",
+                        "Sophie"
+                    ],
+                    "correct": [
+                        "Sophie",
+                        "nettoie",
+                        "le tableau."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "jouent",
+                        "à la fête.",
+                        "Les musiciens"
+                    ],
+                    "correct": [
+                        "Les musiciens",
+                        "jouent",
+                        "à la fête."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "la porte.",
+                        "ouvre",
+                        "Il"
+                    ],
+                    "correct": [
+                        "Il",
+                        "ouvre",
+                        "la porte."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "regardent",
+                        "Elles",
+                        "un dessin animé."
+                    ],
+                    "correct": [
+                        "Elles",
+                        "regardent",
+                        "un dessin animé."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "soigne",
+                        "les malades.",
+                        "Le médecin"
+                    ],
+                    "correct": [
+                        "Le médecin",
+                        "soigne",
+                        "les malades."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "son vélo.",
+                        "répare",
+                        "Mon frère"
+                    ],
+                    "correct": [
+                        "Mon frère",
+                        "répare",
+                        "son vélo."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "sur la ville.",
+                        "La neige",
+                        "tombe"
+                    ],
+                    "correct": [
+                        "La neige",
+                        "tombe",
+                        "sur la ville."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Les clowns",
+                        "les spectateurs.",
+                        "amusent"
+                    ],
+                    "correct": [
+                        "Les clowns",
+                        "amusent",
+                        "les spectateurs."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "grimpe",
+                        "à l'arbre.",
+                        "Julien"
+                    ],
+                    "correct": [
+                        "Julien",
+                        "grimpe",
+                        "à l'arbre."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "goûte",
+                        "la soupe.",
+                        "Le cuisinier"
+                    ],
+                    "correct": [
+                        "Le cuisinier",
+                        "goûte",
+                        "la soupe."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "tond",
+                        "Notre voisin",
+                        "la pelouse."
+                    ],
+                    "correct": [
+                        "Notre voisin",
+                        "tond",
+                        "la pelouse."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "la route.",
+                        "traversent",
+                        "Les canards"
+                    ],
+                    "correct": [
+                        "Les canards",
+                        "traversent",
+                        "la route."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "Clara",
+                        "une image dans son cahier.",
+                        "colle"
+                    ],
+                    "correct": [
+                        "Clara",
+                        "colle",
+                        "une image dans son cahier."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "une grande maison.",
+                        "construisent",
+                        "Les ouvriers"
+                    ],
+                    "correct": [
+                        "Les ouvriers",
+                        "construisent",
+                        "une grande maison."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "porte",
+                        "La reine",
+                        "une couronne dorée."
+                    ],
+                    "correct": [
+                        "La reine",
+                        "porte",
+                        "une couronne dorée."
+                    ]
+                }
+            ],
+            hard: [
+                {
+                    "blocks": [
+                        "offre",
+                        "un cadeau.",
+                        "Maman",
+                        "à Léa."
+                    ],
+                    "correct": [
+                        "Maman",
+                        "offre",
+                        "un cadeau",
+                        "à Léa."
+                    ],
+                    "alts": [
+                        [
+                            "Maman",
+                            "offre",
+                            "à Léa",
+                            "un cadeau."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "donne",
+                        "à la voisine.",
+                        "Le facteur",
+                        "une lettre."
+                    ],
+                    "correct": [
+                        "Le facteur",
+                        "donne",
+                        "une lettre",
+                        "à la voisine."
+                    ],
+                    "alts": [
+                        [
+                            "Le facteur",
+                            "donne",
+                            "à la voisine",
+                            "une lettre."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "aux élèves.",
+                        "les cahiers.",
+                        "La maîtresse",
+                        "distribue"
+                    ],
+                    "correct": [
+                        "La maîtresse",
+                        "distribue",
+                        "les cahiers",
+                        "aux élèves."
+                    ],
+                    "alts": [
+                        [
+                            "La maîtresse",
+                            "distribue",
+                            "aux élèves",
+                            "les cahiers."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "une histoire.",
+                        "Papa",
+                        "raconte",
+                        "aux enfants."
+                    ],
+                    "correct": [
+                        "Papa",
+                        "raconte",
+                        "une histoire",
+                        "aux enfants."
+                    ],
+                    "alts": [
+                        [
+                            "Papa",
+                            "raconte",
+                            "aux enfants",
+                            "une histoire."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "apporte",
+                        "la soupe.",
+                        "Le serveur",
+                        "à la cliente."
+                    ],
+                    "correct": [
+                        "Le serveur",
+                        "apporte",
+                        "la soupe",
+                        "à la cliente."
+                    ],
+                    "alts": [
+                        [
+                            "Le serveur",
+                            "apporte",
+                            "à la cliente",
+                            "la soupe."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "son crayon.",
+                        "prête",
+                        "à sa voisine.",
+                        "Julie"
+                    ],
+                    "correct": [
+                        "Julie",
+                        "prête",
+                        "son crayon",
+                        "à sa voisine."
+                    ],
+                    "alts": [
+                        [
+                            "Julie",
+                            "prête",
+                            "à sa voisine",
+                            "son crayon."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "Le directeur",
+                        "aux visiteurs.",
+                        "la cour.",
+                        "montre"
+                    ],
+                    "correct": [
+                        "Le directeur",
+                        "montre",
+                        "la cour",
+                        "aux visiteurs."
+                    ],
+                    "alts": [
+                        [
+                            "Le directeur",
+                            "montre",
+                            "aux visiteurs",
+                            "la cour."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "Tom",
+                        "à son oncle.",
+                        "écrit",
+                        "une carte."
+                    ],
+                    "correct": [
+                        "Tom",
+                        "écrit",
+                        "une carte",
+                        "à son oncle."
+                    ],
+                    "alts": [
+                        [
+                            "Tom",
+                            "écrit",
+                            "à son oncle",
+                            "une carte."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "vend",
+                        "Le boulanger",
+                        "aux clients.",
+                        "du pain."
+                    ],
+                    "correct": [
+                        "Le boulanger",
+                        "vend",
+                        "du pain",
+                        "aux clients."
+                    ],
+                    "alts": [
+                        [
+                            "Le boulanger",
+                            "vend",
+                            "aux clients",
+                            "du pain."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "rendent",
+                        "leurs devoirs.",
+                        "à la maîtresse.",
+                        "Les élèves"
+                    ],
+                    "correct": [
+                        "Les élèves",
+                        "rendent",
+                        "leurs devoirs",
+                        "à la maîtresse."
+                    ],
+                    "alts": [
+                        [
+                            "Les élèves",
+                            "rendent",
+                            "à la maîtresse",
+                            "leurs devoirs."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "offre",
+                        "Le pêcheur",
+                        "un poisson.",
+                        "à son chat."
+                    ],
+                    "correct": [
+                        "Le pêcheur",
+                        "offre",
+                        "un poisson",
+                        "à son chat."
+                    ],
+                    "alts": [
+                        [
+                            "Le pêcheur",
+                            "offre",
+                            "à son chat",
+                            "un poisson."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "lit",
+                        "à mon petit frère.",
+                        "Mon grand-père",
+                        "une histoire."
+                    ],
+                    "correct": [
+                        "Mon grand-père",
+                        "lit",
+                        "une histoire",
+                        "à mon petit frère."
+                    ],
+                    "alts": [
+                        [
+                            "Mon grand-père",
+                            "lit",
+                            "à mon petit frère",
+                            "une histoire."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "un message.",
+                        "envoie",
+                        "à sa meilleure amie.",
+                        "Sarah"
+                    ],
+                    "correct": [
+                        "Sarah",
+                        "envoie",
+                        "un message",
+                        "à sa meilleure amie."
+                    ],
+                    "alts": [
+                        [
+                            "Sarah",
+                            "envoie",
+                            "à sa meilleure amie",
+                            "un message."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "le chemin.",
+                        "Le guide",
+                        "explique",
+                        "aux touristes."
+                    ],
+                    "correct": [
+                        "Le guide",
+                        "explique",
+                        "le chemin",
+                        "aux touristes."
+                    ],
+                    "alts": [
+                        [
+                            "Le guide",
+                            "explique",
+                            "aux touristes",
+                            "le chemin."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "donne",
+                        "du foin.",
+                        "aux chevaux.",
+                        "La fermière"
+                    ],
+                    "correct": [
+                        "La fermière",
+                        "donne",
+                        "du foin",
+                        "aux chevaux."
+                    ],
+                    "alts": [
+                        [
+                            "La fermière",
+                            "donne",
+                            "aux chevaux",
+                            "du foin."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "à la maîtresse.",
+                        "Nous",
+                        "apportons",
+                        "des fleurs."
+                    ],
+                    "correct": [
+                        "Nous",
+                        "apportons",
+                        "des fleurs",
+                        "à la maîtresse."
+                    ],
+                    "alts": [
+                        [
+                            "Nous",
+                            "apportons",
+                            "à la maîtresse",
+                            "des fleurs."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "la tarte.",
+                        "aux invités.",
+                        "sert",
+                        "Le chef"
+                    ],
+                    "correct": [
+                        "Le chef",
+                        "sert",
+                        "la tarte",
+                        "aux invités."
+                    ],
+                    "alts": [
+                        [
+                            "Le chef",
+                            "sert",
+                            "aux invités",
+                            "la tarte."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "une souris.",
+                        "Le chat",
+                        "apporte",
+                        "à son maître."
+                    ],
+                    "correct": [
+                        "Le chat",
+                        "apporte",
+                        "une souris",
+                        "à son maître."
+                    ],
+                    "alts": [
+                        [
+                            "Le chat",
+                            "apporte",
+                            "à son maître",
+                            "une souris."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "des gaufres.",
+                        "achète",
+                        "aux enfants.",
+                        "Papa"
+                    ],
+                    "correct": [
+                        "Papa",
+                        "achète",
+                        "des gaufres",
+                        "aux enfants."
+                    ],
+                    "alts": [
+                        [
+                            "Papa",
+                            "achète",
+                            "aux enfants",
+                            "des gaufres."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "jouent",
+                        "dans la cour.",
+                        "au foot.",
+                        "Les enfants"
+                    ],
+                    "correct": [
+                        "Les enfants",
+                        "jouent",
+                        "au foot",
+                        "dans la cour."
+                    ],
+                    "alts": [
+                        [
+                            "Les enfants",
+                            "jouent",
+                            "dans la cour",
+                            "au foot."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "un livre.",
+                        "lisent",
+                        "Les élèves",
+                        "en classe."
+                    ],
+                    "correct": [
+                        "Les élèves",
+                        "lisent",
+                        "un livre",
+                        "en classe."
+                    ],
+                    "alts": [
+                        [
+                            "Les élèves",
+                            "lisent",
+                            "en classe",
+                            "un livre."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "mange",
+                        "dans le jardin.",
+                        "Emma",
+                        "une pomme."
+                    ],
+                    "correct": [
+                        "Emma",
+                        "mange",
+                        "une pomme",
+                        "dans le jardin."
+                    ],
+                    "alts": [
+                        [
+                            "Emma",
+                            "mange",
+                            "dans le jardin",
+                            "une pomme."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "devant la maison.",
+                        "la voiture.",
+                        "lave",
+                        "Papa"
+                    ],
+                    "correct": [
+                        "Papa",
+                        "lave",
+                        "la voiture",
+                        "devant la maison."
+                    ],
+                    "alts": [
+                        [
+                            "Papa",
+                            "lave",
+                            "devant la maison",
+                            "la voiture."
+                        ]
+                    ],
+                    "flex": true
+                },
+                {
+                    "blocks": [
+                        "range",
+                        "dans le garage.",
+                        "les outils",
+                        "Le papa"
+                    ],
+                    "correct": [
+                        "Le papa",
+                        "range",
+                        "les outils",
+                        "dans le garage."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "pour le dessert.",
+                        "Maman",
+                        "prépare",
+                        "une tarte"
+                    ],
+                    "correct": [
+                        "Maman",
+                        "prépare",
+                        "une tarte",
+                        "pour le dessert."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "la Grand-Place",
+                        "visitent",
+                        "Les touristes",
+                        "à Bruxelles."
+                    ],
+                    "correct": [
+                        "Les touristes",
+                        "visitent",
+                        "la Grand-Place",
+                        "à Bruxelles."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "des tartines",
+                        "au petit-déjeuner.",
+                        "mangent",
+                        "Les enfants"
+                    ],
+                    "correct": [
+                        "Les enfants",
+                        "mangent",
+                        "des tartines",
+                        "au petit-déjeuner."
+                    ]
+                },
+                {
+                    "blocks": [
+                        "les cahiers",
+                        "La maîtresse",
+                        "corrige",
+                        "après la classe."
+                    ],
+                    "correct": [
+                        "La maîtresse",
+                        "corrige",
+                        "les cahiers",
+                        "après la classe."
+                    ]
+                }
+            ]
+        };
+        let EXERCISES = [];
+        const SESSION_LENGTH = 10;
 
         /**
          * TRANSLATION / UI STRINGS DATABASE
@@ -282,7 +1590,33 @@ F<!DOCTYPE html>
                 errorSpokenFeedback: "Oups ! Ce n'est pas tout à fait ça. Voici la bonne phrase :",
                 finishTitle: "Félicitations !",
                 finishMsg: "Tu as terminé tous les exercices avec succès ! Tu es un champion de la syntaxe !",
-                restart: "Recommencer"
+                restart: "Recommencer",
+                repeat: "Répéter les consignes",
+                resultSoon: "Ton résultat arrive…",
+                speakStart: "Bienvenue ! Aujourd'hui, tu vas remettre dix phrases dans l'ordre. D'abord, choisis ton niveau. Au niveau facile, il y a trois blocs : le sujet, le verbe et le complément. Au niveau difficile, il y a quatre blocs, et parfois plusieurs ordres sont corrects. Clique sur le niveau que tu préfères.",
+                speakIntroEasy: "Niveau facile. Remets les blocs de mots dans l'ordre pour faire une phrase correcte. Clique sur les mots, ou glisse-les dans la zone. Rappelle-toi : la phrase commence par une majuscule et se termine par un point. Quand tu as fini, clique sur Valider.",
+                speakIntroHard: "Niveau difficile. Remets les quatre blocs de mots dans l'ordre pour faire une phrase correcte. Attention : dans ce niveau, plusieurs ordres peuvent être corrects. Rappelle-toi : la phrase commence par une majuscule et se termine par un point. Quand tu as fini, clique sur Valider.",
+                startTitle: "Choisis ton niveau",
+                startSub: "Tu vas remettre 10 phrases en ordre. Prêt(e) ?",
+                easyTitle: "Facile",
+                easyDesc: "3 blocs : le sujet, le verbe et le complément.",
+                hardTitle: "Difficile",
+                hardDesc: "4 blocs. Parfois, plusieurs ordres sont corrects !",
+                multiNote: "✨ Dans ce niveau, plusieurs ordres peuvent être corrects !",
+                question: "Question",
+                resultTitle: "Ton résultat",
+                resultOutOf: "bonnes réponses sur",
+                resultSpoken: "Tu as réussi {n} questions sur {total}.",
+                reviewTitle: "Phrases à revoir :",
+                tipTitle: "À retenir",
+                tip: "Une phrase commence par une majuscule, se termine par un point, et se construit dans l'ordre : le sujet, le verbe, puis le complément.",
+                tiers: {
+                    perfect: { emoji: "🏆", title: "Parfait !", msg: "Tu as réussi toutes les phrases. Tu es un vrai champion de la syntaxe !" },
+                    great: { emoji: "🌟", title: "Très bien !", msg: "Presque parfait ! Tu connais bien l'ordre des mots dans une phrase." },
+                    good: { emoji: "👍", title: "Bien joué !", msg: "Tu as compris l'essentiel. Regarde les phrases à revoir pour progresser encore." },
+                    ok: { emoji: "💪", title: "Tu progresses !", msg: "Continue à t'entraîner. Cherche d'abord qui fait l'action, puis ce qu'il fait." },
+                    low: { emoji: "🌈", title: "Courage !", msg: "Ce n'est pas grave, on apprend en s'entraînant. Recommence et utilise le bouton Écouter pour entendre ta phrase." }
+                }
             },
             en: {
                 exit: "Exit",
@@ -306,7 +1640,33 @@ F<!DOCTYPE html>
                 errorSpokenFeedback: "Oops! That's not quite right. Here is the correct sentence:",
                 finishTitle: "Congratulations!",
                 finishMsg: "You completed all exercises successfully! You are a sentence champion!",
-                restart: "Start Again"
+                restart: "Start Again",
+                repeat: "Repeat instructions",
+                resultSoon: "Your result is coming…",
+                speakStart: "Welcome! Today, you will put ten sentences in order. First, choose your level. In the easy level, there are three blocks: the subject, the verb and the complement. In the hard level, there are four blocks, and sometimes several orders are correct. Click on the level you prefer.",
+                speakIntroEasy: "Easy level. Put the word blocks in order to make a correct sentence. Click on the words, or drag them into the box. Remember: the sentence starts with a capital letter and ends with a period. When you are done, click Check.",
+                speakIntroHard: "Hard level. Put the four word blocks in order to make a correct sentence. Be careful: in this level, several orders can be correct. Remember: the sentence starts with a capital letter and ends with a period. When you are done, click Check.",
+                startTitle: "Choose your level",
+                startSub: "You will put 10 sentences in order. Ready?",
+                easyTitle: "Easy",
+                easyDesc: "3 blocks: the subject, the verb and the complement.",
+                hardTitle: "Hard",
+                hardDesc: "4 blocks. Sometimes several orders are correct!",
+                multiNote: "✨ In this level, several orders can be correct!",
+                question: "Question",
+                resultTitle: "Your result",
+                resultOutOf: "correct answers out of",
+                resultSpoken: "You got {n} questions right out of {total}.",
+                reviewTitle: "Sentences to review:",
+                tipTitle: "Remember",
+                tip: "A sentence starts with a capital letter, ends with a period, and is built in this order: the subject, the verb, then the complement.",
+                tiers: {
+                    perfect: { emoji: "🏆", title: "Perfect!", msg: "You got every sentence right. You are a true syntax champion!" },
+                    great: { emoji: "🌟", title: "Very good!", msg: "Almost perfect! You know the word order of a sentence well." },
+                    good: { emoji: "👍", title: "Well done!", msg: "You understood the main idea. Look at the sentences to review to improve even more." },
+                    ok: { emoji: "💪", title: "You are improving!", msg: "Keep practising. First find who does the action, then what they do." },
+                    low: { emoji: "🌈", title: "Keep going!", msg: "No problem, we learn by practising. Try again and use the Listen button to hear your sentence." }
+                }
             }
         };
 
@@ -318,6 +1678,14 @@ F<!DOCTYPE html>
         let userConstructedBlocks = [];
         let availableBlocks = [];
         let draggedBlockText = null;
+        let currentLevel = null;      // 'easy' or 'hard'
+        let correctCount = 0;
+        let answered = false;
+        let gameFinished = false;
+        let missedSentences = [];
+        let feedbackPending = false;  // true while the spoken feedback is playing
+        let feedbackTimer = null;
+        let introStarted = false;
 
         // DOM ELEMENTS
         const dropZone = document.getElementById('drop-zone');
@@ -340,6 +1708,14 @@ F<!DOCTYPE html>
         const btnLangToggle = document.getElementById('btn-lang-toggle');
         const langIndicator = document.getElementById('lang-indicator');
         const btnSpeakInstruction = document.getElementById('btn-speak-instruction');
+        const startScreen = document.getElementById('start-screen');
+        const gameCard = document.getElementById('game-card');
+        const btnLevelEasy = document.getElementById('btn-level-easy');
+        const btnLevelHard = document.getElementById('btn-level-hard');
+        const questionCounter = document.getElementById('question-counter');
+        const multiNote = document.getElementById('multi-note');
+        const lastNote = document.getElementById('last-note');
+        const btnRepeatStart = document.getElementById('btn-repeat-start');
 
         /**
          * SPEECH SYNTHESIS ENGINE & DUAL VOICE STRATEGY
@@ -376,7 +1752,7 @@ F<!DOCTYPE html>
          * @param {string} langCode - 'fr' or 'en'
          * @param {Function} [onEndCallback] - Function executed on finish
          */
-        function speakText(text, langCode = 'fr', onEndCallback = null) {
+        function speakText(text, langCode = 'fr', onEndCallback = null, onStartCallback = null) {
             if (!audioEnabled || !('speechSynthesis' in window)) {
                 if (onEndCallback) onEndCallback();
                 return;
@@ -401,6 +1777,7 @@ F<!DOCTYPE html>
                 utterance.onend = onEndCallback;
                 utterance.onerror = onEndCallback;
             }
+            if (onStartCallback) utterance.onstart = onStartCallback;
 
             window.speechSynthesis.speak(utterance);
         }
@@ -457,7 +1834,8 @@ F<!DOCTYPE html>
             initVoices();
             setupEventListeners();
             updateLanguageUI();
-            loadExercise(0);
+            // Try to read the welcome instructions aloud (some browsers need a first tap)
+            setTimeout(speakStartIntro, 500);
         });
 
         function updateLanguageUI() {
@@ -476,6 +1854,22 @@ F<!DOCTYPE html>
             document.querySelectorAll('.ui-text-correct-sentence').forEach(el => el.textContent = t.correctSentence);
 
             langIndicator.textContent = currentLanguage.toUpperCase();
+
+            document.querySelectorAll('.ui-text-start-title').forEach(el => el.textContent = t.startTitle);
+            document.querySelectorAll('.ui-text-start-sub').forEach(el => el.textContent = t.startSub);
+            document.querySelectorAll('.ui-text-easy-title').forEach(el => el.textContent = t.easyTitle);
+            document.querySelectorAll('.ui-text-easy-desc').forEach(el => el.textContent = t.easyDesc);
+            document.querySelectorAll('.ui-text-hard-title').forEach(el => el.textContent = t.hardTitle);
+            document.querySelectorAll('.ui-text-hard-desc').forEach(el => el.textContent = t.hardDesc);
+            document.querySelectorAll('.ui-text-multi').forEach(el => el.textContent = t.multiNote);
+            document.querySelectorAll('.ui-text-repeat').forEach(el => el.textContent = t.repeat);
+            document.querySelectorAll('.ui-text-last').forEach(el => el.textContent = t.resultSoon);
+
+            if (gameFinished) {
+                renderFinalScreen();
+            } else if (EXERCISES.length > 0) {
+                updateQuestionCounter();
+            }
         }
 
         function loadExercise(index) {
@@ -486,6 +1880,16 @@ F<!DOCTYPE html>
 
             currentExerciseIndex = index;
             const currentEx = EXERCISES[index];
+
+            // Unlock the question
+            answered = false;
+            btnCheck.disabled = false;
+            btnNext.classList.remove('hidden');
+            btnNext.disabled = false;
+            feedbackPending = false;
+            clearTimeout(feedbackTimer);
+            lastNote.classList.add('hidden');
+            updateQuestionCounter();
 
             // Reset buffers
             userConstructedBlocks = [];
@@ -500,6 +1904,111 @@ F<!DOCTYPE html>
             progressBar.style.width = `${progress}%`;
 
             renderBlocks();
+        }
+
+        /**
+         * GAME FLOW HELPERS
+         */
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function startGame(level) {
+            currentLevel = level;
+            EXERCISES = shuffleArray(EXERCISE_POOLS[level]).slice(0, SESSION_LENGTH);
+            score = 0;
+            scoreCounter.textContent = score;
+            correctCount = 0;
+            missedSentences = [];
+            gameFinished = false;
+
+            startScreen.style.display = 'none';
+            gameCard.style.display = '';
+            multiNote.style.display = level === 'hard' ? '' : 'none';
+
+            loadExercise(0);
+            introStarted = true;
+            speakExerciseIntro();
+        }
+
+        function updateQuestionCounter() {
+            const t = TRANSLATIONS[currentLanguage];
+            const levelLabel = currentLevel === 'hard' ? '🔥 ' + t.hardTitle : '🌱 ' + t.easyTitle;
+            questionCounter.textContent = `${t.question} ${Math.min(currentExerciseIndex + 1, EXERCISES.length)} / ${EXERCISES.length} · ${levelLabel}`;
+        }
+
+        // In "flexible" exercises every block may end with a period; only the last
+        // block placed in the sentence keeps it.
+        function getDisplayText(text, idx) {
+            const ex = EXERCISES[currentExerciseIndex];
+            if (ex && ex.flex && idx < userConstructedBlocks.length - 1) {
+                return text.replace(/\.$/, '');
+            }
+            return text;
+        }
+
+        function matchesAccepted(ex) {
+            if (!ex.flex) {
+                return userConstructedBlocks.length === ex.correct.length &&
+                    userConstructedBlocks.every((val, i) => val === ex.correct[i]);
+            }
+            const norm = list => list.map(t => t.replace(/\.$/, '')).join(' ');
+            const user = norm(userConstructedBlocks);
+            return [ex.correct, ...(ex.alts || [])].some(order => norm(order) === user);
+        }
+
+        /**
+         * SPOKEN INSTRUCTIONS & FEEDBACK TIMING
+         */
+        function speakStartIntro() {
+            const t = TRANSLATIONS[currentLanguage];
+            speakText(t.speakStart, currentLanguage, null, () => { introStarted = true; });
+        }
+
+        function speakExerciseIntro() {
+            const t = TRANSLATIONS[currentLanguage];
+            speakText(currentLevel === 'hard' ? t.speakIntroHard : t.speakIntroEasy, currentLanguage);
+        }
+
+        // Called when the spoken feedback is over (or after a safety timeout):
+        // unlocks "Suivant", or goes straight to the general feedback after the last question.
+        function finishFeedback() {
+            if (!feedbackPending) return;
+            feedbackPending = false;
+            clearTimeout(feedbackTimer);
+            if (currentExerciseIndex >= EXERCISES.length - 1) {
+                setTimeout(() => {
+                    if (!gameFinished) loadExercise(EXERCISES.length);
+                }, 1200);
+            } else {
+                btnNext.disabled = false;
+            }
+        }
+
+        function speakFeedbackAndWait(prefix, sentence) {
+            const isLast = currentExerciseIndex >= EXERCISES.length - 1;
+            feedbackPending = true;
+            btnNext.disabled = true;
+            if (isLast) {
+                btnNext.classList.add('hidden');
+                lastNote.classList.remove('hidden');
+            }
+            clearTimeout(feedbackTimer);
+            // Safety net in case the browser never fires the "end" event
+            feedbackTimer = setTimeout(finishFeedback, 3000 + (prefix.length + sentence.length) * 110);
+
+            if (currentLanguage === 'en') {
+                speakText(prefix, 'en', () => {
+                    speakText(sentence, 'fr', finishFeedback);
+                });
+            } else {
+                speakText(prefix + ' ' + sentence, 'fr', finishFeedback);
+            }
         }
 
         /**
@@ -527,7 +2036,7 @@ F<!DOCTYPE html>
             } else {
                 dropPlaceholder.classList.add('hidden');
                 userConstructedBlocks.forEach((text, idx) => {
-                    const blockEl = createBlockElement(text, 'constructed', idx);
+                    const blockEl = createBlockElement(text, 'constructed', idx, getDisplayText(text, idx));
                     dropZone.appendChild(blockEl);
                 });
             }
@@ -543,13 +2052,13 @@ F<!DOCTYPE html>
         /**
          * Create styled interactive block element
          */
-        function createBlockElement(text, zoneType, index) {
+        function createBlockElement(text, zoneType, index, shownText = text) {
             const block = document.createElement('div');
             block.className = 'px-4 py-3 rounded-2xl font-bold title-font text-base sm:text-lg cursor-pointer transition-all duration-200 shadow-fun-sm hover:shadow-fun active:translate-y-0.5 flex items-center space-x-2 select-none border-2';
             
             // Visual indicators for syntax rules (Capital & Period)
-            const cap = isCapitalized(text);
-            const period = hasPeriod(text);
+            const cap = isCapitalized(shownText);
+            const period = hasPeriod(shownText);
 
             if (zoneType === 'constructed') {
                 block.className += ' bg-amber-200 border-amber-400 text-amber-950 hover:bg-amber-300';
@@ -561,7 +2070,7 @@ F<!DOCTYPE html>
             let capBadge = cap ? '<span class="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded-full font-sans uppercase font-black ml-1 shadow-sm">Maj</span>' : '';
             let periodBadge = period ? '<span class="text-[10px] bg-pink-600 text-white px-1.5 py-0.5 rounded-full font-sans uppercase font-black ml-1 shadow-sm">Point</span>' : '';
 
-            block.innerHTML = `<span>${text}</span>${capBadge}${periodBadge}`;
+            block.innerHTML = `<span>${shownText}</span>${capBadge}${periodBadge}`;
 
             // Make Draggable
             block.draggable = true;
@@ -580,6 +2089,7 @@ F<!DOCTYPE html>
 
             // Tap/Click Action
             block.addEventListener('click', () => {
+                if (answered) return;
                 playSoundFx('click');
                 if (zoneType === 'available') {
                     // Move from available to drop zone
@@ -611,7 +2121,7 @@ F<!DOCTYPE html>
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drop-zone-highlight');
-            if (draggedBlockText && draggedBlockText.zoneType === 'available') {
+            if (!answered && draggedBlockText && draggedBlockText.zoneType === 'available') {
                 playSoundFx('click');
                 availableBlocks.splice(draggedBlockText.index, 1);
                 userConstructedBlocks.push(draggedBlockText.text);
@@ -625,7 +2135,7 @@ F<!DOCTYPE html>
 
         sourceZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            if (draggedBlockText && draggedBlockText.zoneType === 'constructed') {
+            if (!answered && draggedBlockText && draggedBlockText.zoneType === 'constructed') {
                 playSoundFx('click');
                 userConstructedBlocks.splice(draggedBlockText.index, 1);
                 availableBlocks.push(draggedBlockText.text);
@@ -639,6 +2149,7 @@ F<!DOCTYPE html>
         function setupEventListeners() {
             // Reset Button
             btnReset.addEventListener('click', () => {
+                if (answered) return;
                 playSoundFx('click');
                 const currentEx = EXERCISES[currentExerciseIndex];
                 userConstructedBlocks = [];
@@ -648,28 +2159,45 @@ F<!DOCTYPE html>
 
             // Listen Button (Speak current sentence constructed by user)
             btnListen.addEventListener('click', () => {
+                if (feedbackPending) return;
                 playSoundFx('click');
                 if (userConstructedBlocks.length === 0) {
                     const textToSay = currentLanguage === 'en' ? "The sentence is empty!" : "La phrase est vide !";
                     speakText(textToSay, currentLanguage);
                     return;
                 }
-                const sentenceToSpeak = userConstructedBlocks.join(' ');
+                const sentenceToSpeak = userConstructedBlocks.map((t, i) => getDisplayText(t, i)).join(' ');
                 speakText(sentenceToSpeak, 'fr');
             });
 
             // Speak Instruction Button
             btnSpeakInstruction.addEventListener('click', () => {
+                if (feedbackPending) return;
                 playSoundFx('click');
-                const t = TRANSLATIONS[currentLanguage];
-                speakText(t.speakInstruction, currentLanguage);
+                speakExerciseIntro();
             });
+
+            // Repeat the welcome instructions
+            btnRepeatStart.addEventListener('click', () => {
+                playSoundFx('click');
+                speakStartIntro();
+            });
+
+            // If the browser blocked the automatic welcome speech, read it at the first tap on the background
+            const firstGesture = (e) => {
+                document.removeEventListener('pointerdown', firstGesture);
+                if (!introStarted && !currentLevel && !e.target.closest('button, a')) {
+                    speakStartIntro();
+                }
+            };
+            document.addEventListener('pointerdown', firstGesture);
 
             // Language Toggle Button
             btnLangToggle.addEventListener('click', () => {
                 playSoundFx('click');
                 currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
                 updateLanguageUI();
+                if (!currentLevel) speakStartIntro();
             });
 
             // Mute / Audio Toggle Button
@@ -681,8 +2209,13 @@ F<!DOCTYPE html>
                 } else {
                     audioIcon.className = 'fa-solid fa-volume-xmark';
                     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                    finishFeedback();
                 }
             });
+
+            // Level choice buttons
+            btnLevelEasy.addEventListener('click', () => { playSoundFx('click'); startGame('easy'); });
+            btnLevelHard.addEventListener('click', () => { playSoundFx('click'); startGame('hard'); });
 
             // Validate / Check Button
             btnCheck.addEventListener('click', checkAnswer);
@@ -701,15 +2234,21 @@ F<!DOCTYPE html>
             const currentEx = EXERCISES[currentExerciseIndex];
             const t = TRANSLATIONS[currentLanguage];
 
+            if (answered) return;
+
             if (userConstructedBlocks.length === 0) {
                 playSoundFx('error');
+                btnNext.classList.add('hidden');
                 showFeedbackCard('error', t.errorTitle, t.emptyError, null);
                 speakText(t.emptyError, currentLanguage);
                 return;
             }
 
-            const isCorrect = userConstructedBlocks.length === currentEx.correct.length &&
-                userConstructedBlocks.every((val, index) => val === currentEx.correct[index]);
+            answered = true;
+            btnCheck.disabled = true;
+            btnNext.classList.remove('hidden');
+
+            const isCorrect = matchesAccepted(currentEx);
 
             const fullCorrectSentence = currentEx.correct.join(' ');
 
@@ -717,6 +2256,7 @@ F<!DOCTYPE html>
                 // Success
                 playSoundFx('success');
                 score += 10;
+                correctCount++;
                 scoreCounter.textContent = score;
 
                 // Launch celebratory confetti
@@ -733,17 +2273,12 @@ F<!DOCTYPE html>
                 // AUDIO FEEDBACK DUAL-VOICE LOGIC:
                 // 1. Speak praise in selected UI language
                 // 2. Speak the full correct sentence in French
-                if (currentLanguage === 'en') {
-                    speakText(t.correctSpokenPraise, 'en', () => {
-                        speakText(fullCorrectSentence, 'fr');
-                    });
-                } else {
-                    speakText(t.correctSpokenPraise + " " + fullCorrectSentence, 'fr');
-                }
+                speakFeedbackAndWait(t.correctSpokenPraise, fullCorrectSentence);
 
             } else {
                 // Incorrect
                 playSoundFx('error');
+                if (!missedSentences.includes(fullCorrectSentence)) missedSentences.push(fullCorrectSentence);
                 // Add temporary shake animation to drop zone
                 dropZone.classList.add('shake-anim');
                 setTimeout(() => dropZone.classList.remove('shake-anim'), 500);
@@ -752,15 +2287,7 @@ F<!DOCTYPE html>
 
                 // AUDIO FEEDBACK ON ERROR:
                 // Speak error instruction in UI language, then read out correct French sentence cleanly.
-                if (currentLanguage === 'en') {
-                    speakText(t.errorSpokenFeedback, 'en', () => {
-                        speakText(fullCorrectSentence, 'fr');
-                    });
-                } else {
-                    speakText(t.errorSpokenFeedback, 'fr', () => {
-                        speakText(fullCorrectSentence, 'fr');
-                    });
-                }
+                speakFeedbackAndWait(t.errorSpokenFeedback, fullCorrectSentence);
             }
         }
 
@@ -798,42 +2325,74 @@ F<!DOCTYPE html>
         }
 
         /**
-         * Final Completion Screen
+         * Final Completion Screen (written + spoken general feedback)
          */
-        function showFinalCompletionScreen() {
-            const t = TRANSLATIONS[currentLanguage];
-            progressBar.style.width = '100%';
+        function getTier(n, total) {
+            const ratio = n / total;
+            if (n === total) return 'perfect';
+            if (ratio >= 0.8) return 'great';
+            if (ratio >= 0.6) return 'good';
+            if (ratio >= 0.4) return 'ok';
+            return 'low';
+        }
 
-            if (window.confetti) {
+        function renderFinalScreen() {
+            const t = TRANSLATIONS[currentLanguage];
+            const total = EXERCISES.length;
+            const tier = t.tiers[getTier(correctCount, total)];
+            const levelLabel = currentLevel === 'hard' ? '🔥 ' + t.hardTitle : '🌱 ' + t.easyTitle;
+
+            const missedHtml = missedSentences.length > 0 ? `
+                <div class="w-full max-w-lg bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 mb-4 text-left">
+                    <div class="title-font text-base font-bold text-rose-800 mb-2">${t.reviewTitle}</div>
+                    <ul class="space-y-1 text-sm sm:text-base font-semibold text-slate-700 list-disc pl-5">
+                        ${missedSentences.map(s => `<li>${s}</li>`).join('')}
+                    </ul>
+                </div>` : '';
+
+            gameCard.innerHTML = `
+                <div class="text-center py-4 px-2 w-full flex flex-col items-center">
+                    <div class="text-6xl sm:text-7xl mb-2 animate-bounce">${tier.emoji}</div>
+                    <h2 class="title-font text-2xl sm:text-4xl font-bold text-indigo-900 mb-1">${tier.title}</h2>
+                    <div class="text-sm font-bold text-indigo-600 mb-3">${levelLabel}</div>
+                    <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl p-4 inline-flex items-center space-x-3 mb-4">
+                        <i class="fa-solid fa-star text-amber-500 text-3xl"></i>
+                        <span class="title-font text-xl sm:text-2xl font-bold text-amber-900">${correctCount} ${t.resultOutOf} ${total} · ${score} ${t.stars}</span>
+                    </div>
+                    <p class="text-slate-700 text-base sm:text-lg max-w-md mx-auto mb-4 font-semibold">${tier.msg}</p>
+                    ${missedHtml}
+                    <div class="w-full max-w-lg bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 mb-6 text-left">
+                        <div class="title-font text-base font-bold text-indigo-800 mb-1">💡 ${t.tipTitle}</div>
+                        <p class="text-sm sm:text-base font-semibold text-slate-700">${t.tip}</p>
+                    </div>
+                    <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white title-font font-bold text-lg py-3 px-8 rounded-2xl shadow-fun transition-all transform active:translate-y-1">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> ${t.restart}
+                    </button>
+                </div>
+            `;
+        }
+
+        function showFinalCompletionScreen() {
+            gameFinished = true;
+            feedbackCard.classList.add('hidden');
+            renderFinalScreen();
+
+            const t = TRANSLATIONS[currentLanguage];
+            const total = EXERCISES.length;
+            const tier = t.tiers[getTier(correctCount, total)];
+
+            if (window.confetti && correctCount / total >= 0.6) {
                 confetti({
-                    particleCount: 150,
+                    particleCount: correctCount === total ? 160 : 90,
                     spread: 100,
                     origin: { y: 0.5 }
                 });
             }
 
-            const container = document.querySelector('main > div');
-            container.innerHTML = `
-                <div class="text-center py-8 px-4">
-                    <div class="text-6xl sm:text-7xl mb-4 animate-bounce">🏆</div>
-                    <h2 class="title-font text-2xl sm:text-4xl font-bold text-indigo-900 mb-3">${t.finishTitle}</h2>
-                    <p class="text-slate-600 text-base sm:text-lg max-w-md mx-auto mb-6 font-semibold">${t.finishMsg}</p>
-                    <div class="bg-amber-100 border-2 border-amber-300 rounded-2xl p-4 inline-flex items-center space-x-3 mb-8">
-                        <i class="fa-solid fa-star text-amber-500 text-3xl"></i>
-                        <span class="title-font text-2xl font-bold text-amber-900">${score} ${t.stars}</span>
-                    </div>
-                    <div>
-                        <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white title-font font-bold text-lg py-3 px-8 rounded-2xl shadow-fun transition-all transform active:translate-y-1">
-                            <i class="fa-solid fa-rotate-right mr-2"></i> ${t.restart}
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            const endMsg = currentLanguage === 'en' 
-                ? "Congratulations! You completed all exercises!" 
-                : "Félicitations ! Tu as terminé tous les exercices !";
-            speakText(endMsg, currentLanguage);
+            const spoken = tier.title + ' ' +
+                t.resultSpoken.replace('{n}', correctCount).replace('{total}', total) + ' ' +
+                tier.msg;
+            speakText(spoken, currentLanguage);
         }
     </script>
 </body>
