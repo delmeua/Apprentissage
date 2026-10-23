@@ -55,6 +55,54 @@
         background: #ffffff;
       }
 
+      /* Menu de la boîte à outils : les choix sont définis dans listeOutils */
+      .toolbox-wrapper {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 30;
+      }
+      .toolbox-wrapper .toolbox-icon {
+        position: static;
+        cursor: pointer;
+        padding: 0;
+      }
+      .toolbox-menu {
+        display: none;
+        position: absolute;
+        top: 68px;
+        right: 0;
+        width: min(340px, calc(100vw - 2rem));
+        padding: .6rem;
+        border: 3px solid #fff;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, .97);
+        box-shadow: 0 8px 0 rgba(0,0,0,.15), 0 14px 28px rgba(0,0,0,.2);
+      }
+      .toolbox-menu.visible {
+        display: grid;
+        gap: .55rem;
+      }
+      .toolbox-menu a {
+        display: block;
+        padding: .9rem 1rem;
+        border-radius: 13px;
+        background: linear-gradient(#4d96ff, #7b5bff);
+        color: #fff;
+        font-weight: bold;
+        text-align: left;
+        text-decoration: none;
+      }
+      .toolbox-menu a:hover {
+        filter: brightness(1.08);
+        transform: translateX(-2px);
+      }
+      .toolbox-menu a:focus-visible,
+      .toolbox-icon:focus-visible {
+        outline: 3px solid #222;
+        outline-offset: 3px;
+      }
+
       h1 {
         margin: 0;
         font-size: clamp(2rem, 6vw, 3.6rem);
@@ -262,10 +310,15 @@
     </style>
   </head>
   <body>
-    <!-- Icône Boîte à outils vers gestionnaire_de_vocabulaire.html -->
-    <a href="gestionnaire_de_vocabulaire.html" class="toolbox-icon" title="Cet outil permet de créer facilement une liste csv&#10; si vous n'avez pas d'outils dédiés pour le faire.">
-      🧰
-    </a>
+    <!-- Boîte à outils : ajoutez de nouveaux choix dans la listeOutils du script -->
+    <div class="toolbox-wrapper">
+      <button type="button" id="btnBoiteOutils" class="toolbox-icon"
+              aria-label="Ouvrir la boîte à outils" aria-expanded="false"
+              aria-controls="menuBoiteOutils" title="Ouvrir la boîte à outils">
+        🧰
+      </button>
+      <nav id="menuBoiteOutils" class="toolbox-menu" aria-label="Boîte à outils"></nav>
+    </div>
 
     <h1 id="titre"><span class="emoji">🎉</span> Apprentissage <span class="emoji">🎈</span></h1>
 
@@ -324,7 +377,8 @@
         { titre: "📝 Accords dans le groupe du nom", fichier: "francais/accords_dans_le_groupe_du_nom.html", aide: "Exerce-toi aux accords dans le groupe nominal !" },
         { titre: "✍️ Application de conjugaison P2", fichier: "francais/conjugaison_p2_application.html", aide: "Révise tes verbes et la conjugaison !" },
         { titre: "🗂️ Tri des mots", fichier: "francais/tri_des_mots.html", aide: "Apprends à classer et trier la nature des mots !" },
-        { titre: "🔤 Structure de la phrase", fichier: "francais/syntaxe_la_structure_de_la_phrase.html", aide: "Comprends la syntaxe et la construction des phrases !" }
+        { titre: "🔤 Structure de la phrase", fichier: "francais/syntaxe_la_structure_de_la_phrase.html", aide: "Comprends la syntaxe et la construction des phrases !" },
+        { titre : "  Compréhension de la lecture", fichier: "francais/compréhension_lecture.html", aide: "Comprendre ce que tu lis !"}
       ];
 
       // Génération automatique des boutons de calcul
@@ -347,6 +401,52 @@
         lien.textContent = exo.titre;
         if (exo.aide) lien.title = exo.aide;
         conteneurSousMenuFrancais.appendChild(lien);
+      });
+
+      // =========================================================================
+      // ZONE D'EXTENSION FACILE : BOÎTE À OUTILS
+      // Pour ajouter un choix, ajoutez simplement un objet à cette liste.
+      // Les chemins sont relatifs à ce fichier index.html.
+      // =========================================================================
+      const listeOutils = [
+        {
+          titre: "📄 Créer un fichier CSV",
+          fichier: "gestionnaire_de_vocabulaire.html",
+          aide: "Créer une liste CSV à l'aide du gestionnaire de vocabulaire."
+        },
+        {
+          titre: "📚 Adapter questions compréhension lecture",
+          fichier: "francais/questions.html",
+          aide: "Adapter les questions de compréhension en lecture."
+        }
+      ];
+
+      const btnBoiteOutils = document.getElementById("btnBoiteOutils");
+      const menuBoiteOutils = document.getElementById("menuBoiteOutils");
+
+      listeOutils.forEach(outil => {
+        const lien = document.createElement("a");
+        lien.href = outil.fichier;
+        lien.textContent = outil.titre;
+        if (outil.aide) lien.title = outil.aide;
+        menuBoiteOutils.appendChild(lien);
+      });
+
+      function fermerBoiteOutils() {
+        menuBoiteOutils.classList.remove("visible");
+        btnBoiteOutils.setAttribute("aria-expanded", "false");
+      }
+
+      btnBoiteOutils.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const ouvert = menuBoiteOutils.classList.toggle("visible");
+        btnBoiteOutils.setAttribute("aria-expanded", String(ouvert));
+      });
+
+      menuBoiteOutils.addEventListener("click", (event) => event.stopPropagation());
+      document.addEventListener("click", fermerBoiteOutils);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") fermerBoiteOutils();
       });
 
       const champ = document.getElementById("champPrenom");
