@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#6750d8">
+<title>Compréhension de lecture</title>
+<style>
+:root{--purple:#6750d8;--pink:#ff77a8;--yellow:#ffdc65;--ink:#292447;--paper:#fffdf8;--green:#17865c;--red:#c23b52}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:radial-gradient(circle at 10% 5%,#ffe4f0 0,transparent 30%),radial-gradient(circle at 95% 90%,#d9f8ee 0,transparent 30%),#f2efff;display:flex;align-items:center;justify-content:center;padding:18px}
+.app{width:min(900px,100%);background:var(--paper);border:4px solid white;border-radius:28px;box-shadow:0 18px 55px #34246b20;overflow:hidden}
+header{padding:22px 26px;background:linear-gradient(120deg,#6750d8,#9d65e8);color:white;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-size:clamp(1.25rem,3vw,1.8rem);font-weight:900}.sub{opacity:.92;font-size:.95rem}
+button,select{font:inherit}button{cursor:pointer;border:0;border-radius:16px;font-weight:800;padding:13px 18px;transition:transform .12s,filter .12s}button:hover{filter:brightness(1.03);transform:translateY(-1px)}button:focus-visible,select:focus-visible{outline:4px solid #ffbc42;outline-offset:3px}
+
+main{padding:clamp(18px,4vw,34px)}.topline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}.pill{border-radius:999px;padding:8px 13px;background:#f0ebff;font-weight:800;font-size:.9rem}.progress{height:12px;background:#eee8ff;border-radius:99px;overflow:hidden;margin:14px 0 24px}.bar{height:100%;width:0;background:linear-gradient(90deg,#ff77a8,#ffcf55);transition:width .25s}
+h1{font-size:clamp(1.7rem,5vw,2.6rem);line-height:1.12;margin:0 0 12px}p{line-height:1.6}.story{font-size:clamp(1.1rem,2.5vw,1.35rem);background:#fff3d2;border:2px dashed #f2bf3f;border-radius:20px;padding:20px;margin:18px 0}.question{font-size:1.25rem;font-weight:850;margin:18px 0}
+.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.answer{background:white;border:2px solid #e4defc;text-align:left;min-height:72px;display:flex;align-items:center;gap:12px;color:var(--ink);font-size:1.05rem}.letter{display:grid;place-items:center;background:#f0ebff;color:var(--purple);width:38px;height:38px;flex:0 0 38px;border-radius:12px;font-weight:900}.answer:disabled{cursor:default;opacity:.95}.answer.correct{border-color:var(--green);background:#e4fff2}.answer.wrong{border-color:var(--red);background:#fff0f2}
+.feedback{margin-top:18px;padding:16px 18px;border-radius:18px;background:#f1edff;display:none}.feedback.show{display:block}.feedback h2{font-size:1.15rem;margin:0 0 6px}.feedback p{margin:5px 0}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.primary{background:var(--purple);color:white}.secondary{background:#eee9ff;color:var(--purple)}.exit{background:#ffe5ef;color:#8f2851}.hint{margin-top:14px}.hint summary{cursor:pointer;font-weight:800;color:#6956c8}.hint p{margin-bottom:0}.welcome{text-align:center;padding:15px 0}.mascot{font-size:4rem}.welcome p{max-width:620px;margin:12px auto 22px}.small{font-size:.88rem;color:#6d6785}.score{font-size:clamp(2rem,8vw,4rem);font-weight:950;color:var(--purple)}.endcard{text-align:center;background:#f4f0ff;border-radius:24px;padding:25px}.hide{display:none!important}
+@media(max-width:560px){body{padding:8px}.app{border-radius:22px}.answers{grid-template-columns:1fr}.answer{min-height:62px}header{padding:17px}.actions button{flex:1}main{padding:18px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><div class="brand" id="brand">📚 Les petits champions de lecture</div><div class="sub" id="tagline">Lis, réfléchis, et gagne des étoiles !</div></div>
+</header>
+<main>
+<section id="welcome" class="welcome">
+<div class="mascot" aria-hidden="true">🦊📖⭐</div><h1 id="welcomeTitle">Prêt·e pour une aventure de lecture ?</h1>
+<p id="welcomeText">Lis chaque petite histoire, puis touche ou clique sur la bonne réponse. Tu n’as rien à écrire au clavier. Chaque phase contient 10 défis, avec un bilan rigolo à la fin !</p>
+
+<div class="actions" style="justify-content:center"><button class="primary" id="start">🚀 C’est parti !</button><button class="secondary" id="repeatInstructions">🔊 Répéter les consignes</button></div>
+<p class="small" id="voiceNote">🔊 Voix en ligne naturelles (Céline). Une connexion Internet est nécessaire ; un autre service ou la voix locale sera essayé en cas d’échec.</p>
+</section>
+<section id="game" class="hide">
+<div class="topline"><span class="pill" id="phaseLabel">Phase 1 / 5</span><span class="pill" id="questionLabel">Défi 1 / 10</span><span class="pill" id="scoreLabel">⭐ 0</span></div>
+<div class="progress" aria-label="Progression"><div class="bar" id="bar"></div></div>
+<div id="story" class="story"></div><div id="question" class="question"></div>
+<div id="answers" class="answers"></div>
+<details class="hint"><summary id="hintSummary">💡 Afficher l’indice</summary><p id="hintText"></p></details>
+<div id="feedback" class="feedback" aria-live="polite"><h2 id="feedbackTitle"></h2><p id="feedbackText"></p><p id="correctAnswer"></p><div class="actions"><button class="secondary" id="speakAgain">🔊 Réécouter</button></div></div>
+<div class="actions"><button class="primary hide" id="next">Question suivante ➜</button><button class="exit" id="quit">↩ Quitter</button></div>
+</section>
+<section id="summary" class="hide">
+<div class="endcard"><div class="mascot">🏆🎉</div><h1 id="summaryTitle">Phase terminée !</h1><div class="score" id="finalScore">8/10</div><p id="summaryText"></p><p id="globalFeedback"></p><div class="actions" style="justify-content:center"><button class="primary" id="again">🌟 Phase suivante</button><button class="secondary" id="replayVoice">🔊 Réécouter le bilan</button><button class="exit" id="quit2">↩ Quitter</button></div></div>
+</section>
+</main>
+</div>
+<script src="questions.js"></script>
+<script>
+const bank = (()=>{try{return JSON.parse(localStorage.getItem("lectureQuizQuestionsV1"))||window.QUESTION_BANK}catch(e){return window.QUESTION_BANK}})();
+
+const ui = {
+tagline:"Lis, réfléchis, et gagne des étoiles !",
+welcomeTitle:"Prêt·e pour une aventure de lecture ?",
+welcomeText:"Lis chaque petite histoire, puis touche ou clique sur la bonne réponse. Tu n’as rien à écrire au clavier. Chaque phase contient 10 défis, avec un bilan rigolo à la fin !",
+start:"🚀 C’est parti !",phase:"Phase",challenge:"Défi",hint:"💡 Afficher l’indice",
+correct:"Bravo, bonne réponse ! 🌟",wrong:"Pas tout à fait, champion·ne ! 💪",
+correctAnswer:"La bonne réponse est :",next:"Question suivante ➜",finish:"Voir le bilan de la phase 🏆",
+summary:"Phase terminée !",score:"Tu as obtenu",
+great:"Fantastique ! Tu as lu avec attention et trouvé presque toutes les réponses. Continue comme ça !",
+good:"Beau travail ! Tu progresses à chaque défi. Une petite relecture aide à trouver les indices.",
+try:"Bien joué d’avoir essayé ! Relis les histoires tranquillement : chaque défi est une occasion d’apprendre.",
+phaseNext:"🌟 Phase suivante",allDone:"Tu as terminé les cinq phases ! Quelle aventure de lecture !",
+voiceNote:"🔊 Voix en ligne naturelles (Céline). Une connexion Internet est nécessaire ; un autre service ou la voix locale sera essayé en cas d’échec.",
+quit:"↩ Quitter",listen:"🔊 Réécouter"
+};
+let phase=0,idx=0,score=0,phaseScores=[],currentSet=[],lastSpeech="",audioVoice=null,speechToken=0;
+const $=id=>document.getElementById(id);
+function t(k){return ui[k]||""}
+function stripEmoji(text){return String(text).replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,"").replace(/\s{2,}/g," ").trim()}
+function stopSpeech(){speechToken++;if(audioVoice){try{audioVoice.pause();audioVoice.src="";}catch(e){}audioVoice=null;}if("speechSynthesis"in window)speechSynthesis.cancel()}
+function streamElementsUrl(text){return "https://api.streamelements.com/kappa/v2/speech?voice=Celine&text="+encodeURIComponent(text)}
+function googleTtsUrl(text){return "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=fr&q="+encodeURIComponent(text)}
+function fallbackLocal(text,token){if(token!==speechToken||!("speechSynthesis"in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="fr-BE";u.rate=.92;const voices=speechSynthesis.getVoices();const v=voices.find(x=>x.lang.toLowerCase().startsWith("fr-be"))||voices.find(x=>x.lang.toLowerCase().startsWith("fr"));if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}}
+function speechDone(maxMs=12000,token=speechToken){return new Promise(resolve=>{const start=Date.now();const poll=setInterval(()=>{if(token!==speechToken){clearInterval(poll);resolve();return}const playing=(audioVoice&&!audioVoice.paused&&!audioVoice.ended)||("speechSynthesis"in window&&speechSynthesis.speaking);if(!playing||Date.now()-start>maxMs){clearInterval(poll);resolve()}},150)})}
+async function playProvider(url,text,token){return new Promise(resolve=>{if(token!==speechToken){resolve(false);return}let settled=false;const a=new Audio();audioVoice=a;a.preload="auto";const fail=()=>{if(settled)return;settled=true;a.pause();a.removeAttribute("src");a.load();if(audioVoice===a)audioVoice=null;resolve(false)};a.addEventListener("error",fail,{once:true});a.addEventListener("ended",()=>{if(settled)return;settled=true;if(audioVoice===a)audioVoice=null;resolve(true)},{once:true});a.src=url;const p=a.play();if(p&&p.catch)p.catch(fail);setTimeout(()=>{if(!settled&&a.paused)fail()},4500)})}
+async function speech(text){const spoken=stripEmoji(text);lastSpeech=spoken;stopSpeech();const token=speechToken;if(!spoken)return;for(const url of [streamElementsUrl(spoken),googleTtsUrl(spoken)]){const ok=await playProvider(url,spoken,token);if(token!==speechToken)return;if(ok){await speechDone(20000,token);return}}fallbackLocal(spoken,token)}
+function textFor(q,key){return q[key]??""}
+function getStory(q){return q.story||""}
+function getQuestion(q){return q.q||""}
+function getOpts(q){return q.opts||[]}
+function getHint(q){return q.h||""}
+function getWhy(q){return q.why||""}
+const instructions="Bienvenue dans les petits champions de lecture ! Lis l’histoire et la question, puis touche ou clique sur la réponse qui te semble correcte. Tu peux demander un indice. Après ta réponse, tu entendras si elle est correcte et tu entendras la bonne réponse si nécessaire. Chaque phase contient dix défis. À la fin, nous ferons le bilan ensemble. Appuie sur C’est parti pour commencer !";
+function startPhase(){
+  stopSpeech();
+  const source=Array.isArray(bank)?bank.slice():[];
+  if(!source.length){
+    $("welcomeText").textContent="Aucun exercice n’a été trouvé. Ouvre questions.html pour ajouter des exercices.";
+    speech("Aucun exercice n’a été trouvé. Ouvre la page de gestion pour ajouter des exercices.");
+    return;
+  }
+  // Mélange les exercices pour réduire les répétitions ; dix questions par phase.
+  for(let i=source.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[source[i],source[j]]=[source[j],source[i]]}
+  currentSet=source.slice(0,Math.min(10,source.length));
+  // Si la banque contient moins de dix exercices, complète sans bloquer le jeu.
+  while(currentSet.length<10&&source.length){currentSet.push(source[currentSet.length%source.length])}
+  idx=0;score=0;
+  $("welcome").classList.add("hide");$("summary").classList.add("hide");$("game").classList.remove("hide");
+  renderQuestion();
+}
+$("repeatInstructions").addEventListener("click",()=>speech(instructions));
+function renderQuestion(){
+const q=currentSet[idx];$("phaseLabel").textContent=`${t("phase")} ${phase+1} / 5`;$("questionLabel").textContent=`${t("challenge")} ${idx+1} / 10`;$("scoreLabel").textContent=`⭐ ${score}`;$("bar").style.width=`${idx*10}%`;$("story").textContent=getStory(q);$("question").textContent=getQuestion(q);$("hintSummary").textContent=t("hint");$("hintText").textContent=getHint(q);$("hintSummary").parentElement.open=false;$("feedback").classList.remove("show");$("next").classList.add("hide");$("answers").innerHTML="";
+getOpts(q).forEach((opt,i)=>{const b=document.createElement("button");b.className="answer";b.innerHTML=`<span class="letter">${"ABCD"[i]}</span><span></span>`;b.lastElementChild.textContent=opt;b.addEventListener("click",()=>answer(i));$("answers").appendChild(b)});
+$("bar").style.width=`${idx*10}%`;speech("Lis attentivement l’histoire. Ensuite, écoute la question. "+getStory(q)+" Question : "+getQuestion(q));
+}
+$("hintSummary").addEventListener("click",()=>{setTimeout(()=>{if($("hintSummary").parentElement.open&&getHint(currentSet[idx]))speech("Voici un indice. "+getHint(currentSet[idx]))},0)});
+function answer(choice){const q=currentSet[idx],buttons=[...$("answers").querySelectorAll("button")];if(buttons.some(b=>b.disabled))return;buttons.forEach((b,i)=>{b.disabled=true;if(i===q.a)b.classList.add("correct");if(i===choice&&i!==q.a)b.classList.add("wrong")});const ok=choice===q.a;if(ok)score++;$("scoreLabel").textContent=`⭐ ${score}`;$("feedbackTitle").textContent=ok?t("correct"):t("wrong");$("feedbackText").textContent=ok?getWhy(q):"Tu as choisi : "+getOpts(q)[choice]+". "+getWhy(q);$("correctAnswer").textContent=ok?"":t("correctAnswer")+" "+getOpts(q)[q.a]+"."; $("feedback").classList.add("show");$("next").textContent=idx===9?t("finish"):t("next");$("next").classList.remove("hide");speech((ok?t("correct")+" ":"")+getWhy(q)+(ok?"":" "+t("correctAnswer")+" "+getOpts(q)[q.a]+"."))}
+function nextQuestion(){if(idx<9){idx++;renderQuestion()}else{phaseScores.push(score);$("game").classList.add("hide");$("summary").classList.remove("hide");renderSummary(true)}}
+function renderSummary(speakIt){$("summaryTitle").textContent=t("summary");$("finalScore").textContent=`${phaseScores[phaseScores.length-1]}/10`;$("summaryText").textContent=t("score")+" "+phaseScores[phaseScores.length-1]+" / 10.";const n=phaseScores[phaseScores.length-1];let fb=n>=8?t("great"):n>=5?t("good"):t("try");$("globalFeedback").textContent=fb;$("again").textContent=phase===4?t("start"):t("phaseNext");if(phase===4)$("globalFeedback").textContent=fb+" "+t("allDone");if(speakIt)speech(t("summary")+" "+$("summaryText").textContent+" "+fb)}
+$("start").addEventListener("click",startPhase);$("next").addEventListener("click",nextQuestion);$("speakAgain").addEventListener("click",()=>speech(lastSpeech));$("replayVoice").addEventListener("click",()=>speech($("summaryText").textContent+" "+$("globalFeedback").textContent));$("again").addEventListener("click",()=>{if(phase<4)phase++;else phase=0;startPhase()});$("quit").addEventListener("click",()=>{stopSpeech();window.location.href="../index.html"});$("quit2").addEventListener("click",()=>{stopSpeech();window.location.href="../index.html"});
+// Interface et contenus en français.
+</script>
+</body></html>
