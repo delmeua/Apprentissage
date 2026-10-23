@@ -124,13 +124,15 @@
 
       .boutons {
         display: flex;
-        gap: 2rem;
+        gap: 1.5rem;
         flex-wrap: wrap;
         justify-content: center;
         align-items: center;
+        width: 100%;
+        max-width: 1000px;
       }
 
-      /* Taille stricte et identique pour les deux gros boutons */
+      /* Taille identique pour TOUS les gros boutons + Responsive */
       .grosBouton {
         display: flex;
         flex-direction: column;
@@ -138,12 +140,13 @@
         justify-content: center;
         gap: .4rem;
         width: 290px;
+        max-width: 100%;
         height: 170px;
         padding: 1rem;
         border-radius: 32px;
         border: 6px solid #fff;
         font-family: inherit;
-        font-size: 1.4rem;
+        font-size: 1.35rem;
         font-weight: bold;
         color: #fff;
         cursor: pointer;
@@ -152,7 +155,7 @@
         animation: pop .8s ease-in-out infinite alternate;
         text-align: center;
       }
-      .grosBouton:hover { transform: scale(1.07) rotate(-1deg); }
+      .grosBouton:hover { transform: scale(1.05) rotate(-1deg); }
       .grosBouton:active { transform: scale(.96); }
       .grosBouton .icone { font-size: 2.8rem; line-height: 1; }
 
@@ -160,14 +163,19 @@
         background: linear-gradient(#ff9a3d, #ff6b6b);
         box-shadow: 0 10px 0 #d94f2b, 0 18px 30px rgba(0,0,0,.25);
       }
+      .btnFrancais {
+        background: linear-gradient(#2ecc71, #1abc9c);
+        box-shadow: 0 10px 0 #16a085, 0 18px 30px rgba(0,0,0,.25);
+        animation-delay: .2s;
+      }
       .btnHistoires {
         background: linear-gradient(#4d96ff, #7b5bff);
         box-shadow: 0 10px 0 #3a5fd9, 0 18px 30px rgba(0,0,0,.25);
         animation-delay: .4s;
       }
 
-      /* Conteneur en grille 2 colonnes pour les sous-boutons de calcul générés dynamiquement */
-      #sousMenuCalculs {
+      /* Conteneurs en grille pour les sous-boutons */
+      .sousMenu {
         display: none;
         grid-template-columns: repeat(2, 1fr);
         gap: 1.2rem;
@@ -176,17 +184,18 @@
         margin-top: 1rem;
         justify-items: center;
       }
-      #sousMenuCalculs.visible {
+      .sousMenu.visible {
         display: grid;
       }
 
+      /* Style harmonisé pour les sous-boutons */
       .sousBouton {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: .8rem;
         width: 100%;
-        height: 80px;
+        min-height: 80px;
         padding: 1rem;
         border-radius: 24px;
         border: 4px solid #fff;
@@ -196,19 +205,40 @@
         color: #fff;
         cursor: pointer;
         text-decoration: none;
-        background: linear-gradient(#ffb347, #ffcc33);
-        box-shadow: 0 6px 0 #cc9900, 0 12px 20px rgba(0,0,0,.2);
         transition: transform .15s;
         text-align: center;
       }
       .sousBouton:hover { transform: scale(1.03); }
       .sousBouton:active { transform: scale(.95); }
 
+      /* Couleurs sous-boutons Calculs */
+      #sousMenuCalculs .sousBouton {
+        background: linear-gradient(#ffb347, #ffcc33);
+        box-shadow: 0 6px 0 #cc9900, 0 12px 20px rgba(0,0,0,.2);
+      }
+
+      /* Couleurs sous-boutons Français */
+      #sousMenuFrancais .sousBouton {
+        background: linear-gradient(#58d68d, #28b463);
+        box-shadow: 0 6px 0 #1e8449, 0 12px 20px rgba(0,0,0,.2);
+      }
+
       /* Si le nombre total de sous-boutons est impair, le dernier s'étale sur les 2 colonnes */
       .sousBouton:nth-last-child(1):nth-child(odd) {
         grid-column: span 2;
         max-width: 310px;
         justify-self: center;
+      }
+
+      /* Adaptabilité Smartphone */
+      @media (max-width: 500px) {
+        .sousMenu {
+          grid-template-columns: 1fr;
+        }
+        .sousBouton:nth-last-child(1):nth-child(odd) {
+          grid-column: span 1;
+          max-width: 100%;
+        }
       }
 
       @keyframes pop {
@@ -253,19 +283,21 @@
       <div class="grosBouton btnCalculs" id="btnCalculs" title="Clique ici pour voir tous les exercices de calculs !">
         <span class="icone">🧮</span> Mes calculs
       </div>
+      <div class="grosBouton btnFrancais" id="btnFrancais" title="Clique ici pour voir tous les exercices de français !">
+        <span class="icone">📚</span> Mon français
+      </div>
       <a class="grosBouton btnHistoires" id="btnVocabulaire" href="anglais.html" title="Clique ici pour accéder au vocabulaire anglais !">
         <span class="icone">🐝</span> Mon vocabulaire anglais
       </a>
     </div>
 
-    <!-- Conteneur vide : les boutons de calcul seront ajoutés automatiquement par le script -->
-    <div id="sousMenuCalculs"></div>
+    <!-- Conteneurs des sous-menus générés dynamiquement par le script -->
+    <div id="sousMenuCalculs" class="sousMenu"></div>
+    <div id="sousMenuFrancais" class="sousMenu"></div>
 
     <script>
       // =========================================================================
-      // ZONE D'EXTENSION FACILE : 
-      // Pour ajouter un nouvel exercice plus tard, ajoutez simplement une ligne ici :
-      // { titre: "Nom affiché", fichier: "nom_du_fichier.html" },
+      // ZONE D'EXTENSION FACILE : CALCULS
       // =========================================================================
       const listeExercicesCalculs = [
         { titre: "✖️ Tables de multiplication", fichier: "tablesQuiz.html", aide: "Teste tes connaissances sur les tables de multiplication !" },
@@ -284,18 +316,37 @@
         { titre: "⚖️ La balance des monstres", fichier: "la_balance_des_monstres.html", aide: "Autre exercice pour tester ta connaissance des signes mathématiques !" }
       ];
 
-      // Génération automatique des boutons de calcul dans la page
-      const conteneurSousMenu = document.getElementById("sousMenuCalculs");
+      // =========================================================================
+      // ZONE D'EXTENSION FACILE : FRANÇAIS
+      // Pour ajouter d'autres exercices plus tard, ajoutez une nouvelle ligne ici !
+      // =========================================================================
+      const listeExercicesFrancais = [
+        { titre: "📝 Accords dans le groupe du nom", fichier: "francais/accords_dans_le_groupe_du_nom.html", aide: "Exerce-toi aux accords dans le groupe nominal !" },
+        { titre: "✍️ Application de conjugaison P2", fichier: "francais/conjugaison_p2_application.html", aide: "Révise tes verbes et la conjugaison !" },
+        { titre: "🗂️ Tri des mots", fichier: "francais/tri_des_mots.html", aide: "Apprends à classer et trier la nature des mots !" },
+        { titre: "🔤 Structure de la phrase", fichier: "francais/syntaxe_la_structure_de_la_phrase.html", aide: "Comprends la syntaxe et la construction des phrases !" }
+      ];
+
+      // Génération automatique des boutons de calcul
+      const conteneurSousMenuCalculs = document.getElementById("sousMenuCalculs");
       listeExercicesCalculs.forEach(exo => {
         const lien = document.createElement("a");
         lien.className = "sousBouton";
         lien.href = exo.fichier;
         lien.textContent = exo.titre;
-        // C'est cette ligne qui ajoute l'infobulle au survol !
-        if (exo.aide) {
-          lien.title = exo.aide;
-        }
-        conteneurSousMenu.appendChild(lien);
+        if (exo.aide) lien.title = exo.aide;
+        conteneurSousMenuCalculs.appendChild(lien);
+      });
+
+      // Génération automatique des boutons de français
+      const conteneurSousMenuFrancais = document.getElementById("sousMenuFrancais");
+      listeExercicesFrancais.forEach(exo => {
+        const lien = document.createElement("a");
+        lien.className = "sousBouton";
+        lien.href = exo.fichier;
+        lien.textContent = exo.titre;
+        if (exo.aide) lien.title = exo.aide;
+        conteneurSousMenuFrancais.appendChild(lien);
       });
 
       const champ = document.getElementById("champPrenom");
@@ -305,16 +356,24 @@
       const btnOk = document.getElementById("btnOk");
       
       const btnCalculs = document.getElementById("btnCalculs");
+      const btnFrancais = document.getElementById("btnFrancais");
       const btnVocabulaire = document.getElementById("btnVocabulaire");
 
-      // Gestion de l'affichage des sous-boutons de calcul
+      // Gestion des affichages de sous-menus
       btnCalculs.addEventListener("click", () => {
-        sousMenuCalculs.classList.toggle("visible");
+        conteneurSousMenuFrancais.classList.remove("visible");
+        conteneurSousMenuCalculs.classList.toggle("visible");
       });
 
-      // Disparition des sous-boutons quand on clique sur vocabulaire
+      btnFrancais.addEventListener("click", () => {
+        conteneurSousMenuCalculs.classList.remove("visible");
+        conteneurSousMenuFrancais.classList.toggle("visible");
+      });
+
+      // Masquage lors du clic sur Vocabulaire
       btnVocabulaire.addEventListener("click", () => {
-        sousMenuCalculs.classList.remove("visible");
+        conteneurSousMenuCalculs.classList.remove("visible");
+        conteneurSousMenuFrancais.classList.remove("visible");
       });
 
       function lancerConfettis() {
